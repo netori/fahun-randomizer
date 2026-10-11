@@ -117,6 +117,18 @@ def deploy(plan_csv, sync_guide=True, log=print):
                     + (f" / 仍超长 {st['still_long']} 条" if st['still_long'] else ""))
         except Exception as _e:
             log(f"[③b] 长度适配跳过：{_e}")
+        # ③c 说明书自动审计：标签/长度/物品名/空地点/串页/行数/幂等 + 落盘核对
+        try:
+            import _guide_audit
+            _base_xml = os.path.join(APPLY, "work", "msg", "zh", "GoodsCaption.fmg.xml")
+            _fails = _guide_audit.audit(_base_xml, guide_xml, guide_xml, quiet=True)
+            if _fails:
+                log(f"[③c] ✗ 说明书审计发现 {len(_fails)} 处问题：{_fails[:3]}")
+                rec.setdefault("guide_audit", _fails)
+            else:
+                log("[③c] 说明书审计通过 ✓（标签/长度/物品名/空地点/串页/行数 全部符合原版）")
+        except Exception as _e:
+            log(f"[③c] 审计跳过：{_e}")
         log(f"[③] 说明书同步：{'成功' if os.path.exists(guide_xml) else '失败'}")
         rec["steps"].append({"step": "guide_xml", "ok": os.path.exists(guide_xml), "out": guide_xml})
         if not os.path.exists(guide_xml):
