@@ -385,6 +385,16 @@ def _cross_tier_pair(pools, rng, cross_frac, f2_on, items):
     return swaps
 
 
+def _unit_tier_any(u, items):
+    """取单元档位：优先用单元自带的 _tier，其次按格子所在地区，最后 2（中位）"""
+    t = u.get("_tier")
+    if isinstance(t, (int, float)):
+        return int(t)
+    try:
+        return int(_tier_of_unit(u))
+    except Exception:
+        return 2
+
 def _unit_tier(u, items):
     """单元的档位值（0..4；越大约高）"""
     k = u.get("base") or (u.get("items") or [None])[0]
@@ -482,10 +492,35 @@ def run(items, cfg, seed=None):
     swaps = {}
     merged = collections.OrderedDict()
     for pk, meta in pools.items():
-        if "混池" in pk:                      # 混池必须原样保留，不能被按大类重排
-            merged[("mixed", 0)] = dict(meta)
+        if "混池" in pk:
+            # 混池必须原样保留（不能被按大类重排），但**必须按档位拆开**，
+            # 否则所有档位并成一个池 → 连 100% 合理度都会跨档
+            for _u in (meta.get("units") or []):
+                try:
+                    _t = bucket_of(_unit_tier_any(_u, items))
+                except Exception:
+                    _t = 2
+                _slot = merged.setdefault(("mixed", _t),
+                                          {"kind": meta.get("kind", "item"), "units": []})
+                _slot["units"].append(_u)
             continue
         dom, rank = _pool_rank(pk, meta.get("units") or [], items)
+        if dom == "weapon":
+            # build_pools 把**全部武器**放在一个池里，取中位数拆不开 →
+            # 这里逐单元按档位分桶（档位 = 格子所在地区），否则 100% 也会跨档
+            _wunits = meta.get("units") or []
+            _wdone = False
+            for _u in _wunits:
+                try:
+                    _t = bucket_of(_unit_tier_any(_u, items))
+                except Exception:
+                    _t = 2
+                _wkey = ("weapon", _t, "any")
+                _slot = merged.setdefault(_wkey, {"kind": meta.get("kind", "item"), "units": []})
+                _slot["units"].append(_u)
+                _wdone = True
+            if _wdone:
+                continue
         # 合并键里保留"法师/祷告 vs 近战"这一轴（否则法祷与近战混池 → 错排失败 → 等于没随机）
         _us_all = meta.get("units") or []
         _archs = {(u.get("arch") or "") for u in _us_all
