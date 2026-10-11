@@ -1,0 +1,54 @@
+# ── 游戏本体 / MOD 资源（体积大、且属于游戏版权内容，不进仓库）──
+法魂mod V3.0.3*/
+*.bin
+*.bnd
+*.bnd4
+*.dcx
+*.fmg
+*.xml
+*.csv
+*.exe
+*.dll
+*.so
+*.pdb
+
+# ── 工作产物 / 备份 / 日志 ──
+investigation/apply/backup/
+investigation/apply/work/
+investigation/apply/logs/
+investigation/apply/out/
+investigation/apply/tools/
+investigation/*/backup/
+investigation/*/work/
+investigation/*/out/
+investigation/*/logs/
+investigation/**/__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+dist*/
+build*/
+build_native/
+*.spec
+
+# ── 临时 / 编辑器 ──
+.venv/
+venv/
+.idea/
+.vscode/
+*.log
+*.tmp
+*.bak
+~$*
+Thumbs.db
+desktop.ini
+
+# ── 设置文件（含本机路径，按需自行决定是否入库）──
+界面预览.png
+gui_shot*.png
+
+# ── 第三方工具与解包出来的游戏数据（不入库）──
+tools/
+WitchyBND-*.zip
+investigation/weapon-baseline/evidence/
+investigation/**/evidence/

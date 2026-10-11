@@ -1,0 +1,28 @@
+{
+  "scope": "Oodle dependency setup only; no new or old Convergence MOD files processed",
+  "created_utc": "2026-10-10T12:18:49.718803+00:00",
+  "source_path": "F:\\game\\studygame\\elden ring\\ELDEN RING Tarnished Edition v1.17\\Game\\oo2core_6_win64.dll",
+  "target_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\oo2core_6_win64.dll",
+  "size_bytes": 1085952,
+  "source_sha256_before": "988e8226d129b03011a96f51b476e86d38c0c3e817266375a78a7cf3b85d93c4",
+  "source_sha256_after": "988e8226d129b03011a96f51b476e86d38c0c3e817266375a78a7cf3b85d93c4",
+  "target_sha256": "988e8226d129b03011a96f51b476e86d38c0c3e817266375a78a7cf3b85d93c4",
+  "source_unchanged": true,
+  "pe_machine": "0x8664",
+  "architecture": "x64",
+  "already_present_with_matching_hash": false,
+  "copied": true,
+  "missing_dependency_reproduced_before_copy": true,
+  "missing_dependency_error": "Could not find module 'F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\oo2core_6_win64.dll' (or one of its dependencies). Try using the full path with constructor syntax.",
+  "native_dll_load_verified": true,
+  "dll_search_scope": "target DLL directory and Windows System32 only",
+  "exports": {
+    "OodleLZ_Decompress": true,
+    "OodleLZ_Compress": true,
+    "OodleLZ_GetCompressedBufferSizeNeeded": true
+  },
+  "mod_unpack_or_repack_attempted": false,
+  "game_launched": false,
+  "witchybnd_cli_executed": false,
+  "terminal_compatibility_fixed_or_verified": false
+}

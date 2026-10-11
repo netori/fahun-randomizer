@@ -1,0 +1,51 @@
+{
+ "seed": 20261010,
+ "base": {
+  "subpools": {
+   "armor:body": 1,
+   "armor:head": 6,
+   "rune:大师级": 18,
+   "rune:大师级(幽影系列)": 19,
+   "rune:学徒级": 18,
+   "rune:熟练级": 18,
+   "rune:精通级": 18
+  },
+  "plan_rows": 97,
+  "unsatisfied": [
+   {
+    "subpool": "armor:body",
+    "slots": 1,
+    "reason": "池内槽位数 < 2，无法置换"
+   }
+  ]
+ },
+ "D4_merged_shadow": {
+  "subpools": {
+   "armor:body": 1,
+   "armor:head": 6,
+   "rune:大师级": 37,
+   "rune:学徒级": 18,
+   "rune:熟练级": 18,
+   "rune:精通级": 18
+  },
+  "rune_大师级_pool_size": 37,
+  "note": "合并后大师级池从 18 → 36 个槽位；换法自由度变大，但会把幽影卢恩与本体大师级混在同一个池里"
+ },
+ "D3_shop_path": {
+  "approved_delta": 0,
+  "why": "打开商店并**不会**新增任何 approved：仅商店入口的 65 件防具仍然缺『职业/散件归属证据』，通过商店并不解决归属问题",
+  "pending_with_shop_only": 81,
+  "risk": "178 条商店行语义未确认（价格 0/1 或库存 −1、行名疑为 Paramdex 回退），干跑会把这些槽当成可写目标"
+ },
+ "checks": {
+  "multiset_preserved_within_permuted_subpools": true,
+  "slots_total": 98,
+  "slots_permuted": 97,
+  "slots_left_untouched_single_member_pool": 1,
+  "target_lots_with_other_slots": 0,
+  "no_slot_duplicated": true,
+  "no_frozen_glimmer_as_target_item": true,
+  "derangement_or_reported": true,
+  "200_seed_sweep_ok": true
+ }
+}

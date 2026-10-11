@@ -1,0 +1,133 @@
+{
+ "seed": 20261010,
+ "variants": {
+  "base": {
+   "with_shops": false,
+   "merge_shadow": false,
+   "subpools": {
+    "armor:body": 1,
+    "armor:head": 6,
+    "rune:大师级": 18,
+    "rune:大师级(幽影系列)": 19,
+    "rune:学徒级": 18,
+    "rune:熟练级": 18,
+    "rune:精通级": 18
+   },
+   "cells_total": 98,
+   "cells_permuted": 97,
+   "subpools_too_small": [
+    {
+     "subpool": "armor:body",
+     "cells": 1
+    }
+   ],
+   "shop_rows_skipped": {}
+  },
+  "merge": {
+   "with_shops": false,
+   "merge_shadow": true,
+   "subpools": {
+    "armor:body": 1,
+    "armor:head": 6,
+    "rune:大师级": 37,
+    "rune:学徒级": 18,
+    "rune:熟练级": 18,
+    "rune:精通级": 18
+   },
+   "cells_total": 98,
+   "cells_permuted": 97,
+   "subpools_too_small": [
+    {
+     "subpool": "armor:body",
+     "cells": 1
+    }
+   ],
+   "shop_rows_skipped": {}
+  },
+  "shop": {
+   "with_shops": true,
+   "merge_shadow": false,
+   "subpools": {
+    "armor:arm": 24,
+    "armor:body": 29,
+    "armor:head": 31,
+    "armor:leg": 24,
+    "rune:大师级": 18,
+    "rune:大师级(幽影系列)": 19,
+    "rune:学徒级": 18,
+    "rune:熟练级": 18,
+    "rune:精通级": 18,
+    "weapon:category=0": 4,
+    "weapon:category=1": 19,
+    "weapon:category=10": 6,
+    "weapon:category=11": 2,
+    "weapon:category=12": 25,
+    "weapon:category=13": 3,
+    "weapon:category=14": 1,
+    "weapon:category=2": 6,
+    "weapon:category=3": 8,
+    "weapon:category=4": 11,
+    "weapon:category=5": 13,
+    "weapon:category=6": 8,
+    "weapon:category=7": 3,
+    "weapon:category=8": 5,
+    "weapon:category=9": 5
+   },
+   "cells_total": 318,
+   "cells_permuted": 317,
+   "subpools_too_small": [
+    {
+     "subpool": "weapon:category=14",
+     "cells": 1
+    }
+   ],
+   "shop_rows_skipped": {
+    "semantics_unverified": 1007,
+    "other_equip_type": 318,
+    "frozen_starter_set": 9
+   }
+  },
+  "shop_merge": {
+   "with_shops": true,
+   "merge_shadow": true,
+   "subpools": {
+    "armor:arm": 24,
+    "armor:body": 29,
+    "armor:head": 31,
+    "armor:leg": 24,
+    "rune:大师级": 37,
+    "rune:学徒级": 18,
+    "rune:熟练级": 18,
+    "rune:精通级": 18,
+    "weapon:category=0": 4,
+    "weapon:category=1": 19,
+    "weapon:category=10": 6,
+    "weapon:category=11": 2,
+    "weapon:category=12": 25,
+    "weapon:category=13": 3,
+    "weapon:category=14": 1,
+    "weapon:category=2": 6,
+    "weapon:category=3": 8,
+    "weapon:category=4": 11,
+    "weapon:category=5": 13,
+    "weapon:category=6": 8,
+    "weapon:category=7": 3,
+    "weapon:category=8": 5,
+    "weapon:category=9": 5
+   },
+   "cells_total": 318,
+   "cells_permuted": 317,
+   "subpools_too_small": [
+    {
+     "subpool": "weapon:category=14",
+     "cells": 1
+    }
+   ],
+   "shop_rows_skipped": {
+    "semantics_unverified": 1007,
+    "other_equip_type": 318,
+    "frozen_starter_set": 9
+   }
+  }
+ }
+}

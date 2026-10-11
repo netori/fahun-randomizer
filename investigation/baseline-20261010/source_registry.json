@@ -1,0 +1,357 @@
+{
+  "created_utc": "2026-10-10T11:28:03.398766+00:00",
+  "sources": {
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\WitchyBND-3.0.1.0-win-x64.zip": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\WitchyBND-3.0.1.0-win-x64.zip",
+      "size_bytes": 48308252,
+      "sha256_initial": "a3e6b2a0f7eac13f5e83b6602a1149322439c0662baa140ecdd84be28af50364",
+      "roles": [
+        "downloaded tool ZIP"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:03.458499+00:00",
+      "size_bytes_final": 48308252,
+      "sha256_final": "a3e6b2a0f7eac13f5e83b6602a1149322439c0662baa140ecdd84be28af50364",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.651177+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\法魂资料整合表.xlsx": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\法魂资料整合表.xlsx",
+      "size_bytes": 282013,
+      "sha256_initial": "59f2d0a64981286dc479ccd37015de0e45b28f5932c5d6ad698eccd400881b89",
+      "roles": [
+        "reference workbook; first worksheet only",
+        "openpyxl worksheet zero inspection"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:03.488268+00:00",
+      "size_bytes_final": 282013,
+      "sha256_final": "59f2d0a64981286dc479ccd37015de0e45b28f5932c5d6ad698eccd400881b89",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.652261+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\appsettings.json": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\appsettings.json",
+      "size_bytes": 493,
+      "sha256_initial": "a918ab24344e27bed1f50ba12c615c2983b6b6a410d00ad4d04a437b239ae8ff",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.574051+00:00",
+      "size_bytes_final": 493,
+      "sha256_final": "a918ab24344e27bed1f50ba12c615c2983b6b6a410d00ad4d04a437b239ae8ff",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.653314+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\context.png": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\context.png",
+      "size_bytes": 17982,
+      "sha256_initial": "fe9a61c7b0837aa93738bebf44670a58ce9713694f98e00733721642f62594ef",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.591542+00:00",
+      "size_bytes_final": 17982,
+      "sha256_final": "fe9a61c7b0837aa93738bebf44670a58ce9713694f98e00733721642f62594ef",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.654273+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Paramdex.zip": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Paramdex.zip",
+      "size_bytes": 10731079,
+      "sha256_initial": "af1b4c693e0393c6eded20a190898076fb737e1c8959adf092e4911f7e3a3182",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.628201+00:00",
+      "size_bytes_final": 10731079,
+      "sha256_final": "af1b4c693e0393c6eded20a190898076fb737e1c8959adf092e4911f7e3a3182",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.667084+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.BB.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.BB.xml",
+      "size_bytes": 63874,
+      "sha256_initial": "60b8627e74370289de2dccf57c0e0225226fe604f91f09f06e310ff43c0f94cc",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.649120+00:00",
+      "size_bytes_final": 63874,
+      "sha256_final": "60b8627e74370289de2dccf57c0e0225226fe604f91f09f06e310ff43c0f94cc",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.668209+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DES.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DES.xml",
+      "size_bytes": 19303,
+      "sha256_initial": "df2b64dd9e9bef3a325d0ea2c270a6581555cc51ee3576c8915df84c90fd22f0",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.673369+00:00",
+      "size_bytes_final": 19303,
+      "sha256_final": "df2b64dd9e9bef3a325d0ea2c270a6581555cc51ee3576c8915df84c90fd22f0",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.669322+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS1.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS1.xml",
+      "size_bytes": 45649,
+      "sha256_initial": "cad36b5b5d29a1c909e0a9053d9627f101efbf3efee45a54b88c5de45e3dff60",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.696671+00:00",
+      "size_bytes_final": 45649,
+      "sha256_final": "cad36b5b5d29a1c909e0a9053d9627f101efbf3efee45a54b88c5de45e3dff60",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.670420+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS1R.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS1R.xml",
+      "size_bytes": 45649,
+      "sha256_initial": "cad36b5b5d29a1c909e0a9053d9627f101efbf3efee45a54b88c5de45e3dff60",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.724335+00:00",
+      "size_bytes_final": 45649,
+      "sha256_final": "cad36b5b5d29a1c909e0a9053d9627f101efbf3efee45a54b88c5de45e3dff60",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.671000+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS2S.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS2S.xml",
+      "size_bytes": 2119,
+      "sha256_initial": "0350fdc66e3209e752f94584a7ed1090995a7eae08e004ba9e900ee5937f7e4e",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.745727+00:00",
+      "size_bytes_final": 2119,
+      "sha256_final": "0350fdc66e3209e752f94584a7ed1090995a7eae08e004ba9e900ee5937f7e4e",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.672109+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS3.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.DS3.xml",
+      "size_bytes": 62085,
+      "sha256_initial": "16526f7ff0faae6cfb96c66606de10dd1266dea8331b638eb1dab0e699d4608d",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.771471+00:00",
+      "size_bytes_final": 62085,
+      "sha256_final": "16526f7ff0faae6cfb96c66606de10dd1266dea8331b638eb1dab0e699d4608d",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.673164+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.ER.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.ER.xml",
+      "size_bytes": 69920,
+      "sha256_initial": "60dc9f0ebd391331b616673fa291eb867e5cc676693f36aaf37ef54b6ebe7859",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.796567+00:00",
+      "size_bytes_final": 69920,
+      "sha256_final": "60dc9f0ebd391331b616673fa291eb867e5cc676693f36aaf37ef54b6ebe7859",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.673164+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.NR.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.NR.xml",
+      "size_bytes": 57328,
+      "sha256_initial": "cbd8544d54d41de0adeda0c7c4997dd95b15c1772361f6da4038683df563d21b",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.821487+00:00",
+      "size_bytes_final": 57328,
+      "sha256_final": "cbd8544d54d41de0adeda0c7c4997dd95b15c1772361f6da4038683df563d21b",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.674170+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.SDT.xml": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\Assets\\Templates\\TAE.Template.SDT.xml",
+      "size_bytes": 65526,
+      "sha256_initial": "58c34f6538ceea6b58cd87bf6fbc8d8f9f05bdb068949a2fb642bbff20e31eb9",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.849527+00:00",
+      "size_bytes_final": 65526,
+      "sha256_final": "58c34f6538ceea6b58cd87bf6fbc8d8f9f05bdb068949a2fb642bbff20e31eb9",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.675179+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\libzstd.dll": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\libzstd.dll",
+      "size_bytes": 799232,
+      "sha256_initial": "0c245a3c93ad074469f675fb6f1401461f8d46d0ead253e459757d102b8ae562",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.921349+00:00",
+      "size_bytes_final": 799232,
+      "sha256_final": "0c245a3c93ad074469f675fb6f1401461f8d46d0ead253e459757d102b8ae562",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.677188+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\README.md": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\README.md",
+      "size_bytes": 46874,
+      "sha256_initial": "d86fa90c7f73829ecd8edd1805c6d9c2d721775d03167f57cfb007cd16bb0dd6",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:05.952124+00:00",
+      "size_bytes_final": 46874,
+      "sha256_final": "d86fa90c7f73829ecd8edd1805c6d9c2d721775d03167f57cfb007cd16bb0dd6",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.678184+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\SharpShell.dll": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\SharpShell.dll",
+      "size_bytes": 451072,
+      "sha256_initial": "63e0a221f9b84973195fb1514d06b26d7b5d539123ce010b7bbc3ee37ba0fca0",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:06.241419+00:00",
+      "size_bytes_final": 451072,
+      "sha256_final": "63e0a221f9b84973195fb1514d06b26d7b5d539123ce010b7bbc3ee37ba0fca0",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.679706+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\WitchyBND.exe": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\WitchyBND.exe",
+      "size_bytes": 82128653,
+      "sha256_initial": "00aa5b321d5af0179d3c9154a48d2ab3bb55772eaf624a439cc5f6ad4e21982b",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:06.902943+00:00",
+      "size_bytes_final": 82128653,
+      "sha256_final": "00aa5b321d5af0179d3c9154a48d2ab3bb55772eaf624a439cc5f6ad4e21982b",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.763012+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\WitchyBND.Shell.dll": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\WitchyBND.Shell.dll",
+      "size_bytes": 13312,
+      "sha256_initial": "0f2a2eebec7e66b3676b724da013459edf86af6a3aca897a886d65694ed52e60",
+      "roles": [
+        "extracted unmodified tool distribution input"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:28:06.990345+00:00",
+      "size_bytes_final": 13312,
+      "sha256_final": "0f2a2eebec7e66b3676b724da013459edf86af6a3aca897a886d65694ed52e60",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.764016+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\regulation.bin": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\regulation.bin",
+      "size_bytes": 2977120,
+      "sha256_initial": "cab62c7f839706e4373b38b94f3b2aa2ae99872146790497b4e08fb84cfea6c6",
+      "roles": [
+        "active-name regulation candidate; original not tool-processed"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:32:03.465386+00:00",
+      "size_bytes_final": 2977120,
+      "sha256_final": "cab62c7f839706e4373b38b94f3b2aa2ae99872146790497b4e08fb84cfea6c6",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.767138+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\msg\\zhocn\\item_dlc02.msgbnd.dcx": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\msg\\zhocn\\item_dlc02.msgbnd.dcx",
+      "size_bytes": 365049,
+      "sha256_initial": "d7441782f05c4142078a62f7105949e44b569070758d56130074704e4b46921f",
+      "roles": [
+        "simplified Chinese item text container"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:32:03.512511+00:00",
+      "size_bytes_final": 365049,
+      "sha256_final": "d7441782f05c4142078a62f7105949e44b569070758d56130074704e4b46921f",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.768651+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\msg\\zhocn\\menu_dlc02.msgbnd.dcx": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\mod\\msg\\zhocn\\menu_dlc02.msgbnd.dcx",
+      "size_bytes": 505355,
+      "sha256_initial": "1935acdb09fce59182bf6d6a55608c94fb79f56fbc13a8c1bfc54aeb284a3231",
+      "roles": [
+        "simplified Chinese menu text container"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:32:03.555471+00:00",
+      "size_bytes_final": 505355,
+      "sha256_final": "1935acdb09fce59182bf6d6a55608c94fb79f56fbc13a8c1bfc54aeb284a3231",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.770148+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\version.txt": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\version.txt",
+      "size_bytes": 7,
+      "sha256_initial": "0001ece1fa1bc6cfc134d39cb491f65d02e0edfa106b9da8c7e617f86a5bb3af",
+      "roles": [
+        "MOD documentary version/launcher path evidence"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:32:03.596640+00:00",
+      "size_bytes_final": 7,
+      "sha256_final": "0001ece1fa1bc6cfc134d39cb491f65d02e0edfa106b9da8c7e617f86a5bb3af",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.770148+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\Start_Convergence_YAFSML.bat": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）\\Start_Convergence_YAFSML.bat",
+      "size_bytes": 4258,
+      "sha256_initial": "6de9b738b30dfba50ed6f0d044cb9550cb2d5c702607838d8d93068fea0ec249",
+      "roles": [
+        "MOD documentary version/launcher path evidence"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:32:03.632922+00:00",
+      "size_bytes_final": 4258,
+      "sha256_final": "6de9b738b30dfba50ed6f0d044cb9550cb2d5c702607838d8d93068fea0ec249",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.771154+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\光荣商人mod增量包（法魂mod专用）\\光荣商人mod增量包（9月14日更新v1.2.4）.zip": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\光荣商人mod增量包（法魂mod专用）\\光荣商人mod增量包（9月14日更新v1.2.4）.zip",
+      "size_bytes": 226461,
+      "sha256_initial": "e285454bd1877c3879c9f130ceaee00589a1d6274f22ad09ddb43bcaa3bbc08a",
+      "roles": [
+        "incremental archive central-directory filenames only; no content extraction or mixing"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:43:16.500619+00:00",
+      "size_bytes_final": 226461,
+      "sha256_final": "e285454bd1877c3879c9f130ceaee00589a1d6274f22ad09ddb43bcaa3bbc08a",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.772161+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\哥布林地图增量包（法魂mod专用）\\哥布林地图增量包（9月17日更新v2.1.4）.zip": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\哥布林地图增量包（法魂mod专用）\\哥布林地图增量包（9月17日更新v2.1.4）.zip",
+      "size_bytes": 3248703,
+      "sha256_initial": "5844d97ebd2c6772c8553b0f5a7702384343626502184b8c69fd91fcdf02396b",
+      "roles": [
+        "incremental archive central-directory filenames only; no content extraction or mixing"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:43:16.530358+00:00",
+      "size_bytes_final": 3248703,
+      "sha256_final": "5844d97ebd2c6772c8553b0f5a7702384343626502184b8c69fd91fcdf02396b",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.776091+00:00"
+    },
+    "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\切换轮盘增量包（法魂mod专用）\\切换轮盘增量包（1.4.0汉化版，适配游戏1.17）.zip": {
+      "absolute_path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\切换轮盘增量包（法魂mod专用）\\切换轮盘增量包（1.4.0汉化版，适配游戏1.17）.zip",
+      "size_bytes": 1571550,
+      "sha256_initial": "2600fe7e6624177aa705165498540b6d02251d6c225c9e6ab63697848a1dc23f",
+      "roles": [
+        "incremental archive central-directory filenames only; no content extraction or mixing"
+      ],
+      "recorded_before_read_utc": "2026-10-10T11:43:16.557594+00:00",
+      "size_bytes_final": 1571550,
+      "sha256_final": "2600fe7e6624177aa705165498540b6d02251d6c225c9e6ab63697848a1dc23f",
+      "unchanged": true,
+      "final_hash_utc": "2026-10-10T11:43:16.778715+00:00"
+    }
+  }
+}

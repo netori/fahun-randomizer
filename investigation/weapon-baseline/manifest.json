@@ -1,0 +1,271 @@
+{
+  "format_version": "weapon-baseline/1",
+  "created_local": "2026-10-10T22:00+08:00",
+  "created_utc": "2026-10-10T14:00:00Z",
+  "investigation": {
+    "name": "法魂 MOD（V3.0.3）新增武器最小范围资产盘点",
+    "targets": ["女猎手刺剑 / 女猎手的刺剑", "欺诈者的大戟"],
+    "workspace": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod",
+    "workspace_verified_by": "pwd（bash 工具 / brush shell）",
+    "allowed_write_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\investigation\\weapon-baseline",
+    "wrote_only_under_allowed_root": true,
+    "not_done": [
+      "未实现或运行随机化",
+      "未回包、未部署、未启动游戏",
+      "未修改原 MOD、游戏文件、存档、Excel 或工具配置",
+      "未下载或安装任何依赖（oo2core_6_win64.dll 为用户已放置）",
+      "未注册右键菜单、未改注册表/环境变量/系统设置",
+      "未把原 MOD 路径交给 WitchyBND：所有工具调用只指向 investigation/weapon-baseline/ 下的副本"
+    ]
+  },
+  "mod_root_selection": {
+    "candidates": [
+      {
+        "root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）",
+        "has_version_txt": true,
+        "has_mod_regulation_bin": true,
+        "has_mod_msg": true,
+        "file_count": 4110,
+        "total_bytes": 9050267594
+      },
+      {
+        "root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）",
+        "has_version_txt": true,
+        "has_mod_regulation_bin": true,
+        "has_mod_msg": true,
+        "file_count": 4110,
+        "total_bytes": 9050267594
+      }
+    ],
+    "comparison": {
+      "method": "两树相对路径 + 大小清单全量对比（未读文件内容）",
+      "path_sets_identical": true,
+      "size_mismatch_count": 0,
+      "key_file_content_hashes_equal": [
+        "version.txt",
+        "mod/regulation.bin",
+        "mod/msg/zhocn/item_dlc02.msgbnd.dcx",
+        "mod/msg/zhocn/menu_dlc02.msgbnd.dcx",
+        "使用说明.md"
+      ],
+      "evidence": "investigation/weapon-baseline/evidence/candidate_root_comparison.json",
+      "full_content_hash_of_all_4110_files_performed": false
+    },
+    "chosen_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）",
+    "reason": "两个候选目录在路径集合、大小与关键文件内容哈希上完全一致（互为副本）；选 THE_COVERAGE-随机开发 下这一份，因为它是上一轮 V3.0.2 调查所在树的直接后继、且与工作区 随机mod 同树，便于对照与回溯。",
+    "old_version_handling": {
+      "old_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.2 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.2）",
+      "status": "本轮开始时该目录已不存在（被 V3.0.3 取代）；其 regulation.bin 2,977,120 B / sha256 cab62c7f839706e4373b38b94f3b2aa2ae99872146790497b4e08fb84cfea6c6（上一轮基线记录）",
+      "mixing_avoided": "本轮输入只取自 V3.0.3；新版 regulation.bin 哈希 7bcd46b9… 与旧版不同，可证未混入旧版文件"
+    }
+  },
+  "sources": [
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\version.txt",
+      "size_bytes": 7,
+      "sha256": "d57819fefc715b1f0a69881b3891637708400fc4128b4d7492af5101e70acc9e",
+      "role": "MOD 版本声明（正文 3.0.3.0）",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\regulation.bin",
+      "size_bytes": 2984544,
+      "sha256": "7bcd46b957ac49cfe4e9ad2a31a090a8bcc1d3681d3829c1f5aa4fd114530838",
+      "role": "MOD 主参数容器（EquipParamWeapon / ItemLotParam / ShopLineupParam 来源；DCX/KRAK）",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\msg\\zhocn\\item_dlc02.msgbnd.dcx",
+      "size_bytes": 366164,
+      "sha256": "ee10d0771774d68b2cd5da6c66eb4846acbbda87b520c6703dfdf915d72e8403",
+      "role": "简体中文候选文本容器（含 WeaponName / WeaponCaption / GoodsCaption 等 78 个 FMG）",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\msg\\zhocn\\menu_dlc02.msgbnd.dcx",
+      "size_bytes": 505503,
+      "sha256": "8feea2ac9bfc7289d22c4e509ae3d611b0ddf21c6949c68d60d96afa0f80f415",
+      "role": "简体中文候选文本容器（含 EventTextForTalk 等 53 个 FMG）",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\event\\common.emevd.dcx.js",
+      "size_bytes": 690670,
+      "sha256": "88f42cb85866c546b4f2cac8f3af7196af9017342b3c17ec4eca589ef2775a32",
+      "role": "事件脚本（只读引用）：两把武器的 AwardItemLot 发放点",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\event\\m13_00_00_00.emevd.dcx.js",
+      "size_bytes": 77791,
+      "sha256": "a4045114e1889486f235223fb4f1a0071f8a35f52c9e3ebbdcd14aa29e16805f",
+      "role": "事件脚本（只读引用）：女猎手死亡置位 flag 9194",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\event\\m40_00_00_00.emevd.dcx.js",
+      "size_bytes": 80547,
+      "sha256": "e2741f55642d3bab03de617db4efa9f3a4c5f14bc2c90aea8645821dc2fb1c85",
+      "role": "事件脚本（只读引用）：伊德里斯（Idris）死亡置位 flag 9270",
+      "unchanged_after_read": true
+    },
+    {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\法魂资料整合表.xlsx",
+      "size_bytes": 282013,
+      "sha256": "59f2d0a64981286dc479ccd37015de0e45b28f5932c5d6ad698eccd400881b89",
+      "role": "资料表（只读，openpyxl）：仅用于核对用户给出的中文名来源；未用其行号/地名作为 ID 依据",
+      "unchanged_after_read": true
+    }
+  ],
+  "copies": [
+    {
+      "source": "…\\法魂mod V3.0.3 汉化本体（…）\\version.txt",
+      "copy": "investigation/weapon-baseline/inputs/version.txt",
+      "source_sha256": "d57819fefc715b1f0a69881b3891637708400fc4128b4d7492af5101e70acc9e",
+      "copy_sha256": "d57819fefc715b1f0a69881b3891637708400fc4128b4d7492af5101e70acc9e",
+      "verified_equal": true
+    },
+    {
+      "source": "…\\法魂mod V3.0.3 汉化本体（…）\\mod\\regulation.bin",
+      "copy": "investigation/weapon-baseline/inputs/regulation.bin",
+      "source_sha256": "7bcd46b957ac49cfe4e9ad2a31a090a8bcc1d3681d3829c1f5aa4fd114530838",
+      "copy_sha256": "7bcd46b957ac49cfe4e9ad2a31a090a8bcc1d3681d3829c1f5aa4fd114530838",
+      "verified_equal": true
+    },
+    {
+      "source": "…\\法魂mod V3.0.3 汉化本体（…）\\mod\\msg\\zhocn\\item_dlc02.msgbnd.dcx",
+      "copy": "investigation/weapon-baseline/inputs/zhocn/item_dlc02.msgbnd.dcx",
+      "source_sha256": "ee10d0771774d68b2cd5da6c66eb4846acbbda87b520c6703dfdf915d72e8403",
+      "copy_sha256": "ee10d0771774d68b2cd5da6c66eb4846acbbda87b520c6703dfdf915d72e8403",
+      "verified_equal": true
+    },
+    {
+      "source": "…\\法魂mod V3.0.3 汉化本体（…）\\mod\\msg\\zhocn\\menu_dlc02.msgbnd.dcx",
+      "copy": "investigation/weapon-baseline/inputs/zhocn/menu_dlc02.msgbnd.dcx",
+      "source_sha256": "8feea2ac9bfc7289d22c4e509ae3d611b0ddf21c6949c68d60d96afa0f80f415",
+      "copy_sha256": "8feea2ac9bfc7289d22c4e509ae3d611b0ddf21c6949c68d60d96afa0f80f415",
+      "verified_equal": true
+    }
+  ],
+  "tool": {
+    "exe": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\WitchyBND.exe",
+    "exe_size_bytes": 82128653,
+    "exe_sha256": "00aa5b321d5af0179d3c9154a48d2ab3bb55772eaf624a439cc5f6ad4e21982b",
+    "reported_version": "3.0.1.0（--help 输出 'WitchyBND v3.0.1.0'，见 logs/021_witchy_help.console.txt）",
+    "appsettings_json": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\appsettings.json",
+    "appsettings_sha256": "a918ab24344e27bed1f50ba12c615c2983b6b6a410d00ad4d04a437b239ae8ff",
+    "appsettings_modified": false,
+    "oodle_dll": {
+      "path": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\tools\\witchybnd-3.0.1.0\\oo2core_6_win64.dll",
+      "size_bytes": 1085952,
+      "sha256": "988e8226d129b03011a96f51b476e86d38c0c3e817266375a78a7cf3b85d93c4",
+      "functional_proof": "regulation.bin 与两个 *.msgbnd.dcx 均为 DCX + KRAK(Oodle) 压缩；三者解包成功，即证明该 DLL 被工具实际加载并可用"
+    },
+    "terminal_blocker": {
+      "symptom": "PromptPlus requires a terminal/console without redirection environment!.（退出码 1）",
+      "reproduced_on": [
+        "--help（普通管道重定向；logs/002/003）",
+        "-s --help",
+        "-s <file>（静默模式仍先做终端检查；logs/004）",
+        "winpty（-Xallow-non-tty：libwinpty 断言失败，无终端尺寸；logs/002_witchy_help_winpty_abs）"
+      ],
+      "workaround": "自建 ConPTY 承载器 logs/_conpty_run.py（两段式：CreatePseudoConsole + stage2 以 CONIN$/CONOUT$ 显式绑定子进程标准流），使工具获得真实控制台；探针证明子进程 stdout 已是控制台（logs/000b_conpty_probe）",
+      "harness_is_helper_not_tool_patch": true
+    },
+    "cli_flags_used": ["-u/--unpack（只解包不打包）", "-p/--passive（不询问输入）", "-c/--recursive（对 regulation.bin 递归解包并转 XML）"],
+    "cli_flags_documented_source": "logs/021_witchy_help.console.txt（工具自身 --help 输出）"
+  },
+  "commands": {
+    "note": "每条命令的完整 argv / 工作目录 / stdout / stderr / 退出码见 logs/<name>.command.json 与同名 .stdout.txt / .stderr.txt",
+    "log_dir": "investigation/weapon-baseline/logs",
+    "commands": [
+      { "name": "000_conpty_sanity", "purpose": "ConPTY 承载器自检", "exit_code": 1 },
+      { "name": "000b_conpty_probe", "purpose": "证明子进程 stdout 是真实控制台（filetype=2, consolemode OK）", "exit_code": 0 },
+      { "name": "001_witchy_help_winpty", "purpose": "winpty 尝试（失败：winpty 不在 PATH）", "exit_code": 127 },
+      { "name": "002_witchy_help_winpty_abs", "purpose": "winpty 绝对路径尝试（失败：libwinpty 断言，无终端尺寸）", "exit_code": 3 },
+      { "name": "003_copy_inputs", "purpose": "复制 4 个必要输入到 inputs/ 并双向核对 SHA256", "exit_code": 0 },
+      { "name": "004_witchy_silent_unpack_msg", "purpose": "重定向下 -s 解包（失败：PromptPlus 终端检查）", "exit_code": 0 },
+      { "name": "005_witchy_conpty_default", "purpose": "ConPTY 下首次调用（仍失败：子进程继承了父管道）", "exit_code": 1 },
+      { "name": "006_witchy_msg_default", "purpose": "ConPTY 下按文件路径调用（输入副本缺失 → 0 items）", "exit_code": 0 },
+      { "name": "007_witchy_msg_unpack", "purpose": "解包 item_dlc02.msgbnd.dcx 副本（成功，78 个 FMG）", "exit_code": 0 },
+      { "name": "008_witchy_regulation_unpack", "purpose": "解包 regulation.bin 副本（成功；工具自动解出 Paramdex 并判定游戏 ER）", "exit_code": 0 },
+      { "name": "009_witchy_fmg_to_xml", "purpose": "误把解包目录当输入 → 工具执行了『重打包』（见 REPORT.md 偏差披露）", "exit_code": 0 },
+      { "name": "011_xml_EquipParamWeapon", "purpose": "单文件 .param → XML（失败：需交互选择 Paramdex 游戏，400 s 超时）", "exit_code": 1 },
+      { "name": "021_witchy_help", "purpose": "在真实控制台下取到工具完整 CLI 参数", "exit_code": 0 },
+      { "name": "022_023_passive_convert", "purpose": "FMG 被动转换成功；单文件 PARAM 被动转换失败（无法判定游戏）", "exit_code": 0 },
+      { "name": "024_regulation_recursive", "purpose": "regulation.bin 递归解包：195 个 .param + 195 个 .param.xml（成功）", "exit_code": 0 },
+      { "name": "02x_xml_WeaponName / WeaponName_dlc02 / WeaponCaption / WeaponCaption_dlc01 / GoodsCaption", "purpose": "其余 FMG → XML（成功）", "exit_code": 0 },
+      { "name": "030_lot_shop_scan", "purpose": "ItemLotParam_map/_enemy 与 ShopLineupParam 命中扫描 + 相邻 Lot 对照", "exit_code": 0 },
+      { "name": "031_event_context", "purpose": "事件脚本 AwardItemLot 发放点与死亡置位上下文", "exit_code": 0 },
+      { "name": "032_excel_name_search", "purpose": "资料表只读检索（未作 ID 依据）", "exit_code": 0 },
+      { "name": "033_integrity_final", "purpose": "收尾完整性核验（源文件/工具/事件脚本重算 SHA256）", "exit_code": 0 },
+      { "name": "034_fmg_evidence", "purpose": "两把武器的名称/描述/指南 entry 原文取证", "exit_code": 0 },
+      { "name": "035_menu_container", "purpose": "解包 menu_dlc02.msgbnd.dcx 副本（53 个 FMG）", "exit_code": 0 },
+      { "name": "036_eventtalk_evidence", "purpose": "EventTextForTalk 中两条 Boss 名 entry 取证", "exit_code": 0 }
+    ]
+  },
+  "artifacts": {
+    "note": "以下为副本侧解包/转换产物（可再生成）。大小取自本次运行；逐项 SHA256 见 evidence/artifact_hashes.json（若该文件不存在，表示未生成，不表示哈希为空）。",
+    "items": [
+      { "path": "investigation/weapon-baseline/evidence/work2/regulation-bin/", "role": "regulation.bin 副本递归解包：195 个 .param + 195 个 .param.xml", "file_count": 389 },
+      { "path": "investigation/weapon-baseline/evidence/work/item_dlc02-msgbnd-dcx/", "role": "item_dlc02.msgbnd.dcx 副本解包：78 个 FMG（+ _witchy-bnd4.xml）" },
+      { "path": "investigation/weapon-baseline/evidence/work/menu_dlc02-msgbnd-dcx/", "role": "menu_dlc02.msgbnd.dcx 副本解包：53 个 FMG" },
+      { "path": "investigation/weapon-baseline/evidence/xml/", "role": "FMG → XML 产物（WeaponName / WeaponName_dlc01 / WeaponCaption / WeaponCaption_dlc01 / GoodsCaption / EventTextForTalk 等）" }
+    ]
+  },
+  "findings": {
+    "verified": {
+      "Huntress_Estoc": {
+        "chinese_name": "女猎手的刺剑",
+        "regulation_row_name": "Huntress's Estoc",
+        "item_id": 5100000,
+        "weapon_param_row": 5100000,
+        "weapon_category": { "weaponCategory": 2, "wepType": 15, "iconId": 45944, "equipModelId": 256, "swordArtsParamId": 1208 },
+        "fmg_name_entry": { "file": "WeaponName.fmg（容器 item_dlc02.msgbnd.dcx）", "id": 5100000 },
+        "fmg_caption_entry": { "file": "WeaponCaption.fmg", "id": 5100000 },
+        "reward_entrance": { "table": "ItemLotParam_map", "lot_id": 30203, "slot": 1, "item_category": 2, "quantity": 1, "base_point": 1000, "get_item_flag_id": 530201 },
+        "script_grant": { "file": "mod/event/common.emevd.dcx.js", "event": 9008010, "call": "AwardItemLot(30203)", "gate_flag": 530200 },
+        "boss": { "event_text_for_talk_id": 910000226, "name": "失落部族的密契女猎手", "character_id": 13000870, "death_flag": 9194, "map": "m13（利耶尼亚）" }
+      },
+      "Halberd_of_the_Deceiver": {
+        "chinese_name": "欺诈者的大戟",
+        "regulation_row_name": "Halberd of the Deceiver",
+        "item_id": 18530000,
+        "weapon_param_row": 18530000,
+        "weapon_category": { "weaponCategory": 7, "wepType": 29, "iconId": 45943, "equipModelId": 1027, "swordArtsParamId": 5191 },
+        "fmg_name_entry": { "file": "WeaponName_dlc01.fmg（容器 item_dlc02.msgbnd.dcx）", "id": 18530000 },
+        "fmg_caption_entry": { "file": "WeaponCaption_dlc01.fmg", "id": 18530000 },
+        "reward_entrance": { "table": "ItemLotParam_map", "lot_id": 20701, "slot": 1, "item_category": 2, "quantity": 1, "base_point": 1000, "get_item_flag_id": 520701 },
+        "script_grant": { "file": "mod/event/common.emevd.dcx.js", "event": 9008010, "call": "AwardItemLot(20701)", "gate_flag": 9270 },
+        "boss": { "event_text_for_talk_id": 910000225, "name": "“神皮欺诈者”伊德里斯", "character_id": 40000800, "death_flag": 9270, "map": "m40（雾谷地下墓地 / Fog Rift Catacombs）" }
+      }
+    },
+    "shop_entries_for_these_weapons": {
+      "result": "无",
+      "note": "ShopLineupParam 中只有 2 行命中 equipId=5100000（110276/111276），但其 equipType=1（=防具/protector，由交叉表推导），对应 5100000 号防具（Igon's Helm），不是武器"
+    },
+    "enemy_lot_entries": { "result": "ItemLotParam_enemy 中两把武器 0 命中" },
+    "id_collision_notes": [
+      "5100000 同时是『武器（EquipParamWeapon）』与『防具（EquipParamProtector）』的 id，可用 lotItemCategory / equipType 区分：2=武器、3=防具",
+      "ItemLotParam_map 107111 / 107121 / 117102 命中的是 category=3（防具 5100000 = Igon's Helm）",
+      "CharaInitParam 的 equip_Helm=5100000、EquipMtrlSetParam 900176 的 materialId01=5100000(materialCate01=1)、DecalParam 611701 的 emissiveTextureId=5100000 都不是武器引用",
+      "18530000 除 Lot 20701 外没有其它表命中"
+    ]
+  },
+  "integrity": {
+    "evidence": "investigation/weapon-baseline/evidence/source_integrity_final.json",
+    "all_expected_match": true,
+    "note": "复制阶段先记哈希 → 收尾再重算：4 个 MOD 源文件与复制前一致；Excel / 工具 exe / appsettings.json 与上一轮基线记录一致；只读引用的 4 个事件脚本重算一致；mod/event 下全部 267 个 .js 的『文件名+大小』清单哈希 aebf3691…（未逐文件内容哈希）。",
+    "side_effects_inside_workspace_only": [
+      "logs/_conpty_run.py 与 logs/runlog.sh 为本次自建的『承载/记录』辅助脚本（不改工具本体、不改工具配置）",
+      "evidence/ 下为副本解包产物；其中一份工作副本曾被工具自身重打包一次（logs/009_witchy_fmg_to_xml；原件与 inputs/ 副本未受影响）"
+    ]
+  },
+  "deliverables": [
+    "investigation/weapon-baseline/REPORT.md",
+    "investigation/weapon-baseline/weapon_mapping.csv",
+    "investigation/weapon-baseline/manifest.json",
+    "investigation/weapon-baseline/logs/",
+    "investigation/weapon-baseline/evidence/"
+  ]
+}

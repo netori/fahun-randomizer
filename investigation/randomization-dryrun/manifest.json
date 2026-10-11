@@ -1,0 +1,378 @@
+{
+ "format_version": "randomization-dryrun/3",
+ "created_local": "2026-10-11T00:30+08:00",
+ "purpose": "回答『能不能随机起来』：在已批准候选上做不写回的随机化干跑；并把 D3（商店路径）与 D4（幽影同池）落成随机器开关",
+ "scope": {
+  "writes_only_under": "investigation/randomization-dryrun",
+  "no_mod_write": true,
+  "no_injection_code": true,
+  "no_game_launch": true,
+  "untouched_fields": [
+   "quantity",
+   "base_point(权重/概率)",
+   "cumulate_lot_point",
+   "get flag",
+   "row name",
+   "shop price",
+   "shop stock",
+   "解锁条件",
+   "事件流程"
+  ],
+  "untouched_slots": "未被列入置换表的任何 slot（含同一 Lot 的其它 slot）"
+ },
+ "options": {
+  "merge_shadow": {
+   "id": "D4",
+   "default": false,
+   "effect": "幽影卢恩并入 rune:大师级（18 → 37 槽）",
+   "user_note": "用户确认：回头做成随机器的一个选项"
+  },
+  "with_shops": {
+   "id": "D3",
+   "default": false,
+   "effect": "把商店可售候选纳入目标池（98 → 318 槽，新增 15 个武器类别池）",
+   "user_note": "用户确认：商店里确实有武器和散件专属装备"
+  },
+  "seed": {
+   "default": 20261010,
+   "note": "固定种子可复现；每个子池内洗牌结果完整落在 swaps CSV"
+  }
+ },
+ "shop_inventory": {
+  "row_total": 1554,
+  "by_equip_type": {
+   "goods": 596,
+   "weapon": 193,
+   "protector": 490,
+   "gem": 134,
+   "accessory": 140,
+   "customWeapon": 1
+  },
+  "distinct": {
+   "weapon": 131,
+   "protector": 273,
+   "goods": 424,
+   "accessory": 136,
+   "gem": 115
+  },
+  "quality": {
+   "clean_price_and_stock": 547,
+   "unverified": 1007
+  },
+  "single_shop_only_rows": 187,
+  "rows_selling_starter_set_pieces": 13,
+  "filter_policy": [
+   "跳过 semantics_unverified (1007)",
+   "跳过初始套装件 (9 行)",
+   "跳过 道具/护符/战灰 (318 行)"
+  ],
+  "evidence": "investigation/randomization-dryrun/evidence/shop_analysis.json"
+ },
+ "variant_matrix": {
+  "base": {
+   "subpools": 7,
+   "cells": 98,
+   "permuted": 97
+  },
+  "merge": {
+   "subpools": 6,
+   "cells": 98,
+   "permuted": 97
+  },
+  "shop": {
+   "subpools": 24,
+   "cells": 318,
+   "permuted": 317
+  },
+  "shop_merge_seed777": {
+   "subpools": 23,
+   "cells": 318,
+   "permuted": 317
+  },
+  "evidence": "investigation/randomization-dryrun/dryrun_variants_matrix.json"
+ },
+ "invariant_checks": {
+  "multiset_preserved_within_permuted_subpools": true,
+  "no_slot_duplicated": true,
+  "no_frozen_item_used": true,
+  "derangement_ok": true,
+  "seed_sweep_200_ok": true,
+  "target_lots_with_other_slots": 0
+ },
+ "commands": [
+  {
+   "name": "001_dryrun",
+   "exit_code": 1,
+   "note": "首版字段名写错，未产出"
+  },
+  {
+   "name": "002_dryrun_v2",
+   "exit_code": 0,
+   "note": "修正后 97 条置换，不变式全过"
+  },
+  {
+   "name": "004_shop_analysis",
+   "exit_code": 0,
+   "note": "商店盘点（1554 行）"
+  },
+  {
+   "name": "005_variants",
+   "exit_code": 0,
+   "note": "四组合矩阵"
+  },
+  {
+   "name": "006_opt_default / 007_opt_merge / 008_opt_shops / 009_opt_both",
+   "exit_code": 0,
+   "note": "开关化后逐一复跑验证"
+  }
+ ],
+ "outputs": [
+  "dryrun_swaps.csv",
+  "dryrun_swaps_merge.csv",
+  "dryrun_swaps_shops.csv",
+  "dryrun_swaps_both_seed777.csv",
+  "dryrun_variants_matrix.json",
+  "evidence/shop_analysis.json",
+  "evidence/dryrun_last_run.json",
+  "DRYRUN_REPORT.md",
+  "manifest.json",
+  "logs/",
+  "scripts/"
+ ],
+ "seed_sweep": {
+  "config": {
+   "with_shops": true,
+   "merge_shadow": false,
+   "seeds": 200
+  },
+  "per_seed": {
+   "cells_permuted": 317,
+   "shop_rows": 219,
+   "weapon_pool_rows": 118
+  },
+  "uniformity": {
+   "mean": 0.95,
+   "runes": "0.98–0.99",
+   "armor": "0.96",
+   "min": -0.0,
+   "min_after_dedupe": 0.9658,
+   "mean_after_dedupe": 0.9867
+  },
+  "coverage": "314 / 317 槽在 200 轮内见过池内所有可能物品",
+  "finding_duplicate_rows": {
+   "pools_with_duplicates": 15,
+   "pools_total": 24,
+   "cause": "同一物品被多家商店重复出售（匕首/长剑/剑士臂甲/蓝布套件 等占 2–3 行）",
+   "math_rule": "完全打散的条件：任一物品占用的槽位 ≤ n/2",
+   "infeasible_pools": [
+    "weapon:category=0（匕首占 4 槽中的 3）",
+    "weapon:category=14（仅 1 槽）"
+   ],
+   "cells_ever_unchanged_no_dedupe": 4,
+   "cells_ever_unchanged_with_dedupe": 0,
+   "duplicate_rows_left_untouched_with_dedupe": 32
+  },
+  "options_for_randomizer": [
+   "--dedupe 去重口径（推荐）",
+   "分组联动（同一物品多行同步替换，需另做设计）",
+   "不去重并接受 4 个槽可能不动"
+  ],
+  "outputs": [
+   "seed_sweep_summary.csv",
+   "seed_sweep_cell_distribution.csv",
+   "seed_sweep_problem_cells.csv",
+   "evidence/seed_sweep_stats.json",
+   "evidence/pool_dedup_analysis.json",
+   "evidence/seed_sweep_dedupe.json"
+  ]
+ },
+ "swap_unit": {
+  "default": "by-item（组级置换，M1）",
+  "decided_by": "用户：M1 默认可以",
+  "rule": "同一物品（类别:id）的所有获取处绑成一组，整组换成同一个新物品；M1 只在同处数物品间互换 → 组内一致 + 可获取处数不变",
+  "verified_default_run": {
+   "subpools": 24,
+   "items": 286,
+   "cells": 318,
+   "group_consistency_ok": true,
+   "availability_preserved": true,
+   "items_left_unchanged": 22,
+   "no_frozen_used": true
+  },
+  "mixed_strata_flag": {
+   "effect": "让 22 件'处数独一无二'的物品参与（接受其处数变化）",
+   "items_left_unchanged": 1,
+   "availability_preserved": false
+  },
+  "by_row_mode": "保留为 --mode by-row（对照用，会有多卖家不一致）",
+  "artifact_check": "dryrun_swaps_by-item_shops.csv：318 行 / 286 组 / 每组恰好一个 new_item_id（组内一致）"
+ },
+ "integrity": {
+  "mod_files_rechecked_at_end": true,
+  "log": "logs/024_final_verify.stdout.txt"
+ },
+ "configurable_pools": {
+  "engine": [
+   "scripts/randomizer.py（python）",
+   "engine.js（GUI/node）"
+  ],
+  "axes": {
+   "domains": [
+    "rune",
+    "armor",
+    "weapon"
+   ],
+   "joins": "任意联合分组",
+   "shops": true,
+   "sets": true,
+   "merge_shadow": false,
+   "seed": 20261010
+  },
+  "fixed_rules": [
+   "F1 法师/祷告护甲独立成池（同部位·同倾向·护甲↔护甲·不入联合池）",
+   "套装整组不拆散",
+   "同一物品多处来源整组一致",
+   "按池多重集合守恒",
+   "冻结项（D1/D5）不参与"
+  ],
+  "measured": {
+   "default_3_separate": {
+    "pools": 112,
+    "rows": 764
+   },
+   "join_rune_weapon": {
+    "pools": 28,
+    "rows": 764,
+    "joint_cells": 380,
+    "category_changes": 157
+   },
+   "join_all": {
+    "pools": 21,
+    "rows": 764,
+    "joint_cells": 402,
+    "category_changes": 190
+   }
+  }
+ },
+ "tests": {
+  "python_config_matrix": {
+   "runs": 360,
+   "combos": 180,
+   "failures": 0
+  },
+  "js_engine_node": {
+   "runs": 900,
+   "failures": 0
+  },
+  "gui_render_and_selftest": {
+   "runs": 624,
+   "failures": 0
+  },
+  "note": "三套基础（guide/xlsx/mix）；说明书未解析归零后重跑"
+ },
+ "gui": {
+  "file": "GUI.html",
+  "data": [
+   "world.js",
+   "world.json"
+  ],
+  "engine": "engine.js",
+  "doc": "说明_池子选项.md",
+  "no_server_required": true
+ },
+ "unresolved_names_not_in_pools": [
+  "迪亚洛斯面具",
+  "金手镯",
+  "大头盔",
+  "眼球罩袍",
+  "树人罩袍",
+  "罐子",
+  "龙戟",
+  "石像鬼大剑/戟",
+  "死王子杖和家人头连枷",
+  "王室大剑",
+  "燃炉拳套",
+  "众使者的笛子和秘文剑",
+  "龙装墓碑"
+ ],
+ "exclusivity_pass": {
+  "rule": "用户口径：先判定职业专属；不是就不入池",
+  "added_class_exclusive": {
+   "21090000": "燃炉拳套（火焰预言家）",
+   "3190000": "石像鬼大剑（风暴呼召者）",
+   "11100000": "众使者的笛子（基本主义者）",
+   "2110000": "秘文剑（基本主义者）",
+   "33180000": "死王子杖（死灵术士）"
+  },
+  "excluded_not_exclusive": [
+   "迪亚洛斯面具",
+   "金手镯",
+   "大头盔",
+   "眼球罩袍",
+   "树人罩袍",
+   "罐子"
+  ],
+  "excluded_unresolved": [
+   "龙戟",
+   "王室大剑",
+   "龙装墓碑"
+  ],
+  "bug_fixed": "以「套」结尾的普通物品（燃炉拳套）曾被误判为套装名而丢弃",
+  "candidates": {
+   "entries_with_entrance": 785,
+   "unique_items": 718,
+   "armor": 359,
+   "weapon": 271,
+   "goods": 88
+  }
+ },
+ "guide_basis": {
+  "source": "GoodsCaption.fmg 8800-8826（护甲+卢恩）+ 8870-8895（武器）；8850-8866 为卷轴/祷告书",
+  "sections_per_class": [
+   "XX值得注意的防具套装（每件带地点）",
+   "以下地点可获得XX法术卢恩",
+   "XX值得注意的武器"
+  ],
+  "parsed": {
+   "armor_with_entrance": 353,
+   "weapon_with_entrance": 284,
+   "goods_with_entrance": 95,
+   "unique_with_entrance": 683,
+   "unresolved_names": 0,
+   "complete_sets": {
+    "近战": 23,
+    "法师/祷告混合": 23,
+    "祷告": 12,
+    "法师": 9,
+    "祷告/感应": 8,
+    "感应": 1
+   }
+  },
+  "set_expansion_rule": "套装名 → 用『基名+部位词』定位 id 家族 → 取该家族全部件（黑夜套装→黑夜头盔/铠甲/臂甲/腿甲 5090000-5090300）",
+  "bases": {
+   "guide": {
+    "items": 681,
+    "pools": 84,
+    "rows": 777
+   },
+   "xlsx": {
+    "items": 723,
+    "pools": 116,
+    "rows": 775
+   },
+   "mix": {
+    "items": 800
+   }
+  },
+  "bugs_fixed": [
+   "部位码按末 3 位（护甲 id 有 6/7/8 位；此前 7 位 id 的 DLC 套装被整批跳过）",
+   "说明书正文为『名称 - 地点』行，早先按『名称(编号)』解析只捞到 7 件防具",
+   "套装名展开改为 id 家族（黑/黑夜女巫等非规整件名不再漏）",
+   "测试脚本 test_engine.js 仍在用旧末 4 位判断（已改 partCodeOf）"
+  ],
+  "corrections": [
+   "『说明书护甲只有 7 件』— 错（漏读 8800-8806/8826 护甲节）",
+   "『黑夜套装 = 咒剑士面具』— 错（MOD 里确有独立黑夜套装 5090000-5090300）"
+  ]
+ }
+}

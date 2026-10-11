@@ -1,0 +1,142 @@
+{
+  "format_version": "randomization-catalog-review/1",
+  "created_local": "2026-10-10T23:05+08:00",
+  "audit": {
+    "name": "候选清单质量审计：是否具备进入随机化干跑的条件",
+    "role": "本地只读质量审计代理",
+    "workspace": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod",
+    "readonly_inputs": "investigation/randomization-catalog/{items.csv, reward_slots.csv, bundles.json, guide_entries.csv, REPORT.md, manifest.json, evidence/, logs/}",
+    "allowed_write_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\investigation\\randomization-catalog-review",
+    "not_done": [
+      "未重新解包、未运行 WitchyBND",
+      "未修改 MOD / 游戏 / 存档 / Excel / 工具",
+      "未修改任何已有调查产物（randomization-catalog 全目录只读）",
+      "未创建代理或团队、未下载依赖、未改系统或客户端设置",
+      "未为缺失的 ID / slot / FMG / 世界位置编造数值"
+    ],
+    "extra_readonly_citation": "investigation/weapon-baseline/weapon_mapping.csv —— 仅用于核对两把武器的 weaponCategory（该文件是上一轮已解析产物，未重新解包）；审计报告 §3 已披露"
+  },
+  "input_integrity": {
+    "baseline": "investigation/randomization-catalog/evidence/source_integrity_final.json（baseline_all_match: true）",
+    "checked": [
+      { "file": "items.csv", "size_bytes": 239334, "sha256": "662a6160e913b8189600d6aebd5685ac", "match": true },
+      { "file": "reward_slots.csv", "size_bytes": 699310, "sha256": "094c61c3590854f2e249592d709c5d34", "match": true },
+      { "file": "bundles.json", "size_bytes": 28366, "sha256": "cb4882d7a354c4139aefa3719a9ac9d8", "match": true },
+      { "file": "guide_entries.csv", "size_bytes": 60380, "sha256": "1a8a5828cf1a8eda821e9ee6486e4a61", "match": true },
+      { "file": "REPORT.md", "size_bytes": 15179, "sha256": "14c1cd684146a72c7c411d52f95eb512", "match": true },
+      { "file": "manifest.json", "size_bytes": 11761, "sha256": "d005657baf175e68499f6c57e71fc4bf", "match": true }
+    ],
+    "blocked": false,
+    "log": "logs/001_input_hash_check.stdout.txt"
+  },
+  "decision_rules": {
+    "approved": "身份(FMG+参数行+部位标志) ∧ 类别正确的真实奖励槽 ∧ 池归属有独立证据（Bundle 成员 / 职业说明点名 / 卢恩等级+流派+说明书点名）。approved 仅表示可进入干跑，不表示可写回 MOD。",
+    "pending": "缺槽、池归属无证据、Bundle 不完整、或需人工决策",
+    "excluded": "经验卢恩、中间物（碎片）、关键/剧情类卢恩",
+    "unknown_values": "未知留空，不用 0 代替；world_position 一律 hint_only；single_acquisition 一律 unverified"
+  },
+  "reason_codes": {
+    "POOL_ASSIGNMENT_UNSUPPORTED": 416,
+    "RUNE_IDENTITY_TIER_SLOT_OK": 90,
+    "NO_REWARD_SLOT_EVIDENCE": 81,
+    "OUT_OF_SCOPE_EXP_RUNE": 34,
+    "OUT_OF_SCOPE_KEY_OR_OTHER_RUNE": 19,
+    "CLASS_AFFINITY_UNVERIFIED": 18,
+    "MISSING_TARGET_SLOT": 9,
+    "BUNDLE_MEMBER_APPROVED": 8,
+    "GUIDE_ATTRIBUTED_SINGLE_PIECE": 7,
+    "BUNDLE_MEMBER_BUNDLE_NOT_APPROVED": 6,
+    "OK_FOUR_PARTS_FOUR_SLOTS_INDEX_VERIFIED": 2,
+    "WEAPON_PENDING_USER_APPROVAL": 2,
+    "INTERMEDIATE_ITEM_EXCLUDED": 1
+  },
+  "statistics": {
+    "装备(protector)": { "approved": 15, "pending": 503, "excluded": 0, "total": 518 },
+    "武器(weapon)": { "approved": 0, "pending": 2, "excluded": 0, "total": 2 },
+    "卢恩(goods)": { "approved": 90, "pending": 18, "excluded": 54, "total": 162 },
+    "Bundle": { "approved": 2, "pending": 9, "excluded": 0, "total": 11 }
+  },
+  "conflicts": {
+    "SHOP_SEMANTICS_UNVERIFIED": 178,
+    "LOT_OTHER_SLOTS_PRESENT": 15,
+    "INPUT_GAP_REWARD_SLOTS_MISSING": 5,
+    "ITEM_CATEGORY_MISMATCH": 3,
+    "FINAL_PRODUCT_CRAFT_REF_MISSING": 1,
+    "INTERMEDIATE_IN_POOL": 1,
+    "other_checks": { "duplicate_item_names": 0, "SLOT_MULTI_CLAIM": 0, "BUNDLE_SLOT_SHARED": 0, "MEMBER_SHARED_WITH_APPROVED_BUNDLE": 0 }
+  },
+  "weapons": [
+    {
+      "item_id": "5100000", "name_cn": "女猎手的刺剑",
+      "profession_affinity": "秘契职业",
+      "profession_affinity_source": "用户确认（会话元数据；不作为 item_id / 参数行 / 奖励入口 / FMG entry 的证据）",
+      "mechanical_subpool": "weapon:category=2",
+      "category_evidence": "investigation/weapon-baseline/weapon_mapping.csv（weaponCategory=2, wepType=15；上一轮已解析产物）",
+      "lawful_slot": "ItemLotParam_map:30203:slot1 (category=2, flag 530201)",
+      "rejected_slots": ["ItemLotParam_map:107111:slot1", "ItemLotParam_map:107121:slot1", "ItemLotParam_map:117102:slot1", "ShopLineupParam:110276", "ShopLineupParam:111276"],
+      "rejected_reason": "lotItemCategory=3 / equipType=1 → 防具（同名 ID 跨类别，Igon's Helm），非本武器入口",
+      "decision": "pending / WEAPON_PENDING_USER_APPROVAL"
+    },
+    {
+      "item_id": "18530000", "name_cn": "欺诈者的大戟",
+      "profession_affinity": "神皮流派",
+      "profession_affinity_source": "用户确认（会话元数据；不作为 item_id / 参数行 / 奖励入口 / FMG entry 的证据）",
+      "mechanical_subpool": "weapon:category=7",
+      "category_evidence": "investigation/weapon-baseline/weapon_mapping.csv（weaponCategory=7, wepType=29）",
+      "lawful_slot": "ItemLotParam_map:20701:slot1 (category=2, flag 520701)",
+      "rejected_slots": [],
+      "decision": "pending / WEAPON_PENDING_USER_APPROVAL"
+    }
+  ],
+  "mechanical_subpools": {
+    "armor": "armor:head / armor:chest / armor:arms / armor:legs（字段名映射：body→chest, arm→arms, leg→legs）；整套用 armor:set_bundle(4件)",
+    "weapon": "weapon:category=<EquipParamWeapon.weaponCategory>（两把武器 = 2 与 7）",
+    "rune": "rune:<实际等级名>（学徒级/熟练级/精通级/大师级/大师级(幽影)，取自 MOD FMG 描述文本）",
+    "goods": "goods:<实际类别>（输入无 goods 子类别字段 → 未生成，不猜值）",
+    "forbidden": ["weapon↔armor", "weapon↔rune", "armor↔rune", "任何涉及未知类别的互换"]
+  },
+  "input_defects_found": [
+    { "id": "DEFECT-1", "severity": "medium", "title": "reward_slots.csv 缺 22 行",
+      "detail": "items.csv 含 22 行补入的防具（18 个 Bundle 成员等），但其入口行未同步进入 reward_slots.csv；影响 5 个 Bundle 的成员槽位读取",
+      "audit_handling": "改用输入内 evidence/lot_reward_index.json 逐槽核对（表/行/slot 的 item_id 与 category 完全一致），并在 slot_conflicts.csv 标记 INPUT_GAP_REWARD_SLOTS_MISSING；未修改输入" },
+    { "id": "DEFECT-2", "severity": "medium", "title": "池归属标注口径偏松", "detail": "601 件防具被统一标为 poolB_candidate，其中 416 件无任何职业/散件归属证据", "audit_handling": "降为 pending / POOL_ASSIGNMENT_UNSUPPORTED；未修改输入" },
+    { "id": "DEFECT-3", "severity": "medium", "title": "商店行语义未确认", "detail": "178 条商店入口 price=1/0 或 stock=-1，行名疑为 Paramdex 回退", "audit_handling": "标记 SHOP_SEMANTICS_UNVERIFIED；仅商店入口的候选不得首批干跑" }
+  ],
+  "dry_run_readiness": {
+    "ready": {
+      "bundles": ["火山术士", "基本主义者"],
+      "armor_singles": ["5230100", "5183000", "5182000", "5272000", "5020000", "5400000", "5300000"],
+      "runes": 90
+    },
+    "not_ready": { "armor": 503, "runes": 18, "weapons": 2, "shop_semantics_rows": 178 },
+    "human_decisions_required": [
+      "新手级「微光＊卢恩」18 条是否可用（身份/等级/槽位齐全但说明书未点名）",
+      "未批准 Bundle 的 6 个成员能否作为散件入池 B",
+      "商店路径是否允许参与干跑（178 条语义未确认）",
+      "幽影系列是否与同级普通卢恩共用 rune:大师级 子池"
+    ],
+    "note": "approved 仅代表可进入干跑；世界位置(world_position=hint_only)与单次获取(single_acquisition=unverified)均未确认"
+  },
+  "outputs": {
+    "candidate_review.csv": { "rows": 693, "encoding": "UTF-8 BOM", "row_kind": ["item", "bundle"] },
+    "slot_conflicts.csv": { "rows": 203, "encoding": "UTF-8 BOM" },
+    "REPORT.md": { "note": "含分类统计、reason_code 字典、武器标签与机械类别约束、子池、冲突、输入缺陷、干跑就绪度" },
+    "evidence/audit_findings.json": { "note": "统计与 reason/conflict 计数" },
+    "evidence/final_verify.json": { "note": "收尾哈希复核（输入 + 本目录产物）" },
+    "scripts/audit_candidates.py": { "note": "审计引擎（只读解析 + 规则判定）" },
+    "logs/": { "note": "每条命令的 argv / 工作目录 / stdout / stderr / 退出码" }
+  },
+  "integrity": {
+    "inputs_rechecked_at_end": true,
+    "inputs_unchanged": true,
+    "log": "logs/005_final_verify.stdout.txt"
+  },
+  "deliverables": [
+    "investigation/randomization-catalog-review/candidate_review.csv",
+    "investigation/randomization-catalog-review/slot_conflicts.csv",
+    "investigation/randomization-catalog-review/REPORT.md",
+    "investigation/randomization-catalog-review/manifest.json",
+    "investigation/randomization-catalog-review/evidence/",
+    "investigation/randomization-catalog-review/logs/"
+  ]
+}
