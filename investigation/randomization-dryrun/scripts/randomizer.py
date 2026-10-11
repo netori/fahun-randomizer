@@ -390,10 +390,30 @@ def _spec_tier(u, items):
     try:
         v = items.get(u.get("base") or (u.get("items") or [None])[0]) or {}
         arch = u.get("arch") or v.get("arch") or ""
-        # 「法祷不分级」只适用于法祷**护甲**（你说的“法祷装备都差不多”）。
-        # 武器一律按所在地区分档——否则法祷武器会全挤进同一桶，100% 也会越档。
-        if arch in CASTER_ARCH and (u.get("_dom") or v.get("domain")) == "armor":
-            return None
+        _dom = u.get("_dom") or v.get("domain")
+        # 护甲按**部位**分档（你的规则：臂0 / 腿1 / 身2 / 头3）——
+        # 用地区档位会让"早期地区的头盔"变成 0 档，与学徒卢恩同桶 → 卢恩↔护甲越档
+        if _dom == "armor":
+            if arch in CASTER_ARCH:
+                return None                  # 法祷护甲不分级（隔离在池键里做）
+            _sp = v.get("subpool") or u.get("subpool") or ""
+            for _p, _t in (("head", 3), ("body", 2), ("leg", 1), ("arm", 0)):
+                if f":{_p}@" in _sp or _sp.endswith(f":{_p}"):
+                    return _t
+            # 取不到部位时退回地区档位
+        # 武器/卢恩：按所在地区/阶位分档（下面沿用 _tier）
+        # 卢恩按**阶位**（学徒0/熟练1/精通2/大师3/幽影3），不用地区档位
+        if _dom == "rune":
+            _sp = v.get("subpool") or ""
+            for _nm, _t in (("学徒", 0), ("熟练", 1), ("精通", 2), ("大师", 3), ("幽影", 3)):
+                if _nm in _sp:
+                    return _t
+            # 草表没写阶位时用卢恩数值段粗分（与 _tier_of_unit 同口径）
+            try:
+                _iid = int(v.get("id") or u.get("id") or 0)
+            except Exception:
+                _iid = 0
+            return 0 if _iid < 8300 else 1 + min(2, (_iid - 8300) // 60)
         t = u.get("_tier")
         if not isinstance(t, (int, float)):
             t = _tier_of_unit(u)
