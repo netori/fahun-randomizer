@@ -390,8 +390,10 @@ def _spec_tier(u, items):
     try:
         v = items.get(u.get("base") or (u.get("items") or [None])[0]) or {}
         arch = u.get("arch") or v.get("arch") or ""
-        if arch in CASTER_ARCH:
-            return None                      # 法祷整域不分级（隔离在池键里做）
+        # 「法祷不分级」只适用于法祷**护甲**（你说的“法祷装备都差不多”）。
+        # 武器一律按所在地区分档——否则法祷武器会全挤进同一桶，100% 也会越档。
+        if arch in CASTER_ARCH and (u.get("_dom") or v.get("domain")) == "armor":
+            return None
         t = u.get("_tier")
         if not isinstance(t, (int, float)):
             t = _tier_of_unit(u)
