@@ -16,6 +16,22 @@
 
 [i]Randomizes the class-guide items of The Convergence — items only, locations and quantities untouched.[/i][/center]
 
+[size=5][b][color=orange]Language notice: Chinese only for now.[/color][/b][/size]
+
+[b]This tool does not support the English version yet.[/b] It is built for the [b]Chinese localization[/b] of The Convergence (法魂 · 汉化本体):
+
+[list]
+[*]The [b]user interface is entirely in Chinese[/b] — there is no English build.
+[*]The [b]guide-text rewriting[/b] (the part that makes the in-game class guides show the new locations) only works with the Chinese guide file.
+[*]Install checks and "restore original" also expect the Chinese localization's file layout.
+[/list]
+
+In practice: on the [b]Chinese localized build[/b], everything below applies. On the English (or any other language) version of The Convergence this tool is [b]not usable yet[/b] — the item pool and file layout differ, so it is not a matter of translating a few strings.
+
+A proper English build is possible later (the pipeline can rebuild the item catalog from another language), but it is not done. Better to say this up front than to have you install something that cannot run.
+
+[line]
+
 [line]
 
 [size=5][b]What this does[/b][/size]
@@ -158,6 +174,20 @@ Two bugs found this way are worth mentioning, because they shaped the release:
 [size=4]Convergence Class Item Randomizer[/size]
 
 [i]只换物品、不搬位置 —— 让法魂的每一周目都得重新找东西。[/i][/center]
+
+[b][color=orange]语言说明：目前仅支持中文版（法魂汉化本体）。[/color][/b]
+
+[b]本工具暂不支持英文版。[/b] 界面、说明书写地点、文件自检与「还原成原始」都是按[b]法魂汉化本体[/b]做的：
+
+[list]
+[*]界面[b]全中文[/b]，没有英文版；
+[*]说明书改地点只认中文说明书文件；
+[*]英文（或其它语言）版的 The Convergence 物品池与文件结构都不一样，[b]不是翻译几个字就能用[/b]。
+[/list]
+
+以后可以做英文版（管线本身支持从别的语言重建物品目录），但现在没有。先把话说明白，总比让人装上一个跑不起来的东西好。
+
+[line]
 
 [line]
 
