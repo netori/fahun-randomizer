@@ -385,6 +385,20 @@ def _cross_tier_pair(pools, rng, cross_frac, f2_on, items):
     return swaps
 
 
+def _spec_tier(u, items):
+    """《算法规格》§2 的统一档位：0..3（夹取）；法师/祷告域整域不参与档位（返回 None）"""
+    try:
+        v = items.get(u.get("base") or (u.get("items") or [None])[0]) or {}
+        arch = u.get("arch") or v.get("arch") or ""
+        if arch in CASTER_ARCH:
+            return None                      # 法祷整域不分级（隔离在池键里做）
+        t = u.get("_tier")
+        if not isinstance(t, (int, float)):
+            t = _tier_of_unit(u)
+        return max(0, min(3, int(t)))
+    except Exception:
+        return 2
+
 def _unit_tier_any(u, items):
     """取单元档位：优先用单元自带的 _tier，其次按格子所在地区，最后 2（中位）"""
     t = u.get("_tier")
@@ -452,7 +466,9 @@ def run(items, cfg, seed=None):
         dom, rank = _pool_rank(pk, us, items)
         _plist.append((pk, meta, dom, rank))
     # 允许的档次步数：1.0→0（只同档）；0.75→1；0.5→2；0.25→3；0→4（全放开）
-    steps = int(round((1.0 - _coh) * 4.0))
+    # 规格 §2.4：统一 4 档，跨度均匀
+    #   跨度 = 1 + round((1-合理度)*3)  → 100%:1 ／ 67%:2 ／ 33%:3 ／ 0%:4
+    steps = max(0, min(3, int(round((1.0 - _coh) * 3.0))))
     bucket_of = lambda r: r // (steps + 1)
     base_pools = collections.OrderedDict(pools)
     _xd = False
@@ -497,7 +513,7 @@ def run(items, cfg, seed=None):
             # 否则所有档位并成一个池 → 连 100% 合理度都会跨档
             for _u in (meta.get("units") or []):
                 try:
-                    _t = bucket_of(_unit_tier_any(_u, items))
+                    _t = bucket_of(_spec_tier(_u, items) if _spec_tier(_u, items) is not None else 2)
                 except Exception:
                     _t = 2
                 _slot = merged.setdefault(("mixed", _t),
@@ -512,7 +528,7 @@ def run(items, cfg, seed=None):
             _wdone = False
             for _u in _wunits:
                 try:
-                    _t = bucket_of(_unit_tier_any(_u, items))
+                    _t = bucket_of(_spec_tier(_u, items) if _spec_tier(_u, items) is not None else 2)
                 except Exception:
                     _t = 2
                 _wkey = ("weapon", _t, "any")
