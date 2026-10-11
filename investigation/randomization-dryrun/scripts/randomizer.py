@@ -492,6 +492,8 @@ def run(items, cfg, seed=None):
     #   跨度 = 1 + round((1-合理度)*3)  → 100%:1 ／ 67%:2 ／ 33%:3 ／ 0%:4
     steps = max(0, min(3, int(round((1.0 - _coh) * 3.0))))
     bucket_of = lambda r: r // (steps + 1)
+    # 跨档率：合理度越低，越多单元被“放行”到跨度桶（可在幅度内跨档）；未被放行的严格同档
+    _cross_rate = max(0.0, min(1.0, 1.0 - _coh))
     base_pools = collections.OrderedDict(pools)
     _xd = False
     # ── 跨类混池（池合并实现 → 池内完整置换 → 守恒天然成立）──
@@ -560,9 +562,11 @@ def run(items, cfg, seed=None):
             # 否则所有档位并成一个池 → 连 100% 合理度都会跨档
             for _u in (meta.get("units") or []):
                 try:
-                    _t = bucket_of(_spec_tier(_u, items) if _spec_tier(_u, items) is not None else 2)
+                    _st = _spec_tier(_u, items)
+                    _st = 2 if _st is None else _st
                 except Exception:
-                    _t = 2
+                    _st = 2
+                _t = bucket_of(_st) if rng.random() < _cross_rate else _st
                 _slot = merged.setdefault(("mixed", _t),
                                           {"kind": meta.get("kind", "item"), "units": []})
                 _slot["units"].append(_u)
@@ -575,9 +579,12 @@ def run(items, cfg, seed=None):
             _wdone = False
             for _u in _wunits:
                 try:
-                    _t = bucket_of(_spec_tier(_u, items) if _spec_tier(_u, items) is not None else 2)
+                    _st = _spec_tier(_u, items)
+                    _st = 2 if _st is None else _st
                 except Exception:
-                    _t = 2
+                    _st = 2
+                # 放行 → 跨度桶；未放行 → 严格同档桶
+                _t = bucket_of(_st) if rng.random() < _cross_rate else _st
                 _wkey = ("weapon", _t, "any")
                 _slot = merged.setdefault(_wkey, {"kind": meta.get("kind", "item"), "units": []})
                 _slot["units"].append(_u)
@@ -594,7 +601,11 @@ def run(items, cfg, seed=None):
             _fk = "melee"
         else:
             _fk = "any"
-        key = (dom, bucket_of(rank), _fk)
+        try:
+            _rr = int(rank)
+        except Exception:
+            _rr = 2
+        key = (dom, (bucket_of(_rr) if rng.random() < _cross_rate else _rr), _fk)
         if key not in merged:
             merged[key] = dict(meta, units=[])
         _have = {u["id"] for u in merged[key]["units"]}
