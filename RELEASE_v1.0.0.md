@@ -2,6 +2,10 @@
 
 > 发布包名 **`ConvergenceClassItemRandomizer.exe`**（英文名用 Convergence = 法魂）
 
+> ⚠️ **语言限制：目前仅支持中文版（法魂汉化本体）** —— 界面全中文，没有英文版；
+> 说明书写地点只认中文说明书文件；英文（或其它语言）版的 The Convergence 物品池与文件结构都不同，
+> **不是翻译几个字就能用**。以后可以做（管线支持从别的语言重建物品目录），但现在没有。
+
 给「法魂」MOD（THE COVERAGE V3.0.3 · 游戏 1.17.1 · YAFSML）用的物品随机化工具。
 **原生实现，不依赖任何外部工具**（自研 AES / DCX / Oodle / BND4 / PARAM / FMG 读写）。
 
