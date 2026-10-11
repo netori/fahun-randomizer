@@ -8,6 +8,10 @@ ZW = "\u200b"          # 零宽空格：游戏不显示，但占长度
 
 # 地点措辞 → 更短的等价说法（按长度收益排序）
 RULES = [
+    # 去掉区域前缀（"王城罗德尔 黄金树大教堂附近" → "黄金树大教堂附近"）
+    (re.compile(r"^(?:宁姆格福|利耶尼亚|盖利德|亚坛高原|王城罗德尔|化圣雪原|巨人山顶|希芙拉河|安瑟尔河|蒙格温王朝|米凯拉的圣树|深根底层|渐崩的法姆·亚兹拉)\s*"), ""),
+    (re.compile(r"^(.{2,7}?[城村野地塔桥狱井])\s+(.+)$"), r"\2"),
+    (re.compile(r"^(?:赐福|附近|旁边)\s*"), ""),
     # 观察到的长措辞（按“保留主体、去掉套话”处理）
     (re.compile(r"^击败(.+?)后可在解指处购买$"), r"\1"),
     (re.compile(r"^击败(.+?)后于解指处购买$"), r"\1"),
@@ -72,15 +76,17 @@ def rewrite(xml_new: str, xml_old: str, out: str, report=None):
         return d
     new = rows(xml_new)
     old = rows(xml_old)
-    stat = {"padded": 0, "shortened": 0, "still_long": 0}
+    # 文本框是固定尺寸：上限取「原版最长条目」；补齐仍按各自原长（保证不短于原版）
+    cap = max((len(v) for k, v in old.items() if len(str(k)) == 4), default=0)
+    stat = {"padded": 0, "shortened": 0, "still_long": 0, "上限": cap}
     for i, t in list(new.items()):
         base = old.get(i)
         if base is None or not t:
             continue
-        budget = len(base)
+        budget = max(len(base), cap)
         if len(t) <= budget:
-            if len(t) < budget:
-                new[i] = t + ZW * (budget - len(t))     # 补齐到原长度
+            if len(t) < len(base):
+                new[i] = t + ZW * (len(base) - len(t))  # 补齐到“各自原长”
                 stat["padded"] += 1
             continue
         # ① 先把无效（英文/符号）地点替换成原文里的对应地点，再看长度

@@ -104,6 +104,26 @@ def deploy(plan_csv, sync_guide=True, log=print):
             log(f"[③] 说明书同步异常：{e}")
         finally:
             sys.argv = _argv
+        # ③a 按正确方向重写地点：物品名不动，只换它现在所在的地点
+        try:
+            import _guide_rebuild, importlib.util
+            _spec = importlib.util.spec_from_file_location(
+                "_rand_engine", os.path.join(os.path.dirname(APPLY), "randomization-dryrun", "scripts", "randomizer.py"))
+            _r = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(_r)
+            _items = _r.load_world(False, "guide")
+
+            def _name_of(k):
+                return (_items.get(k) or {}).get("name", "")
+
+            _base = os.path.join(APPLY, "work", "msg", "zh", "GoodsCaption.fmg.xml")
+            _rb = guide_xml.replace(".fmg.xml", ".rebuilt.fmg.xml")
+            if os.path.exists(_base):
+                st_rb = _guide_rebuild.rewrite(guide_xml, _base, plan_csv, _rb, _name_of)
+                if os.path.exists(_rb):
+                    guide_xml = _rb
+                log(f"[③a] 说明书地点重写：换上 {st_rb['换地点']} 处 / 地点未变 {st_rb['地点未变']} / 未动 {st_rb['未动/保持']}")
+        except Exception as _e:
+            log(f"[③a] 地点重写跳过：{_e}")
         # ③b 长度适配：新文本不得超过原版长度（否则游戏会把尾部截掉）
         try:
             import _guide_fit

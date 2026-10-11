@@ -45,12 +45,13 @@ def audit(base_xml, deploy_xml, fitted_xml=None, quiet=False):
         if ta != tc:
             fails.append(f"[标签] id={i} 标签数量或顺序与原版不同（原 {len(ta)} / 现 {len(tc)}）")
 
-    # ── ② 长度不得超过原版（否则会被游戏截尾）──
+    # ── ② 长度不得超过“文本框上限”（= 原版最长条目），也不得短于各自原长 ──
+    cap = max((len(v) for k, v in a.items() if k in GIDS), default=0)
     for i in GIDS:
         if not a.get(i):
             continue
-        if len(c.get(i, "")) > len(a[i]):
-            fails.append(f"[长度] id={i} 超过原版 {len(c.get(i,''))-len(a[i])} 字")
+        if len(c.get(i, "")) > cap:
+            fails.append(f"[长度] id={i} 超过文本框上限 {len(c.get(i,''))-cap} 字")
         if len(c.get(i, "")) < len(a[i]):
             fails.append(f"[长度] id={i} 短于原版 {len(a[i])-len(c.get(i,''))} 字（未补齐）")
 
