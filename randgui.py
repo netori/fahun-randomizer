@@ -1,4 +1,4 @@
-# randgui.py — 法魂物品随机器（人话版界面）
+# randgui.py — 法魂职业道具和装备随机器（人话版界面）
 #
 #   · 只换物品，不搬位置；随时可一键还原
 #   · 同一种子 = 完全一样的结果
@@ -173,7 +173,7 @@ def plain_summary(plan, items, engine):
 class App:
     def __init__(self, root):
         self.root = root
-        root.title("法魂物品随机器")
+        root.title("法魂职业道具和装备随机器")
         root.geometry("980x740")
         root.minsize(900, 680)
         self.engine = None
@@ -208,7 +208,7 @@ class App:
         # 标题
         head = ttk.Frame(self.root, padding=(16, 12, 16, 4))
         head.pack(fill="x")
-        ttk.Label(head, text="法魂物品随机器", font=big).pack(side="left")
+        ttk.Label(head, text="法魂职业道具和装备随机器", font=big).pack(side="left")
 
         body = ttk.Frame(self.root, padding=(16, 4, 16, 8))
         body.pack(fill="both", expand=True)
@@ -735,7 +735,7 @@ def selftest(seed=20261010):
 
 
 def cli_deploy(argv):
-    """命令行写入：法魂随机器.exe --deploy <plan.csv> [--no-guide]"""
+    """命令行写入：法魂职业道具和装备随机器.exe --deploy <plan.csv> [--no-guide]"""
     sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
     import native_deploy
     plan = argv[argv.index("--deploy") + 1]

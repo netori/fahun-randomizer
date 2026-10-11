@@ -1,4 +1,4 @@
-# 法魂物品随机器（THE COVERAGE · Elden Ring 1.17.1）
+# 法魂职业道具和装备随机器（THE COVERAGE · Elden Ring 1.17.1）
 
 给「法魂」MOD 用的物品随机化工具：**只换物品、不搬位置**，随时可一键还原。
 原生实现，**不依赖任何外部工具**（自研 AES / DCX / Oodle / BND4 / PARAM / FMG 读写）。
@@ -16,15 +16,15 @@
 ## 用法
 
 1. 把游戏目录（含 `mod/regulation.bin` 与其 msg 目录）准备好，工具放在 MOD 根目录
-2. 双击 `法魂随机器.exe`（或 `python randgui.py`）
+2. 双击 `法魂职业道具和装备随机器.exe`（或 `python randgui.py`）
 3. 选随机项目与混合方式 → 拉合理度 → 填种子 → 点 ① 生成随机方案 → 点 ② 写入游戏
 4. 不满意：点「还原成原始」
 
 命令行：
 ```
-法魂随机器.exe --deploy <plan.csv> [--no-guide]   # 只写入，不开界面
-法魂随机器.exe --selftest                          # 自检（同种子一致 / 换种子不同）
-法魂随机器.exe --uicheck                           # 只构建界面
+法魂职业道具和装备随机器.exe --deploy <plan.csv> [--no-guide]   # 只写入，不开界面
+法魂职业道具和装备随机器.exe --selftest                          # 自检（同种子一致 / 换种子不同）
+法魂职业道具和装备随机器.exe --uicheck                           # 只构建界面
 ```
 
 ## 关键实现说明
