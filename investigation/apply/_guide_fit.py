@@ -89,20 +89,20 @@ def rewrite(xml_new: str, xml_old: str, out: str, report=None):
             pairs_old = dict(zip(re.findall(r"<font color=\"#FFA500\">([^<]+)</font>", base),
                                  [x.strip() for x in re.findall(r" - ([^\n<]+)", base)]))
             def _fix_one(m):
-                item, dest = m.group(1), m.group(2)
+                # 只替换“地点”那一段，标签原样保留（否则会丢 <font color=...> 导致字号/颜色变化）
+                head, dest = m.group(1), m.group(2)
                 if is_bad_place(dest):
-                    dest = pairs_old.get(item, "未知地点")
-                return f'{item}</font> - {dest}'
-            t = re.sub(r'<font color="#FFA500">([^<]+)</font> - ([^\n<]+)', _fix_one, t)
+                    dest = pairs_old.get(head, "未知地点")
+                return head + dest
+            t = re.sub(r'(<font color="#FFA500">[^<]+</font> - )([^\n<]+)', _fix_one, t)
         # ② 超长 → 缩短各个地点
-        parts = re.split(r"( - )", t)
-        cand = []
-        for seg in parts:
-            if seg == " - ":
-                cand.append(seg); continue
-            cand.append(re.sub(r"([^\n<]+?)(?=\n|</font>|$)",
-                               lambda m: shorten_place(m.group(1)), seg))
-        t2 = "".join(cand)
+        # 只对每行“ - ”之后的地点文字做缩短；其余字节（含所有标签）原样保留
+        def _line(ln):
+            m = re.match(r"^(.*? - )([^\n<]+)(.*)$", ln)
+            if not m:
+                return ln
+            return m.group(1) + shorten_place(m.group(2)) + m.group(3)
+        t2 = "\n".join(_line(ln) for ln in t.split("\n"))
         if len(t2) > budget:
             stat["still_long"] += 1
         else:
