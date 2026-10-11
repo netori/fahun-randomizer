@@ -1,5 +1,7 @@
 # 法魂职业道具和装备随机器 v1.0.0
 
+> 发布包名 **`ConvergenceClassItemRandomizer.exe`**（英文名用 Convergence = 法魂）
+
 给「法魂」MOD（THE COVERAGE V3.0.3 · 游戏 1.17.1 · YAFSML）用的物品随机化工具。
 **原生实现，不依赖任何外部工具**（自研 AES / DCX / Oodle / BND4 / PARAM / FMG 读写）。
 
