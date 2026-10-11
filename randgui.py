@@ -331,7 +331,9 @@ class App:
             wtxt = "武器掺入 0%（未勾选装备）"
         else:
             wtxt = f"武器掺入上限 {int(round((1 - c) * 66))}%"
-        self.lbl_cohtxt.config(text=f"{lvl}　档位跨度 {span}/4（{tier_mix}%）　{wtxt}")
+        rate = int(round((1 - c) * 100))
+        self.lbl_cohtxt.config(
+            text=f"{lvl}　档位跨度 {span}/4（{tier_mix}%）　越档率 ≤{rate}%　{wtxt}")
 
     def _dice(self):
         self.seed.set(str(random.randrange(1, 2 ** 31 - 1)))
