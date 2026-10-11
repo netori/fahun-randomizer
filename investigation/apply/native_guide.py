@@ -79,7 +79,9 @@ def find_string(blob: bytearray, prefix: str):
 
 def replace_equal_len(blob: bytearray, old: str, new: str, prefix_len=20, limit=None) -> int:
     """按前缀定位整串，再用"新文本 + 零宽空格"填满原长度（长度必须 ≤ 原串）"""
-    span = find_string(blob, old[:prefix_len])
+    span = find_string(blob, old)          # 整串优先（前缀会撞车）
+    if span is None:
+        span = find_string(blob, old[:prefix_len])
     if span is None:
         return 0
     i, j = span

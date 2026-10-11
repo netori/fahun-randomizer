@@ -54,7 +54,10 @@ def plan_edits(fmg: bytes, edits):
     """**在原始文件上**先把每条的目标确定下来：(旧串, 新串, 串起点, 表项位置)"""
     out, detail = [], []
     for old, new in edits:
-        span = find_string(fmg, old[:20])
+        # 先用**整串**定位：同一职业的多个说明书页首行完全相同，用前缀会撞车
+        span = find_string(fmg, old)
+        if span is None:
+            span = find_string(fmg, old[:20])
         if span is None:
             detail.append((old[:18], "没找到原串")); continue
         entry = find_table_entry(fmg, span[0])
