@@ -307,12 +307,15 @@ class App:
         self.root.after(120, self._pump)
 
     def _coh_hint(self, *_a):
-        """把 0-100% 翻译成一句人话"""
+        """把 0-100% 翻译成一句人话（口径与引擎一致：统一 4 档）"""
         c = float(self.coherence.get())
-        steps = int(round((1 - c) * 4))
-        lvl = {0: "跨 0 档", 1: "跨 1 档", 2: "跨 2 档", 3: "跨 3 档", 4: "跨 4 档"}[steps]
-        # 档位混合范围 = 池子覆盖的档位跨度（引擎里 bucket = rank // (steps+1)，共 5 档）
-        tier_mix = int(round((steps + 1) / 5.0 * 100))
+        # 引擎里 steps = clamp(round((1-c)*3), 0, 3)，bucket = 档位 // (steps+1)
+        steps = max(0, min(3, int(round((1 - c) * 3))))
+        span = steps + 1                       # 可互换的档位跨度：1~4
+        lvl = {1: "只能同档位互换", 2: "相邻两档可互换",
+               3: "三档以内可互换", 4: "等级完全放开"}[span]
+        # 档位共 4 级（卢恩 学徒/熟练/精通/大师·幽影；护甲 臂/腿/身/头）
+        tier_mix = int(round(span / 4.0 * 100))
         doms = [d for d, v in self.doms.items() if v.get()]
         if len(doms) <= 1:
             wtxt = "单项随机，不涉及跨类"
@@ -320,7 +323,7 @@ class App:
             wtxt = "武器掺入 0%（未勾选装备）"
         else:
             wtxt = f"武器掺入上限 {int(round((1 - c) * 66))}%"
-        self.lbl_cohtxt.config(text=f"{lvl}　档位混合范围 {tier_mix}%　{wtxt}")
+        self.lbl_cohtxt.config(text=f"{lvl}　档位跨度 {span}/4（{tier_mix}%）　{wtxt}")
 
     def _dice(self):
         self.seed.set(str(random.randrange(1, 2 ** 31 - 1)))
@@ -365,7 +368,11 @@ class App:
             rows = [r for r in plan if r.get("old") != r.get("new")]
             st = plain_summary(plan, items, m)
             bad = [k for k, v in ck.items() if not v]
-            lines = [f"一共改动 {st['total']} 处东西。"]
+            _c = float(cfg.get("coherence", 0.8))
+            _span = max(0, min(3, int(round((1 - _c) * 3)))) + 1
+            _lv = {1: "只能同档位互换", 2: "相邻两档可互换", 3: "三档以内可互换", 4: "等级完全放开"}[_span]
+            lines = [f"一共改动 {st['total']} 处东西。",
+                     f"· 档位：{_lv}（合理度 {int(_c*100)}%，跨度 {_span}/4）。"]
             if st["armor_rune"]:
                 lines.append(f"· 有 {st['armor_rune']} 件护甲和卢恩互换了。")
             if st["weapon_any"]:
