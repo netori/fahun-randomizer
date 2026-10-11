@@ -50,6 +50,8 @@ def load_engine():
 
 
 # ── 随机组合（下拉框）──
+names_for_join = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
+
 MODES = [("mix", "全部混合（勾选的几类一起混）"),
          ("sep", "各自随机（勾选的几类各随各的）")]
 ITEMS = [("rune", "卢恩"), ("armor", "护甲"), ("weapon", "装备（武器）")]
@@ -237,14 +239,20 @@ class App:
 
     def _refresh_modes(self, *_a):
         """混合方式随勾选项目智能变更（下拉里的文字直接写出项目名）"""
-        names = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
         doms = self._picked_doms()
         if len(doms) <= 1:
             vals = ["只有一项：在自己范围里随机"]
         else:
+            names = names_for_join
             plus = " + ".join(names[d] for d in doms)
             dun = "、".join(names[d] for d in doms)
-            vals = [f"全部混合（{plus} 一起混）", f"各自随机（{dun} 各随各的）"]
+            vals = [f"全部混合（{plus} 一起混）"]
+            if len(doms) == 3:
+                a, b, c = doms
+                vals += [f"{names[a]}+{names[b]} 混 · {names[c]} 独自",
+                         f"{names[a]}+{names[c]} 混 · {names[b]} 独自",
+                         f"{names[b]}+{names[c]} 混 · {names[a]} 独自"]
+            vals.append(f"各自随机（{dun} 各随各的）")
         old = self.mode.get()
         self.cb_mode.config(values=vals)
         self.mode.set(old if old in vals else vals[0])
@@ -252,8 +260,8 @@ class App:
         self._coh_hint()
 
     def _combo_hint(self, *_a):
+        names = names_for_join
         """按当前勾选与混合方式，说明会怎么随"""
-        names = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
         doms = self._picked_doms()
         if not doms:
             self.lbl_combo.config(text="⚠ 一项都没勾：请至少勾选一个随机项目。")
@@ -331,9 +339,17 @@ class App:
     def _collect(self):
         doms = [d for d, v in self.doms.items() if v.get()]
         sep = ("各自" in self.mode.get()) or len(doms) <= 1
-        return {"domains": doms or ["rune", "armor", "weapon"], "joins": [],
+        joins = []
+        if not sep and len(doms) == 3 and "·" in self.mode.get():
+            # "A+B 混 · C 独自" → joins=[[A,B]]
+            left = self.mode.get().split("混 ·")[0]
+            pair = [d for d in doms if names_for_join[d] in left]
+            if len(pair) == 2:
+                joins = [pair]
+        return {"domains": doms or ["rune", "armor", "weapon"],
                 "basis": "guide", "shops": False,   # 固定：说明书范围、商店不参与（均不给选项）
-                "cross_domain": (not sep),           # “各自随机”= 不建混池
+                "joins": joins,                      # 两两混：只给这一组建混池
+                "cross_domain": (not sep) and not joins,   # 全部混合=建混池；两两混/各自=不建
                 "merge_shadow": self.shadow.get(), "sets": self.sets.get(),
                 "seed": int(self.seed.get()), "density": round(float(self.density.get()), 3),
                 "coherence": round(float(self.coherence.get()), 3),

@@ -477,34 +477,59 @@ def run(items, cfg, seed=None):
     # 武器混入比例：合理度 100% → 0（武器自己玩）；越低越多，上限 66%
     _mixed_ratio = max(0.0, min(0.66, (1.0 - _coh) * 0.66))
     # 混池（近战护甲 + 卢恩）**永远存在**：护甲↔卢恩从一开始就是完全随机的（用户规则）
-    if _cross_domain_ok(cfg):
-        _mine, _runes, _weapons, _rest = [], [], [], []
+    # ── 混池分组（joins）──
+    _groups = [set(g) for g in (cfg.get("joins") or []) if len(set(g)) >= 2]
+    if not _groups and _cross_domain_ok(cfg):
+        # 旧行为（向后兼容）：cross_domain 为真 → 已勾选的域合成一个混池
+        _groups = [set(cfg.get("domains") or ["rune", "armor", "weapon"])]
+    if _groups:
+        _pool_of_u = {}                       # 单元 -> 原池键
         for _pk, _meta in base_pools.items():
             for _u in (_meta.get("units") or []):
-                _dom, _rank = _pool_rank(_pk, [_u], items)
-                _arch = _u.get("arch") or ""
-                _is_set = bool(_u.get("parts"))
-                if _dom == "armor" and _arch == "近战" and not _is_set:
-                    _mine.append(_u)
-                elif _dom == "rune" and not _is_set:
-                    _runes.append(_u)
-                elif _dom == "weapon" and not _is_set:
-                    _weapons.append(_u)
-                else:
-                    _rest.append((_pk, _meta, _u))
-        _wsel = int(round(len(_weapons) * _mixed_ratio))
-        rng.shuffle(_weapons)
-        _win, _wout = _weapons[:_wsel], _weapons[_wsel:]
-        _mixed = _mine + _runes + _win
-        # 把混池成员从原池里摘掉，留下的原池继续各自置换
-        _mix_ids = {u["id"] for u in _mixed}
+                _pool_of_u[_u["id"]] = _pk
+        _mix_ids = set()
         _newpools = collections.OrderedDict()
-        _newpools["混池·近战护甲+卢恩+武器"] = {"kind": "item", "units": _mixed}
-        for _pk, _meta in base_pools.items():
-            _keep = [u for u in (_meta.get("units") or []) if u["id"] not in _mix_ids]
-            if _keep:
-                _newpools[_pk] = dict(_meta, units=_keep)
-        pools = _newpools
+
+        def _dom_of(_u):
+            _pk = _pool_of_u.get(_u["id"], "")
+            return _pool_rank(_pk, [_u], items)[0]
+
+        for _gi, _g in enumerate(_groups):
+            _mine, _runes, _weapons = [], [], []
+            for _pk, _meta in base_pools.items():
+                for _u in (_meta.get("units") or []):
+                    if _u["id"] in _mix_ids:
+                        continue
+                    _dom = _dom_of(_u)
+                    if _dom not in _g:
+                        continue
+                    _arch = _u.get("arch") or ""
+                    _is_set = bool(_u.get("parts"))
+                    if _dom == "armor":
+                        # 法祷护甲（含套装）永不进混池；近战套装整组不拆
+                        if _arch == "近战" and not _is_set:
+                            _mine.append(_u)
+                    elif _dom == "rune" and not _is_set:
+                        _runes.append(_u)
+                    elif _dom == "weapon" and not _is_set:
+                        _weapons.append(_u)
+            # 武器只在"该组含武器"时按比例掺入
+            _win = []
+            if "weapon" in _g and _weapons:
+                _wsel = int(round(len(_weapons) * _mixed_ratio))
+                rng.shuffle(_weapons)
+                _win = _weapons[:_wsel]
+            _mixed = _mine + _runes + _win
+            if len(_mixed) >= 2:
+                _nm = "混池·" + "+".join(sorted(_g))
+                _newpools[_nm] = {"kind": "item", "units": _mixed}
+                _mix_ids |= {u["id"] for u in _mixed}
+        if _mix_ids:
+            for _pk, _meta in base_pools.items():
+                _keep = [u for u in (_meta.get("units") or []) if u["id"] not in _mix_ids]
+                if _keep:
+                    _newpools[_pk] = dict(_meta, units=_keep)
+            pools = _newpools
     swaps = {}
     merged = collections.OrderedDict()
     for pk, meta in pools.items():
