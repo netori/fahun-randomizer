@@ -104,6 +104,19 @@ def deploy(plan_csv, sync_guide=True, log=print):
             log(f"[③] 说明书同步异常：{e}")
         finally:
             sys.argv = _argv
+        # ③b 长度适配：新文本不得超过原版长度（否则游戏会把尾部截掉）
+        try:
+            import _guide_fit
+            _base_xml = os.path.join(APPLY, "work", "msg", "zh", "GoodsCaption.fmg.xml")
+            _fitted = guide_xml.replace(".fmg.xml", ".fitted.fmg.xml")
+            if os.path.exists(_base_xml) and os.path.exists(guide_xml):
+                st = _guide_fit.rewrite(guide_xml, _base_xml, _fitted)
+                if os.path.exists(_fitted):
+                    guide_xml = _fitted
+                log(f"[③b] 说明书长度适配：补齐 {st['padded']} 条 / 缩写 {st['shortened']} 条"
+                    + (f" / 仍超长 {st['still_long']} 条" if st['still_long'] else ""))
+        except Exception as _e:
+            log(f"[③b] 长度适配跳过：{_e}")
         log(f"[③] 说明书同步：{'成功' if os.path.exists(guide_xml) else '失败'}")
         rec["steps"].append({"step": "guide_xml", "ok": os.path.exists(guide_xml), "out": guide_xml})
         if not os.path.exists(guide_xml):
