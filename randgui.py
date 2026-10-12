@@ -3,7 +3,7 @@
 #   · 只换物品，不搬位置；随时可一键还原
 #   · 同一种子 = 完全一样的结果
 #   · 命令行：--selftest 自检 ｜ --uicheck 只建界面不显示（供自动化测试）｜ --deploy plan.csv 部署
-import importlib.util, json, os, queue, random, sys, threading
+import importlib.util, json, os, queue, random, shutil, sys, threading
 import tkinter as tk
 from tkinter import messagebox, ttk
 from tkinter import font as tkfont
@@ -23,8 +23,53 @@ def find_workspace(start):
 
 
 HERE = os.path.dirname(os.path.abspath(sys.executable if getattr(sys, "frozen", False) else __file__))
-WORKSPACE = find_workspace(HERE) or find_workspace(os.getcwd())
 BUNDLE = getattr(sys, "_MEIPASS", HERE)
+
+
+def materialize_assets():
+    """打包版首次运行时，把 exe 内置的运行时资源释放到 exe 旁边。
+
+    为什么这么做：写入管线（AES/DCX/BND4/FMG）、说明书基准、目录数据本来是开发目录里的文件，
+    玩家手里没有那套目录，所以直接跑会「找不到引擎/找不到工作区」。
+    释放到 exe 旁边之后，磁盘上出现与开发目录一致的结构 —— 后续所有路径逻辑无需改动，
+    而且备份、日志、计划表都落在真实磁盘上（临时解包目录重启就没了，不能放那儿）。
+
+    幂等：已存在且大小、时间戳一致的文件不重复写。
+    """
+    src = os.path.join(BUNDLE, "_assets", "investigation")
+    if not os.path.isdir(src):
+        return False            # 开发模式：本来就有，什么都不用做
+    dst = os.path.join(HERE, "investigation")
+    n_new = n_skip = 0
+    for dp, _dn, fn in os.walk(src):
+        rel = os.path.relpath(dp, src)
+        target = dst if rel == "." else os.path.join(dst, rel)
+        os.makedirs(target, exist_ok=True)
+        for f in fn:
+            s, t = os.path.join(dp, f), os.path.join(target, f)
+            try:
+                if os.path.exists(t) and os.path.getsize(t) == os.path.getsize(s) and os.path.getmtime(t) >= os.path.getmtime(s):
+                    n_skip += 1
+                    continue
+            except OSError:
+                pass
+            try:
+                shutil.copy2(s, t)
+                n_new += 1
+            except OSError as e:
+                print(f"  释放资源失败：{f}（{e}）")
+    # 写入过程中要用的目录先建好
+    for d in ("apply/backup", "apply/out", "apply/logs", "apply/work/msg/zh"):
+        os.makedirs(os.path.join(dst, d), exist_ok=True)
+    return (n_new, n_skip)
+
+
+if getattr(sys, "frozen", False):
+    _r = materialize_assets()
+    if isinstance(_r, tuple) and _r[0]:
+        print(f"  首次运行：已释放运行时资源（{_r[0]} 个文件）→ {HERE}")
+
+WORKSPACE = find_workspace(HERE) or find_workspace(os.getcwd())
 
 
 def engine_dir():
@@ -54,6 +99,18 @@ def load_engine():
 #   必需项（缺了就没法正确写入/还原）：原始备份、游戏内的 regulation 与说明书
 def _looks_like_mod(d):
     return os.path.isfile(os.path.join(d, "mod", "regulation.bin"))
+
+
+def publish_mod_root(root):
+    """把确认过的 MOD 根目录告诉写入管线。
+
+    打包发出去以后，玩家把 exe 放在自己的 MOD 目录里，管线必须按这个目录干活，
+    而不是按开发期的目录约定去猜（被 import 的模块拿不到界面上的变量，所以用环境变量传）。
+    """
+    if root:
+        os.environ["CONVERGENCE_MOD_ROOT"] = os.path.abspath(root)
+        return True
+    return False
 
 
 def find_mod_root(start=None):
@@ -93,6 +150,7 @@ def find_mod_root(start=None):
 def check_env(mod_root=None, apply_dir=None):
     """逐项检查本地必需文件。返回 [(项目, 状态, 说明, 路径)]"""
     root = mod_root or find_mod_root()
+    publish_mod_root(root)
     ap = apply_dir or (os.path.join(WORKSPACE, "investigation", "apply") if WORKSPACE else None)
     rows = []
 
@@ -189,6 +247,7 @@ class App:
         self.log(f"工作区: {WORKSPACE or '未找到（请把本程序放到 随机mod 目录下）'}")
         self._coh_hint()
         self.mod_root = find_mod_root()
+        publish_mod_root(self.mod_root)
         if self.mod_root:
             self.apply_mod_root()
         self._refresh_modes()
@@ -747,6 +806,11 @@ def cli_deploy(argv):
 
 
 def main():
+    # 尽早发布 MOD 路径：写入管线在 import 时就会读取它（打包版尤其重要）
+    try:
+        publish_mod_root(find_mod_root())
+    except Exception:
+        pass
     if "--deploy" in sys.argv:
         return cli_deploy(sys.argv)
     if "--selftest" in sys.argv:

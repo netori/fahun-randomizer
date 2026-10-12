@@ -1,0 +1,135 @@
+{
+  "format_version": "randomization-catalog/1",
+  "created_local": "2026-10-10T23:40+08:00",
+  "investigation": {
+    "name": "法魂随机化前期调查：职业专属装备与职业法术卢恩候选清单",
+    "workspace": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod",
+    "allowed_write_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\随机mod\\investigation\\randomization-catalog",
+    "wrote_only_under_allowed_root": true,
+    "not_done": [
+      "未实现随机算法、未写注入代码",
+      "未修改或回包 MOD、未启动游戏",
+      "未改动原 MOD / 游戏 / 存档 / 法魂资料整合表.xlsx / 工具配置",
+      "未创建代理或团队、未下载依赖、未改系统或客户端设置",
+      "未全量重新解包（复用上一轮解包数据，仅新增 14 个 FMG→XML 与 1 次 menu 容器解包）"
+    ]
+  },
+  "previous_round_acceptance": {
+    "read": ["investigation/weapon-baseline/REPORT.md", "investigation/weapon-baseline/manifest.json",
+             "investigation/weapon-baseline/weapon_mapping.csv", "investigation/weapon-baseline/logs/"],
+    "verdict": "PARAM/FMG 解析确实成功（非目录盘点/DLL/Excel 线索/猜测）",
+    "evidence": [
+      "EquipParamWeapon.param.xml: row id=5100000 (Huntress's Estoc, weaponCategory=2, wepType=15, swordArtsParamId=1208)",
+      "EquipParamWeapon.param.xml: row id=18530000 (Halberd of the Deceiver, weaponCategory=7, wepType=29, swordArtsParamId=5191)",
+      "WeaponName.fmg.xml: id=5100000 = 女猎手的刺剑；WeaponName_dlc01.fmg.xml: id=18530000 = 欺诈者的大戟",
+      "WeaponCaption.fmg.xml id=5100000；WeaponCaption_dlc01.fmg.xml id=18530000",
+      "ItemLotParam_map 30203 / 20701 slot1 (lotItemCategory=2 weapon)",
+      "logs/024_regulation_recursive.*（195 param + 195 xml）, logs/011_xml_EquipParamWeapon.*, logs/034_fmg_evidence.*"
+    ],
+    "reuse": "本轮复用 weapon-baseline/evidence/work2/regulation-bin（194 张 param 的 XML）与 work/item_dlc02-msgbnd-dcx（78 个已解出 FMG）"
+  },
+  "baseline": {
+    "mod_root": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）",
+    "version_txt": "3.0.3.0",
+    "checked_before_and_after": true,
+    "files": [
+      { "path": "…\\version.txt", "size_bytes": 7, "sha256": "d57819fefc715b1f0a69881b3891637708400fc4128b4d7492af5101e70acc9e", "match": true },
+      { "path": "…\\mod\\regulation.bin", "size_bytes": 2984544, "sha256": "7bcd46b957ac49cfe4e9ad2a31a090a8bcc1d3681d3829c1f5aa4fd114530838", "match": true },
+      { "path": "…\\mod\\msg\\zhocn\\item_dlc02.msgbnd.dcx", "size_bytes": 366164, "sha256": "ee10d0771774d68b2cd5da6c66eb4846acbbda87b520c6703dfdf915d72e8403", "match": true },
+      { "path": "…\\mod\\msg\\zhocn\\menu_dlc02.msgbnd.dcx", "size_bytes": 505503, "sha256": "8feea2ac9bfc7289d22c4e509ae3d611b0ddf21c6949c68d60d96afa0f80f415", "match": true },
+      { "path": "…\\随机mod\\法魂资料整合表.xlsx", "size_bytes": 282013, "sha256": "59f2d0a64981286dc479ccd37015de0e45b28f5932c5d6ad698eccd400881b89", "match": true },
+      { "path": "…\\tools\\witchybnd-3.0.1.0\\WitchyBND.exe", "size_bytes": 82128653, "sha256": "00aa5b321d5af0179d3c9154a48d2ab3bb55772eaf624a439cc5f6ad4e21982b", "match": true },
+      { "path": "…\\tools\\witchybnd-3.0.1.0\\appsettings.json", "size_bytes": 493, "sha256": "a918ab24344e27bed1f50ba12c615c2983b6b6a410d00ad4d04a437b239ae8ff", "match": true }
+    ],
+    "no_version_drift": true
+  },
+  "coverage": {
+    "xlsx_first_sheet": { "sheet": "Sheet3 (2)", "columns": ["Name", "Text", "Location"], "data_rows": 611, "distinct_locations": 142,
+                          "evidence": "evidence/xlsx_sheet1_armor_leads.json / .csv（带行号，可用 'Sheet3 (2)'!A<row> 回溯）" },
+    "xlsx_class_sheet": { "sheet": "职业初始套装位置表", "columns": ["职业", "初始套装", "效果", "获取位置"], "class_groups": 26, "pieces": 104,
+                          "evidence": "bundles.json（记录 '职业初始套装位置表'!A<row> 单元格）" },
+    "armor_identity": { "matched": 496, "of": 611, "method": "xlsx 英文名 ↔ EquipParamProtector 内嵌行名（规范化精确同名）→ ID → zhocn ProtectorName FMG 名称" },
+    "armor_part": { "source": "EquipParamProtector headEquip/bodyEquip/armEquip/legEquip", "note": "部位不靠名字猜" },
+    "goods": { "EquipParamGoods_rows": 3793, "rune_named_items": 162, "complete_class_runes": 108, "exp_runes": 24, "fragments": 1 },
+    "reward_index": { "lot_rows_indexed": 11311, "shop_rows": 1554, "maps": ["ItemLotParam_map", "ItemLotParam_enemy", "ShopLineupParam"] },
+    "guide_entries": { "count": 52, "GoodsCaption": 45, "GoodsInfo": 7, "caster_classes_parsed": 18 },
+    "category_semantics": { "lotItemCategory": { "1": "goods", "2": "weapon", "3": "protector", "4": "accessory", "5": "gem(Ash of War)" },
+                            "equipType": { "0": "weapon", "1": "protector", "2": "accessory", "3": "goods", "4": "gem" },
+                            "method": "用 EquipParam* 真表 id 集合反推，非猜测",
+                            "evidence": "evidence/lot_reward_index.json → category_table_derivation" }
+  },
+  "sources_readonly": [
+    "xlsx 第1工作表 Sheet3 (2)（防具线索）与 职业初始套装位置表（职业归属）",
+    "weapon-baseline/evidence/work2/regulation-bin：EquipParamProtector / EquipParamGoods / EquipParamWeapon / EquipParamAccessory / EquipParamGem / ItemLotParam_map / ItemLotParam_enemy / ShopLineupParam",
+    "weapon-baseline/evidence/work/item_dlc02-msgbnd-dcx：ProtectorName(+dlc01)、GoodsName(+dlc01)、GoodsCaption(+dlc01)、GoodsInfo(+dlc01)、ProtectorCaption(+dlc01)、MagicName/Caption、GoodsDialog（本轮 14 次 -u -p 转换）",
+    "weapon-baseline/evidence/work/menu_dlc02-msgbnd-dcx（上一轮遗留解包）"
+  ],
+  "outputs": {
+    "items.csv": { "rows": 682, "encoding": "UTF-8 BOM", "by_pool": { "poolA_member(职业套装)": 18, "poolB_candidate": 601, "poolB_candidate(职业说明书散件)": 7, "pending_approval": 2, "out_of_scope": 24, "excluded": 1 } },
+    "reward_slots.csv": { "rows": 3036, "encoding": "UTF-8 BOM", "shop_rows": 286, "protector_slots_cat3": 485, "goods_slots_cat1": 2270,
+                          "columns_note": "每个入口单独一行；含真实字段值、行名、评级与证据路径" },
+    "bundles.json": { "bundles": 11, "four_parts_complete": 2, "approvable": 2,
+                      "approvable_classes": ["火山术士", "基本主义者"], "slot_conflicts": 0 },
+    "guide_entries.csv": { "rows": 52, "encoding": "UTF-8 BOM", "note": "含 text_raw 原文，未改写" },
+    "REPORT.md": { "note": "已验证 / 待确认 / 排除 / 评级分离 / 阻塞 / 完整性 / 首批测试建议" },
+    "evidence/": ["xlsx_sheet1_armor_leads.json/.csv", "armor_id_candidates.json", "lot_reward_index.json",
+                   "set_candidates.json", "goods_runes.json", "guide_entries.json", "source_integrity_final.json", "xml/"],
+    "scripts/": ["scan_rewards.py", "analyze_sets.py", "analyze_runes.py", "analyze_guides.py",
+                 "build_catalog.py", "build_catalog2.py", "patch_items.py"]
+  },
+  "acceptance_samples": {
+    "complete_caster_bundle_1": { "class": "火山术士", "guide_entry": 8880, "xlsx_cell": "'职业初始套装位置表'!A42",
+      "members": [ { "part": "head", "id": 1210000, "slot": "ItemLotParam_map:16000090:1" },
+                   { "part": "body", "id": 1210100, "slot": "ItemLotParam_map:16000091:1" },
+                   { "part": "arm", "id": 1210200, "slot": "ItemLotParam_map:16000092:1" },
+                   { "part": "leg", "id": 1210300, "slot": "ItemLotParam_map:16000093:1" } ],
+      "common_get_flag": "16007090", "lot_row_name": "[LD - Volcano Manor] Volcanist Set …" },
+    "complete_caster_bundle_2": { "class": "基本主义者", "guide_entry": 8887, "xlsx_cell": "'职业初始套装位置表'!A70",
+      "members": [ { "part": "head", "id": 1310000, "slot": "ItemLotParam_map:1045370050:1" },
+                   { "part": "body", "id": 1310100, "slot": "ItemLotParam_map:1045370051:1" },
+                   { "part": "arm", "id": 1310200, "slot": "ItemLotParam_map:1045370052:1" },
+                   { "part": "leg", "id": 1310300, "slot": "ItemLotParam_map:1045370053:1" } ],
+      "common_get_flag": "1045377050", "lot_row_name": "[Limgrave - Mistwood] Fundamentalist Set" },
+    "melee_loose_piece": { "name": "皮革长裤", "id": 40300, "part": "leg", "slot": "ItemLotParam_map:1043310343:1",
+                           "effect_xlsx": "Increases STR and VIG by 1 and reduces weapon stamina cost by 1%",
+                           "note": "同组 40000/40100/40200 亦有 cat3 槽；其 cat5（战灰）槽已按类别剔除" },
+    "complete_class_rune": [ { "id": 8349, "name": "辉光辉石卢恩", "tier": "大师级", "school": "辉石",
+                               "slot": "ItemLotParam_map:10190:1", "get_flag": 510190, "row_name": "[Haligtree - Loretta] Glint Tome #5" },
+                             { "id": 8345, "name": "微光辉石卢恩", "tier": "新手级", "school": "辉石",
+                               "slot": "ItemLotParam_map:1037440022:1", "get_flag": 1037447020, "row_name": "[Liurnia of the Lakes - Gate Town Southeast] Glint Tome #1" } ],
+    "shop_sample": [ { "id": 50300, "name": "凯丹长裤", "shop_row": 100079, "equipType": 1, "price": 800, "sellQuantity": 1, "eventFlag_forStock": 100790, "eventFlag_forRelease": 0 },
+                     { "id": 60000, "name": "龙骑士头盔", "shop_row": 100090, "equipType": 1, "price": 1000, "sellQuantity": 1, "eventFlag_forStock": 100900, "eventFlag_forRelease": 0 } ]
+  },
+  "ratings_separation": {
+    "identity_confidence": "high（FMG 名称 + 参数行 + 部位标志三方一致）",
+    "reward_slot_confidence": "high（按类别命中具体 (表,行,slot)）",
+    "world_position_confidence": "lot_row_name_hint_only / shop_row_only（未做地图或实体核实）",
+    "single_acquisition_confidence": "unverified（无一次性证据）"
+  },
+  "excluded_by_constraint": {
+    "exp_runes": 24, "rune_fragments": 1, "great_runes_and_mending_runes": "未纳入候选",
+    "new_weapons": "两把新武器 suggested_pool=pending_approval，未自动入池B",
+    "strength_field": "按要求留空，未凭部位或名称编造"
+  },
+  "blockers": [
+    "无致命阻塞",
+    "过程小坑1：超大内联脚本被 shell 静默丢弃（无文件产生）→ 改为脚本文件执行（logs/022_* 首跑无输出 → 脚本化后成功）",
+    "过程小坑2：初版脚本 xlsx 路径层级与职业说明过滤条件写错（logs/026_* FileNotFoundError / 0 职业）→ 修正后 logs/027_* 成功"
+  ],
+  "integrity": {
+    "final_check_log": "logs/029_integrity_final.stdout.txt",
+    "evidence": "evidence/source_integrity_final.json",
+    "baseline_all_match": true,
+    "note": "收尾对 7 个关键源文件（含 xlsx、工具 exe、appsettings.json）重新计算 SHA256，与开工前一致；本目录产物哈希同记录于该文件（patch_items 之后以最后一轮复核为准）"
+  },
+  "deliverables": [
+    "investigation/randomization-catalog/items.csv",
+    "investigation/randomization-catalog/reward_slots.csv",
+    "investigation/randomization-catalog/bundles.json",
+    "investigation/randomization-catalog/guide_entries.csv",
+    "investigation/randomization-catalog/REPORT.md",
+    "investigation/randomization-catalog/manifest.json",
+    "investigation/randomization-catalog/evidence/",
+    "investigation/randomization-catalog/logs/"
+  ]
+}

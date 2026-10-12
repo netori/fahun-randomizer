@@ -4,7 +4,7 @@
 #       → 用原头重新压成 DCX → 重新加密 → 写回
 #
 # 用法：python native_apply.py --plan <计划表> [--source <regulation.bin>] [--out <文件>] [--verify]
-import argparse, csv, hashlib, json, os, struct, sys, time
+import argparse, csv, glob, hashlib, json, os, struct, sys, time
 
 APPLY = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(APPLY))
@@ -12,7 +12,30 @@ sys.path.insert(0, APPLY)
 import erio            # noqa
 import param_patch as pp   # noqa
 
-MOD = os.path.normpath(os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"))
+def _resolve_mod_root():
+    """MOD 根目录（含 mod/regulation.bin 的那一层）。
+
+    顺序：① 环境变量（界面解析并发布）→ ② exe 或脚本所在目录自己就是 MOD
+         → ③ 同级的 法魂mod* → ④ 开发期默认路径。
+    打包发给玩家走 ①②，在开发目录里走 ③④。
+    """
+    env = os.environ.get("CONVERGENCE_MOD_ROOT")
+    if env and os.path.isdir(os.path.join(env, "mod")):
+        return os.path.normpath(env)
+    bases = []
+    if getattr(sys, "frozen", False):
+        bases.append(os.path.dirname(os.path.abspath(sys.executable)))
+    bases.append(os.path.dirname(ROOT))
+    for base in bases:
+        if os.path.isfile(os.path.join(base, "mod", "regulation.bin")):
+            return os.path.normpath(base)
+        cand = [d for d in glob.glob(os.path.join(base, "法魂mod*")) if os.path.isdir(os.path.join(d, "mod"))]
+        if cand:
+            return os.path.normpath(sorted(cand)[0])
+    return os.path.normpath(os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"))
+
+
+MOD = _resolve_mod_root()
 TS = time.strftime("%Y%m%d_%H%M%S")
 
 PROBE = {"ItemLotParam_map": 107020, "ItemLotParam_enemy": 340051304, "ShopLineupParam": 101550}

@@ -16,10 +16,21 @@ import erio, native_apply, native_guide, oodle, fix_guide   # noqa
 
 MOD = native_guide.MOD
 WS = os.path.dirname(ROOT)
-if getattr(sys, "frozen", False):                       # 打包运行：MOD 取工作区旁边的法魂mod 目录
-    _cand = [d for d in glob.glob(os.path.join(os.path.dirname(sys.executable), "..", "法魂mod*")) if os.path.isdir(d)]
-    if _cand:
-        MOD = os.path.normpath(_cand[0])          # …\THE_COVERAGE-随机开发
+# MOD 目录来源（按优先级）：
+#   ① 界面/命令行解析并发布的 CONVERGENCE_MOD_ROOT —— 打包发出去以后走这条
+#   ② exe 自己所在目录就是 MOD 根（玩家把 exe 放进 MOD 目录）
+#   ③ exe 同级的 法魂mod* —— 开发期布局
+_env = os.environ.get("CONVERGENCE_MOD_ROOT")
+if _env and os.path.isdir(os.path.join(_env, "mod")):
+    MOD = os.path.normpath(_env)
+elif getattr(sys, "frozen", False):
+    _base = os.path.dirname(sys.executable)
+    if os.path.isfile(os.path.join(_base, "mod", "regulation.bin")):
+        MOD = os.path.normpath(_base)
+    else:
+        _cand = [d for d in glob.glob(os.path.join(_base, "..", "法魂mod*")) if os.path.isdir(os.path.join(d, "mod"))]
+        if _cand:
+            MOD = os.path.normpath(sorted(_cand)[0])
 CAT = os.path.join(WS, "investigation", "randomization-catalog-review")
 LOG = os.path.join(APPLY, "logs")
 

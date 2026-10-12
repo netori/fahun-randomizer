@@ -1,0 +1,995 @@
+{
+ "note": "来源=xlsx『职业初始套装位置表』+zhocn ProtectorName FMG+EquipParamProtector 部位+奖励槽索引；match_method 记录每件的匹配依据；approvable 仅代表结构可批准(仍需人工确认)",
+ "bundles": [
+  {
+   "class_name": "辉石魔法师",
+   "class_cells": "'职业初始套装位置表'!A30",
+   "class_guide_entry": "8877",
+   "class_attrs": "智力",
+   "class_damage": "魔力属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "辉石魔法师兜帽",
+     "fmg_piece_name": "辉石魔法师帽",
+     "piece_id": "837000",
+     "match_method": "class_prefix+suffix",
+     "effect": "智力增加 1 点，魔法的专注值消耗降低 2%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B32:D32",
+     "entrance": null,
+     "all_lot_entrances": [],
+     "shop_entrances": []
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "辉石魔法师长袍",
+     "fmg_piece_name": "辉石魔法师袍",
+     "piece_id": "837100",
+     "match_method": "class_prefix+suffix",
+     "effect": "智力增加 2 点，魔法的专注值消耗降低 4%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B33:D33",
+     "entrance": null,
+     "all_lot_entrances": [],
+     "shop_entrances": []
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "唤星者",
+   "class_cells": "'职业初始套装位置表'!A34",
+   "class_guide_entry": "8878",
+   "class_attrs": "智力",
+   "class_damage": "物理",
+   "four_parts_present": false,
+   "n_members_with_entrance": 3,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "唤星者兜帽",
+     "fmg_piece_name": "唤星者风帽",
+     "piece_id": "1190000",
+     "match_method": "class_prefix+suffix",
+     "effect": "力量和智力各增加 1 点，魔法的专注值消耗降低 1%",
+     "xlsx_location": "啜泣半岛，在唤星者初始位置的箱子里",
+     "xlsx_cells": "'职业初始套装位置表'!B34:D34",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045330020",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045337020",
+      "row_name": "Starcaller Loot 2 - Starcaller Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045330020",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045337020",
+       "row_name": "Starcaller Loot 2 - Starcaller Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "唤星者长袍",
+     "fmg_piece_name": "唤星者外衣",
+     "piece_id": "1190100",
+     "match_method": "class_prefix+suffix",
+     "effect": "力量和智力各增加 2 点，魔法的专注值消耗降低 2%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B35:D35",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045330021",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045337020",
+      "row_name": "Starcaller Loot 2 - Starcaller Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045330021",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045337020",
+       "row_name": "Starcaller Loot 2 - Starcaller Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "唤星者靴子",
+     "fmg_piece_name": "唤星者靴子",
+     "piece_id": "1190300",
+     "match_method": "exact_name",
+     "effect": "力量和智力各增加 1 点，魔法的专注值消耗降低 1%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B37:D37",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045330023",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045337020",
+      "row_name": "Starcaller Loot 2 - Starcaller Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045330023",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045337020",
+       "row_name": "Starcaller Loot 2 - Starcaller Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "地底魔法师",
+   "class_cells": "'职业初始套装位置表'!A38",
+   "class_guide_entry": "8879",
+   "class_attrs": "智力",
+   "class_damage": "雷属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "火山术士",
+   "class_cells": "'职业初始套装位置表'!A42",
+   "class_guide_entry": "8880",
+   "class_attrs": "智力与信仰",
+   "class_damage": "火属性",
+   "four_parts_present": true,
+   "n_members_with_entrance": 4,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "火山术士帽",
+     "fmg_piece_name": "火山术士帽子",
+     "piece_id": "1210000",
+     "match_method": "class_prefix+suffix",
+     "effect": "智力和信仰各增加 1 点，魔法的专注值消耗降低 1%",
+     "xlsx_location": "火山官邸，在官邸内锁着的房间，蜗牛后面的秘密通道尽头处",
+     "xlsx_cells": "'职业初始套装位置表'!B42:D42",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "16000090",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "16007090",
+      "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+      "gameclear": "0"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "16000090",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "16007090",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+       "gameclear": "0"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "火山术士长袍",
+     "fmg_piece_name": "火山术士长袍",
+     "piece_id": "1210100",
+     "match_method": "exact_name",
+     "effect": "智力和信仰各增加 2 点，魔法的专注值消耗降低 2%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B43:D43",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "16000091",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "16007090",
+      "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+      "gameclear": "0"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "16000091",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "16007090",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+       "gameclear": "0"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "火山术士手套",
+     "fmg_piece_name": "火山术士手套",
+     "piece_id": "1210200",
+     "match_method": "exact_name",
+     "effect": "智力和信仰各增加 1 点，魔法的专注值消耗降低 1%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B44:D44",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "16000092",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "16007090",
+      "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+      "gameclear": "0"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "16000092",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "16007090",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+       "gameclear": "0"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "火山术士靴子",
+     "fmg_piece_name": "火山术士靴子",
+     "piece_id": "1210300",
+     "match_method": "exact_name",
+     "effect": "智力和信仰各增加 1 点，魔法的专注值消耗降低 1%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B45:D45",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "16000093",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "16007090",
+      "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+      "gameclear": "0"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "16000093",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "16007090",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])",
+       "gameclear": "0"
+      }
+     ],
+     "shop_entrances": []
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": true
+  },
+  {
+   "class_name": "诺克斯神谕官",
+   "class_cells": "'职业初始套装位置表'!A50",
+   "class_guide_entry": "8882",
+   "class_attrs": "信仰与智力",
+   "class_damage": "魔力属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "死灵术士",
+   "class_cells": "'职业初始套装位置表'!A54",
+   "class_guide_entry": "8883",
+   "class_attrs": "信仰与智力",
+   "class_damage": "圣属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "火焰预言家",
+   "class_cells": "'职业初始套装位置表'!A66",
+   "class_guide_entry": "8886",
+   "class_attrs": "信仰",
+   "class_damage": "火属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "预言家眼罩",
+     "fmg_piece_name": "预言家眼罩",
+     "piece_id": "620000",
+     "match_method": "exact_name",
+     "effect": "信仰增加 1 点，祷告的专注值消耗降低 1%，施法速度增加 2",
+     "xlsx_location": "王城外遁世商人售卖",
+     "xlsx_cells": "'职业初始套装位置表'!B67:D67",
+     "entrance": null,
+     "all_lot_entrances": [],
+     "shop_entrances": [
+      {
+       "shop_row_id": "100739",
+       "equipId": 620000,
+       "equipType": "1",
+       "tables_containing_id": [
+        "protector",
+        "weapon"
+       ],
+       "value": "1000",
+       "mtrlId": "-1",
+       "sellQuantity": "1",
+       "eventFlag_forStock": "170390",
+       "eventFlag_forRelease": "0",
+       "costType": "0",
+       "setNum": "1",
+       "row_name": "[Hermit Merchant - Leyndell] Prophet Blindfold"
+      }
+     ]
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "预言家长袍",
+     "fmg_piece_name": "预言家长袍",
+     "piece_id": "622100",
+     "match_method": "exact_name",
+     "effect": "信仰增加 2 点，祷告的专注值消耗降低 2%，施法速度增加 4",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B69:D69",
+     "entrance": null,
+     "all_lot_entrances": [],
+     "shop_entrances": [
+      {
+       "shop_row_id": "100741",
+       "equipId": 622100,
+       "equipType": "1",
+       "tables_containing_id": [
+        "protector"
+       ],
+       "value": "1500",
+       "mtrlId": "-1",
+       "sellQuantity": "1",
+       "eventFlag_forStock": "170410",
+       "eventFlag_forRelease": "0",
+       "costType": "0",
+       "setNum": "1",
+       "row_name": "[Hermit Merchant - Leyndell] Prophet Robe"
+      },
+      {
+       "shop_row_id": "110229",
+       "equipId": 622100,
+       "equipType": "1",
+       "tables_containing_id": [
+        "protector"
+       ],
+       "value": "0",
+       "mtrlId": "900329",
+       "sellQuantity": "-1",
+       "eventFlag_forStock": "0",
+       "eventFlag_forRelease": "0",
+       "costType": "0",
+       "setNum": "1",
+       "row_name": "[Reversion] Prophet Robe"
+      },
+      {
+       "shop_row_id": "111229",
+       "equipId": 622100,
+       "equipType": "1",
+       "tables_containing_id": [
+        "protector"
+       ],
+       "value": "500",
+       "mtrlId": "900329",
+       "sellQuantity": "-1",
+       "eventFlag_forStock": "0",
+       "eventFlag_forRelease": "0",
+       "costType": "0",
+       "setNum": "1",
+       "row_name": "[Reversion] Prophet Robe"
+      }
+     ]
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "基本主义者",
+   "class_cells": "'职业初始套装位置表'!A70",
+   "class_guide_entry": "8887",
+   "class_attrs": "信仰",
+   "class_damage": "圣属性",
+   "four_parts_present": true,
+   "n_members_with_entrance": 4,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "基本主义者王冠",
+     "fmg_piece_name": "基本主义者头冠",
+     "piece_id": "1310000",
+     "match_method": "class_prefix+suffix",
+     "effect": "信仰增加 1 点，祷告专注值消耗降低 2%",
+     "xlsx_location": "宁姆格福，雾林废墟北边森林中被钉在木桩上的囚犯下方",
+     "xlsx_cells": "'职业初始套装位置表'!B70:D70",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045370050",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045377050",
+      "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045370050",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045377050",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "基本主义者胸甲",
+     "fmg_piece_name": "基本主义者胸甲",
+     "piece_id": "1310100",
+     "match_method": "exact_name",
+     "effect": "信仰增加 2 点，祷告专注值消耗降低 4%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B71:D71",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045370051",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045377050",
+      "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045370051",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045377050",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "基本主义者护腕",
+     "fmg_piece_name": "基本主义者护腕",
+     "piece_id": "1310200",
+     "match_method": "exact_name",
+     "effect": "信仰增加 1 点，祷告专注值消耗降低 2%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B72:D72",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045370052",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045377050",
+      "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045370052",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045377050",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "基本主义者腿甲",
+     "fmg_piece_name": "基本主义者腿甲",
+     "piece_id": "1310300",
+     "match_method": "exact_name",
+     "effect": "信仰增加 1 点，祷告专注值消耗降低 2%",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B73:D73",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "1045370053",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "1045377050",
+      "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "1045370053",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "1045377050",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": true
+  },
+  {
+   "class_name": "癫火狂徒",
+   "class_cells": "'职业初始套装位置表'!A86",
+   "class_guide_entry": "8891",
+   "class_attrs": "信仰与智力",
+   "class_damage": "火属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 0,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "腐败侍仆",
+   "class_cells": "'职业初始套装位置表'!A94",
+   "class_guide_entry": "8893",
+   "class_attrs": "信仰与感应",
+   "class_damage": "物理",
+   "four_parts_present": false,
+   "n_members_with_entrance": 2,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "腐败手套",
+     "fmg_piece_name": "腐败手套",
+     "piece_id": "1340200",
+     "match_method": "exact_name",
+     "effect": "信仰和感应各增加 1 点，施法速度增加 2",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B96:D96",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "105802",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "400580",
+      "row_name": "[Snuppet- servant of rot] Rot Set_1",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "105802",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "400580",
+       "row_name": "[Snuppet- servant of rot] Rot Set_1",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "腐败靴子",
+     "fmg_piece_name": "腐败靴子",
+     "piece_id": "1340300",
+     "match_method": "exact_name",
+     "effect": "信仰和感应各增加 1 点，施法速度增加 2",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B97:D97",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "105803",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "400580",
+      "row_name": "[Snuppet- servant of rot] Rot Set_1",
+      "gameclear": "-1"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "105803",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "400580",
+       "row_name": "[Snuppet- servant of rot] Rot Set_1",
+       "gameclear": "-1"
+      }
+     ],
+     "shop_entrances": []
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  },
+  {
+   "class_name": "密契者",
+   "class_cells": "'职业初始套装位置表'!A98",
+   "class_guide_entry": "8894",
+   "class_attrs": "信仰与感应",
+   "class_damage": "魔力属性",
+   "four_parts_present": false,
+   "n_members_with_entrance": 1,
+   "members": [
+    {
+     "part": "head",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "body",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "arm",
+     "sheet_piece_name": "",
+     "piece_id": "",
+     "match_method": "unmatched",
+     "entrance": null
+    },
+    {
+     "part": "leg",
+     "sheet_piece_name": "毛皮绑腿",
+     "fmg_piece_name": "毛皮绑腿",
+     "piece_id": "300300",
+     "match_method": "exact_name",
+     "effect": "信仰、感应和耐力各增加 1 点",
+     "xlsx_location": "",
+     "xlsx_cells": "'职业初始套装位置表'!B101:D101",
+     "entrance": {
+      "source_table": "ItemLotParam_map",
+      "row_id": "12010043",
+      "slot": 1,
+      "category": 3,
+      "num": "1",
+      "base_point": "1000",
+      "cumulate_lot_point": "0",
+      "slot_get_flag": "0",
+      "row_get_flag": "12017040",
+      "row_name": "[LD - Ainsel/Lake of Rot] Mystic Set",
+      "gameclear": "0"
+     },
+     "all_lot_entrances": [
+      {
+       "source_table": "ItemLotParam_map",
+       "row_id": "12010043",
+       "slot": 1,
+       "category": 3,
+       "num": "1",
+       "base_point": "1000",
+       "cumulate_lot_point": "0",
+       "slot_get_flag": "0",
+       "row_get_flag": "12017040",
+       "row_name": "[LD - Ainsel/Lake of Rot] Mystic Set",
+       "gameclear": "0"
+      }
+     ],
+     "shop_entrances": []
+    }
+   ],
+   "slot_conflicts": [],
+   "approvable": false
+  }
+ ]
+}

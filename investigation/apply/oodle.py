@@ -2,26 +2,48 @@
 import ctypes, glob, os, struct
 
 DLL_CANDIDATES = [
-    r"F:\game\studygame\elden ring\ELDEN RING Tarnished Edition v1.17\Game",
+    # 常见 Steam 安装位置（覆盖大多数玩家）
     r"C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING\Game",
     r"D:\SteamLibrary\steamapps\common\ELDEN RING\Game",
     r"E:\SteamLibrary\steamapps\common\ELDEN RING\Game",
+    r"F:\SteamLibrary\steamapps\common\ELDEN RING\Game",
 ]
 _lib = None
 _dll_path = None
 
 
 def find_dll(extra_dirs=()):
-    """在游戏目录（以及调用方给的目录、本工具 tools/oodle/）里找 oo2core*.dll"""
+    """找 oo2core*.dll。
+
+    搜索顺序：调用方给的目录 → exe 旁边的 oodle/ 与 game/ → 向上几层的 game/ →
+    oodle.py 同级的 oodle/tools/oodle → 常见 Steam 安装位置。
+    找不到也不要紧：会给出「把 DLL 复制到哪」的人话提示。
+    """
     here = os.path.dirname(os.path.abspath(__file__))
-    dirs = list(extra_dirs) + [os.path.join(here, "oodle"), os.path.join(here, "tools", "oodle")] + DLL_CANDIDATES
+    dirs = list(extra_dirs)
+    exe_dir = os.environ.get("CONVERGENCE_RAND_ROOT") or here
+    for base in (exe_dir, here):
+        dirs += [os.path.join(base, "oodle"),
+                 os.path.join(base, "game"),
+                 os.path.join(base, "Game"),
+                 os.path.join(base, "tools", "oodle")]
+    # 从 exe/脚本所在目录向上找 game/ 或 Game/（有些整合包把游戏放在 MOD 上一级）
+    cur = exe_dir
+    for _ in range(4):
+        for sub in ("game", "Game"):
+            dirs.append(os.path.join(cur, sub))
+        nxt = os.path.dirname(cur)
+        if nxt == cur:
+            break
+        cur = nxt
+    dirs += DLL_CANDIDATES
     for d in dirs:
         if not d or not os.path.isdir(d):
             continue
         for name in ("oo2core_9_win64.dll", "oo2core_8_win64.dll", "oo2core_7_win64.dll", "oo2core_6_win64.dll"):
-            p = os.path.join(d, name)
-            if os.path.exists(p):
-                return p
+            q = os.path.join(d, name)
+            if os.path.exists(q):
+                return q
     return None
 
 

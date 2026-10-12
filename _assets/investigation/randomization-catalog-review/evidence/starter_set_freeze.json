@@ -1,0 +1,1580 @@
+{
+ "rule": "D5：职业初始套装（法魂资料整合表『职业初始套装位置表』所列）不参与随机（双向冻结）",
+ "method_legend": {
+  "exact_name": "资料表名与 FMG 名逐字相同",
+  "prefix_part": "同前缀+部位后缀且与参数部位标志一致",
+  "id_quadruple": "MOD 套装惯用连续四位 ID（x0000/0100/0200/0300）且四件部位互补",
+  "variant_map": "上轮缺口分析确认的写法差异"
+ },
+ "groups": [
+  {
+   "class_name": "扈从",
+   "class_cell": "'职业初始套装位置表'!A2",
+   "pieces": [
+    {
+     "id": "1500000",
+     "fmg_name": "骑士头盔",
+     "part": "head",
+     "sheet_name": "骑士头盔",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "21000020",
+       "slot": "1",
+       "category": "2",
+       "row_name": "Main-gauche"
+      }
+     ],
+     "shop_rows": [
+      "101874"
+     ],
+     "bundle_class": []
+    },
+    {
+     "id": "1500100",
+     "fmg_name": "骑士铠甲",
+     "part": "body",
+     "sheet_name": "骑士铠甲",
+     "match_method": "exact_name",
+     "lot_entrances": [],
+     "shop_rows": [
+      "101875"
+     ],
+     "bundle_class": []
+    },
+    {
+     "id": "1500300",
+     "fmg_name": "骑士腿甲",
+     "part": "leg",
+     "sheet_name": "骑士腿甲",
+     "match_method": "exact_name",
+     "lot_entrances": [],
+     "shop_rows": [
+      "101877"
+     ],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "exact_name",
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "先锋",
+   "class_cell": "'职业初始套装位置表'!A6",
+   "pieces": [
+    {
+     "id": "1140000",
+     "fmg_name": "先锋头盔",
+     "part": "head",
+     "sheet_name": "先锋头盔",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1040390000",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Stormhill - Forested West Cliffside] Vanguard Set (used to be Nomadic Warrior's Cookbook [7])"
+      }
+     ],
+     "shop_rows": [
+      "101815"
+     ],
+     "bundle_class": []
+    },
+    {
+     "id": "1140100",
+     "fmg_name": "先锋铠甲",
+     "part": "body",
+     "sheet_name": "先锋铠甲",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1040390001",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Stormhill - Forested West Cliffside] Vanguard Set (used to be Nomadic Warrior's Cookbook [7])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1140200",
+     "fmg_name": "先锋臂甲",
+     "part": "arm",
+     "sheet_name": "先锋护手",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1040390002",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Stormhill - Forested West Cliffside] Vanguard Set (used to be Nomadic Warrior's Cookbook [7])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1140300",
+     "fmg_name": "先锋腿甲",
+     "part": "leg",
+     "sheet_name": "先锋腿甲",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1040390003",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Stormhill - Forested West Cliffside] Vanguard Set (used to be Nomadic Warrior's Cookbook [7])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "exact_name",
+    "exact_name",
+    "prefix_part",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "神射手套装",
+   "class_cell": "'职业初始套装位置表'!A10",
+   "pieces": [
+    {
+     "id": "1150300",
+     "fmg_name": "神射手靴子",
+     "part": "leg",
+     "sheet_name": "神射手靴子",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1043330013",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Weeping Peninsula - Minor Erdtree] Marksman Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "无畏者套装",
+   "class_cell": "'职业初始套装位置表'!A14",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "狂战士套装",
+   "class_cell": "'职业初始套装位置表'!A18",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "佣兵",
+   "class_cell": "'职业初始套装位置表'!A22",
+   "pieces": [
+    {
+     "id": "1180000",
+     "fmg_name": "佣兵头盔",
+     "part": "head",
+     "sheet_name": "佣兵头盔",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "105300",
+       "slot": "1",
+       "category": "2",
+       "row_name": "[Necromancer Domo] Deathrite Dagger"
+      },
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370030",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Sellsword Set (used to be Nomadic Warrior's Cookbook [4])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1180100",
+     "fmg_name": "佣兵铠甲",
+     "part": "body",
+     "sheet_name": "佣兵铠甲",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370031",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Sellsword Set (used to be Nomadic Warrior's Cookbook [4])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1180200",
+     "fmg_name": "佣兵手套",
+     "part": "arm",
+     "sheet_name": "佣兵手套",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370032",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Sellsword Set (used to be Nomadic Warrior's Cookbook [4])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1180300",
+     "fmg_name": "佣兵靴子",
+     "part": "leg",
+     "sheet_name": "佣兵靴子",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370033",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Sellsword Set (used to be Nomadic Warrior's Cookbook [4])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "exact_name",
+    "exact_name",
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "游荡者",
+   "class_cell": "'职业初始套装位置表'!A26",
+   "pieces": [
+    {
+     "id": "931200",
+     "fmg_name": "游荡者腕套",
+     "part": "arm",
+     "sheet_name": "盗贼袖套",
+     "match_method": "prefix_part",
+     "lot_entrances": [],
+     "shop_rows": [
+      "100015"
+     ],
+     "bundle_class": []
+    },
+    {
+     "id": "931300",
+     "fmg_name": "游荡者靴子",
+     "part": "leg",
+     "sheet_name": "盗贼靴子",
+     "match_method": "prefix_part",
+     "lot_entrances": [],
+     "shop_rows": [
+      "100016"
+     ],
+     "bundle_class": []
+    },
+    {
+     "id": "1401000",
+     "fmg_name": "盗贼面具",
+     "part": "head",
+     "sheet_name": "盗贼面具",
+     "match_method": "exact_name",
+     "lot_entrances": [],
+     "shop_rows": [
+      "100546"
+     ],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part",
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "辉石魔法师",
+   "class_cell": "'职业初始套装位置表'!A30",
+   "pieces": [
+    {
+     "id": "837000",
+     "fmg_name": "辉石魔法师帽",
+     "part": "head",
+     "sheet_name": "辉石魔法师兜帽",
+     "match_method": "prefix_part",
+     "lot_entrances": [],
+     "shop_rows": [],
+     "bundle_class": [
+      "辉石魔法师"
+     ]
+    },
+    {
+     "id": "837100",
+     "fmg_name": "辉石魔法师袍",
+     "part": "body",
+     "sheet_name": "辉石魔法师长袍",
+     "match_method": "prefix_part",
+     "lot_entrances": [],
+     "shop_rows": [],
+     "bundle_class": [
+      "辉石魔法师"
+     ]
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "唤星者",
+   "class_cell": "'职业初始套装位置表'!A34",
+   "pieces": [
+    {
+     "id": "1190000",
+     "fmg_name": "唤星者风帽",
+     "part": "head",
+     "sheet_name": "唤星者兜帽",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045330020",
+       "slot": "1",
+       "category": "3",
+       "row_name": "Starcaller Loot 2 - Starcaller Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "唤星者"
+     ]
+    },
+    {
+     "id": "1190100",
+     "fmg_name": "唤星者外衣",
+     "part": "body",
+     "sheet_name": "唤星者长袍",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045330021",
+       "slot": "1",
+       "category": "3",
+       "row_name": "Starcaller Loot 2 - Starcaller Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "唤星者"
+     ]
+    },
+    {
+     "id": "1190200",
+     "fmg_name": "唤星者腕带",
+     "part": "arm",
+     "sheet_name": "唤星者裹布",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045330022",
+       "slot": "1",
+       "category": "3",
+       "row_name": "Starcaller Loot 2 - Starcaller Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1190300",
+     "fmg_name": "唤星者靴子",
+     "part": "leg",
+     "sheet_name": "唤星者靴子",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045330023",
+       "slot": "1",
+       "category": "3",
+       "row_name": "Starcaller Loot 2 - Starcaller Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "唤星者"
+     ]
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part",
+    "prefix_part",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "地底魔法师",
+   "class_cell": "'职业初始套装位置表'!A38",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "火山术士",
+   "class_cell": "'职业初始套装位置表'!A42",
+   "pieces": [
+    {
+     "id": "1210000",
+     "fmg_name": "火山术士帽子",
+     "part": "head",
+     "sheet_name": "火山术士帽",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "16000090",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "火山术士"
+     ]
+    },
+    {
+     "id": "1210100",
+     "fmg_name": "火山术士长袍",
+     "part": "body",
+     "sheet_name": "火山术士长袍",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "16000091",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "火山术士"
+     ]
+    },
+    {
+     "id": "1210200",
+     "fmg_name": "火山术士手套",
+     "part": "arm",
+     "sheet_name": "火山术士手套",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "16000092",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "火山术士"
+     ]
+    },
+    {
+     "id": "1210300",
+     "fmg_name": "火山术士靴子",
+     "part": "leg",
+     "sheet_name": "火山术士靴子",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "16000093",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Volcano Manor] Volcanist Set (Used to be Nomadic Warrior's Cookbook [21])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "火山术士"
+     ]
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "exact_name",
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "烈风召唤者",
+   "class_cell": "'职业初始套装位置表'!A46",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "诺克斯神谕官",
+   "class_cell": "'职业初始套装位置表'!A50",
+   "pieces": [
+    {
+     "id": "1230000",
+     "fmg_name": "诺克斯神谕官头带",
+     "part": "head",
+     "sheet_name": "诺克先知头带",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "12020700",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Nokron / Siofra] Nox Oracle Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1230100",
+     "fmg_name": "诺克斯神谕官铠甲",
+     "part": "body",
+     "sheet_name": "诺克先知铠甲",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "12020701",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Nokron / Siofra] Nox Oracle Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1230200",
+     "fmg_name": "诺克斯神谕官手套",
+     "part": "arm",
+     "sheet_name": "诺克先知手套",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "12020702",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Nokron / Siofra] Nox Oracle Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1230300",
+     "fmg_name": "诺克斯神谕官长裙",
+     "part": "leg",
+     "sheet_name": "诺克先知裙子",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "12020703",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Nokron / Siofra] Nox Oracle Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part",
+    "prefix_part",
+    "prefix_part"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "死灵术士",
+   "class_cell": "'职业初始套装位置表'!A54",
+   "pieces": [
+    {
+     "id": "1240000",
+     "fmg_name": "死灵术士风帽",
+     "part": "head",
+     "sheet_name": "死灵法师兜帽",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "30000030",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Weeping Peninsula - Tombsward Catacombs] Necromancer Set (used to be Nomadic Warrior's Cookbook [9])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1240100",
+     "fmg_name": "死灵术士长袍",
+     "part": "body",
+     "sheet_name": "死灵法师长袍",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "30000031",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Weeping Peninsula - Tombsward Catacombs] Necromancer Set (used to be Nomadic Warrior's Cookbook [9])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1240200",
+     "fmg_name": "死灵术士手套",
+     "part": "arm",
+     "sheet_name": "死灵法师手套",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "30000032",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Weeping Peninsula - Tombsward Catacombs] Necromancer Set (used to be Nomadic Warrior's Cookbook [9])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "1240300",
+     "fmg_name": "死灵术士长裤",
+     "part": "leg",
+     "sheet_name": "死灵法师裤子",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "30000033",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Weeping Peninsula - Tombsward Catacombs] Necromancer Set (used to be Nomadic Warrior's Cookbook [9])"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part",
+    "prefix_part",
+    "prefix_part"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "冰霜女巫",
+   "class_cell": "'职业初始套装位置表'!A58",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "悖逆异端",
+   "class_cell": "'职业初始套装位置表'!A62",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "火焰预言家",
+   "class_cell": "'职业初始套装位置表'!A66",
+   "pieces": [
+    {
+     "id": "620000",
+     "fmg_name": "预言家眼罩",
+     "part": "head",
+     "sheet_name": "预言家眼罩",
+     "match_method": "exact_name",
+     "lot_entrances": [],
+     "shop_rows": [
+      "100739"
+     ],
+     "bundle_class": [
+      "火焰预言家"
+     ]
+    },
+    {
+     "id": "622100",
+     "fmg_name": "预言家长袍",
+     "part": "body",
+     "sheet_name": "预言家长袍",
+     "match_method": "exact_name",
+     "lot_entrances": [],
+     "shop_rows": [
+      "100741",
+      "110229",
+      "111229"
+     ],
+     "bundle_class": [
+      "火焰预言家"
+     ]
+    }
+   ],
+   "method": [
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "基本主义者",
+   "class_cell": "'职业初始套装位置表'!A70",
+   "pieces": [
+    {
+     "id": "1310000",
+     "fmg_name": "基本主义者头冠",
+     "part": "head",
+     "sheet_name": "基本主义者王冠",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370050",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "基本主义者"
+     ]
+    },
+    {
+     "id": "1310100",
+     "fmg_name": "基本主义者胸甲",
+     "part": "body",
+     "sheet_name": "基本主义者胸甲",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370051",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "基本主义者"
+     ]
+    },
+    {
+     "id": "1310200",
+     "fmg_name": "基本主义者护腕",
+     "part": "arm",
+     "sheet_name": "基本主义者护腕",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370052",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "基本主义者"
+     ]
+    },
+    {
+     "id": "1310300",
+     "fmg_name": "基本主义者腿甲",
+     "part": "leg",
+     "sheet_name": "基本主义者腿甲",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1045370053",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Limgrave - Mistwood] Fundamentalist Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "基本主义者"
+     ]
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "exact_name",
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  },
+  {
+   "class_name": "野兽虔敬者",
+   "class_cell": "'职业初始套装位置表'!A74",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "龙信徒",
+   "class_cell": "'职业初始套装位置表'!A78",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "神皮庆典司仪",
+   "class_cell": "'职业初始套装位置表'!A82",
+   "pieces": [
+    {
+     "id": "800200",
+     "fmg_name": "庆典手套",
+     "part": "arm",
+     "sheet_name": "庆典手套",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1040540092",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Altus Plateau - Road of Iniquity Side Path] Festive Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "癫火狂徒",
+   "class_cell": "'职业初始套装位置表'!A86",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "鲜血入道者",
+   "class_cell": "'职业初始套装位置表'!A90",
+   "pieces": [],
+   "method": [],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "腐败侍仆",
+   "class_cell": "'职业初始套装位置表'!A94",
+   "pieces": [
+    {
+     "id": "1340200",
+     "fmg_name": "腐败手套",
+     "part": "arm",
+     "sheet_name": "腐败手套",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "105802",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Snuppet- servant of rot] Rot Set_1"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "腐败侍仆"
+     ]
+    },
+    {
+     "id": "1340300",
+     "fmg_name": "腐败靴子",
+     "part": "leg",
+     "sheet_name": "腐败靴子",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "105803",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Snuppet- servant of rot] Rot Set_1"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "腐败侍仆"
+     ]
+    }
+   ],
+   "method": [
+    "exact_name",
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "密契者",
+   "class_cell": "'职业初始套装位置表'!A98",
+   "pieces": [
+    {
+     "id": "300300",
+     "fmg_name": "毛皮绑腿",
+     "part": "leg",
+     "sheet_name": "毛皮绑腿",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "12010043",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[LD - Ainsel/Lake of Rot] Mystic Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": [
+      "密契者"
+     ]
+    }
+   ],
+   "method": [
+    "exact_name"
+   ],
+   "complete_quadruple": false
+  },
+  {
+   "class_name": "调香师",
+   "class_cell": "'职业初始套装位置表'!A102",
+   "pieces": [
+    {
+     "id": "90000",
+     "fmg_name": "调香师风帽",
+     "part": "head",
+     "sheet_name": "旅行者帽子",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "31180031",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Altus Plateau - Perfumer's Grotto] Perfumer Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "90200",
+     "fmg_name": "调香师手套",
+     "part": "arm",
+     "sheet_name": "旅行者手套",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "31180033",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Altus Plateau - Perfumer's Grotto] Perfumer Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "90300",
+     "fmg_name": "调香师腰巾",
+     "part": "leg",
+     "sheet_name": "旅行者工装裤",
+     "match_method": "prefix_part",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "31180034",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Altus Plateau - Perfumer's Grotto] Perfumer Set"
+      }
+     ],
+     "shop_rows": [],
+     "bundle_class": []
+    },
+    {
+     "id": "100100",
+     "fmg_name": "调香师旅行装",
+     "part": "body",
+     "sheet_name": "调香师旅行装",
+     "match_method": "exact_name",
+     "lot_entrances": [
+      {
+       "table": "ItemLotParam_map",
+       "row_id": "1048380011",
+       "slot": "1",
+       "category": "3",
+       "row_name": "[Caelid - West Aeonia Swamp] Traveler's Set"
+      }
+     ],
+     "shop_rows": [
+      "110204",
+      "111204"
+     ],
+     "bundle_class": []
+    }
+   ],
+   "method": [
+    "prefix_part",
+    "prefix_part",
+    "prefix_part",
+    "exact_name"
+   ],
+   "complete_quadruple": true
+  }
+ ],
+ "frozen_ids_with_entrance": {
+  "1500000": {
+   "class_name": "扈从",
+   "fmg_name": "骑士头盔",
+   "part": "head",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:21000020:s1"
+   ],
+   "shop_rows": [
+    "101874"
+   ]
+  },
+  "1500100": {
+   "class_name": "扈从",
+   "fmg_name": "骑士铠甲",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [],
+   "shop_rows": [
+    "101875"
+   ]
+  },
+  "1500300": {
+   "class_name": "扈从",
+   "fmg_name": "骑士腿甲",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [],
+   "shop_rows": [
+    "101877"
+   ]
+  },
+  "1140000": {
+   "class_name": "先锋",
+   "fmg_name": "先锋头盔",
+   "part": "head",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1040390000:s1"
+   ],
+   "shop_rows": [
+    "101815"
+   ]
+  },
+  "1140100": {
+   "class_name": "先锋",
+   "fmg_name": "先锋铠甲",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1040390001:s1"
+   ],
+   "shop_rows": []
+  },
+  "1140200": {
+   "class_name": "先锋",
+   "fmg_name": "先锋臂甲",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:1040390002:s1"
+   ],
+   "shop_rows": []
+  },
+  "1140300": {
+   "class_name": "先锋",
+   "fmg_name": "先锋腿甲",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1040390003:s1"
+   ],
+   "shop_rows": []
+  },
+  "1150300": {
+   "class_name": "神射手套装",
+   "fmg_name": "神射手靴子",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1043330013:s1"
+   ],
+   "shop_rows": []
+  },
+  "1180000": {
+   "class_name": "佣兵",
+   "fmg_name": "佣兵头盔",
+   "part": "head",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:105300:s1",
+    "ItemLotParam_map:1045370030:s1"
+   ],
+   "shop_rows": []
+  },
+  "1180100": {
+   "class_name": "佣兵",
+   "fmg_name": "佣兵铠甲",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370031:s1"
+   ],
+   "shop_rows": []
+  },
+  "1180200": {
+   "class_name": "佣兵",
+   "fmg_name": "佣兵手套",
+   "part": "arm",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370032:s1"
+   ],
+   "shop_rows": []
+  },
+  "1180300": {
+   "class_name": "佣兵",
+   "fmg_name": "佣兵靴子",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370033:s1"
+   ],
+   "shop_rows": []
+  },
+  "931200": {
+   "class_name": "游荡者",
+   "fmg_name": "游荡者腕套",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [],
+   "shop_rows": [
+    "100015"
+   ]
+  },
+  "931300": {
+   "class_name": "游荡者",
+   "fmg_name": "游荡者靴子",
+   "part": "leg",
+   "match_method": "prefix_part",
+   "slots": [],
+   "shop_rows": [
+    "100016"
+   ]
+  },
+  "1401000": {
+   "class_name": "游荡者",
+   "fmg_name": "盗贼面具",
+   "part": "head",
+   "match_method": "exact_name",
+   "slots": [],
+   "shop_rows": [
+    "100546"
+   ]
+  },
+  "1190000": {
+   "class_name": "唤星者",
+   "fmg_name": "唤星者风帽",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:1045330020:s1"
+   ],
+   "shop_rows": []
+  },
+  "1190100": {
+   "class_name": "唤星者",
+   "fmg_name": "唤星者外衣",
+   "part": "body",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:1045330021:s1"
+   ],
+   "shop_rows": []
+  },
+  "1190200": {
+   "class_name": "唤星者",
+   "fmg_name": "唤星者腕带",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:1045330022:s1"
+   ],
+   "shop_rows": []
+  },
+  "1190300": {
+   "class_name": "唤星者",
+   "fmg_name": "唤星者靴子",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045330023:s1"
+   ],
+   "shop_rows": []
+  },
+  "1210000": {
+   "class_name": "火山术士",
+   "fmg_name": "火山术士帽子",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:16000090:s1"
+   ],
+   "shop_rows": []
+  },
+  "1210100": {
+   "class_name": "火山术士",
+   "fmg_name": "火山术士长袍",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:16000091:s1"
+   ],
+   "shop_rows": []
+  },
+  "1210200": {
+   "class_name": "火山术士",
+   "fmg_name": "火山术士手套",
+   "part": "arm",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:16000092:s1"
+   ],
+   "shop_rows": []
+  },
+  "1210300": {
+   "class_name": "火山术士",
+   "fmg_name": "火山术士靴子",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:16000093:s1"
+   ],
+   "shop_rows": []
+  },
+  "1230000": {
+   "class_name": "诺克斯神谕官",
+   "fmg_name": "诺克斯神谕官头带",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:12020700:s1"
+   ],
+   "shop_rows": []
+  },
+  "1230100": {
+   "class_name": "诺克斯神谕官",
+   "fmg_name": "诺克斯神谕官铠甲",
+   "part": "body",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:12020701:s1"
+   ],
+   "shop_rows": []
+  },
+  "1230200": {
+   "class_name": "诺克斯神谕官",
+   "fmg_name": "诺克斯神谕官手套",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:12020702:s1"
+   ],
+   "shop_rows": []
+  },
+  "1230300": {
+   "class_name": "诺克斯神谕官",
+   "fmg_name": "诺克斯神谕官长裙",
+   "part": "leg",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:12020703:s1"
+   ],
+   "shop_rows": []
+  },
+  "1240000": {
+   "class_name": "死灵术士",
+   "fmg_name": "死灵术士风帽",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:30000030:s1"
+   ],
+   "shop_rows": []
+  },
+  "1240100": {
+   "class_name": "死灵术士",
+   "fmg_name": "死灵术士长袍",
+   "part": "body",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:30000031:s1"
+   ],
+   "shop_rows": []
+  },
+  "1240200": {
+   "class_name": "死灵术士",
+   "fmg_name": "死灵术士手套",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:30000032:s1"
+   ],
+   "shop_rows": []
+  },
+  "1240300": {
+   "class_name": "死灵术士",
+   "fmg_name": "死灵术士长裤",
+   "part": "leg",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:30000033:s1"
+   ],
+   "shop_rows": []
+  },
+  "620000": {
+   "class_name": "火焰预言家",
+   "fmg_name": "预言家眼罩",
+   "part": "head",
+   "match_method": "exact_name",
+   "slots": [],
+   "shop_rows": [
+    "100739"
+   ]
+  },
+  "622100": {
+   "class_name": "火焰预言家",
+   "fmg_name": "预言家长袍",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [],
+   "shop_rows": [
+    "100741",
+    "110229",
+    "111229"
+   ]
+  },
+  "1310000": {
+   "class_name": "基本主义者",
+   "fmg_name": "基本主义者头冠",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:1045370050:s1"
+   ],
+   "shop_rows": []
+  },
+  "1310100": {
+   "class_name": "基本主义者",
+   "fmg_name": "基本主义者胸甲",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370051:s1"
+   ],
+   "shop_rows": []
+  },
+  "1310200": {
+   "class_name": "基本主义者",
+   "fmg_name": "基本主义者护腕",
+   "part": "arm",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370052:s1"
+   ],
+   "shop_rows": []
+  },
+  "1310300": {
+   "class_name": "基本主义者",
+   "fmg_name": "基本主义者腿甲",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1045370053:s1"
+   ],
+   "shop_rows": []
+  },
+  "800200": {
+   "class_name": "神皮庆典司仪",
+   "fmg_name": "庆典手套",
+   "part": "arm",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1040540092:s1"
+   ],
+   "shop_rows": []
+  },
+  "1340200": {
+   "class_name": "腐败侍仆",
+   "fmg_name": "腐败手套",
+   "part": "arm",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:105802:s1"
+   ],
+   "shop_rows": []
+  },
+  "1340300": {
+   "class_name": "腐败侍仆",
+   "fmg_name": "腐败靴子",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:105803:s1"
+   ],
+   "shop_rows": []
+  },
+  "300300": {
+   "class_name": "密契者",
+   "fmg_name": "毛皮绑腿",
+   "part": "leg",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:12010043:s1"
+   ],
+   "shop_rows": []
+  },
+  "90000": {
+   "class_name": "调香师",
+   "fmg_name": "调香师风帽",
+   "part": "head",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:31180031:s1"
+   ],
+   "shop_rows": []
+  },
+  "90200": {
+   "class_name": "调香师",
+   "fmg_name": "调香师手套",
+   "part": "arm",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:31180033:s1"
+   ],
+   "shop_rows": []
+  },
+  "90300": {
+   "class_name": "调香师",
+   "fmg_name": "调香师腰巾",
+   "part": "leg",
+   "match_method": "prefix_part",
+   "slots": [
+    "ItemLotParam_map:31180034:s1"
+   ],
+   "shop_rows": []
+  },
+  "100100": {
+   "class_name": "调香师",
+   "fmg_name": "调香师旅行装",
+   "part": "body",
+   "match_method": "exact_name",
+   "slots": [
+    "ItemLotParam_map:1048380011:s1"
+   ],
+   "shop_rows": [
+    "110204",
+    "111204"
+   ]
+  }
+ },
+ "counts": {
+  "classes": 26,
+  "matched_pieces": 47,
+  "complete_quadruples": 8,
+  "frozen_ids_with_entrance": 45
+ }
+}
