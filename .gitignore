@@ -7,8 +7,6 @@
 *.fmg
 *.xml
 *.csv
-# 例外：基准计划是"验收台"的一部分，必须进仓库，否则克隆下来跑不了 _golden_check.py
-!investigation/randomization-dryrun/golden/*.csv
 *.exe
 *.dll
 *.so
@@ -54,3 +52,7 @@ tools/
 WitchyBND-*.zip
 investigation/weapon-baseline/evidence/
 investigation/**/evidence/
+
+# 例外：基准计划是验收台的一部分，必须在仓库里（否则克隆后跑不了 _golden_check.py）
+!investigation/randomization-dryrun/golden/
+!investigation/randomization-dryrun/golden/**
