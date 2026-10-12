@@ -7,6 +7,8 @@
 *.fmg
 *.xml
 *.csv
+# 例外：基准计划是"验收台"的一部分，必须进仓库，否则克隆下来跑不了 _golden_check.py
+!investigation/randomization-dryrun/golden/*.csv
 *.exe
 *.dll
 *.so
