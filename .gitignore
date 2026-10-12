@@ -63,3 +63,6 @@ investigation/**/evidence/
 *.key
 *apikey*
 *nxmsq*
+
+# 上传用的打包产物：不入库（本地生成即可）
+*.zip
