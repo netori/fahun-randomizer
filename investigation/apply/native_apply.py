@@ -59,9 +59,67 @@ def plan_by_table(plan_path):
     return out
 
 
+class PreconditionError(RuntimeError):
+    """写前复核失败：目标格子的现状与计划不符 → 立即中止，绝不写半成品（硬约束 H12）"""
+
+
+def check_preconditions(plan_path, source, quiet=True):
+    """写前复核：计划里记的「旧物品（ID+类别）」必须与**当前**文件一致。
+
+    目的：换过 MOD 版本、或上一次写入只做了一半时，不要照着旧计划继续写。
+    旧版计划没有 preconditions 列时自动跳过（向后兼容）。
+    """
+    rows = list(csv.DictReader(open(plan_path, encoding="utf-8-sig")))
+    if not rows or "preconditions" not in rows[0]:
+        return {"checked": 0, "legacy": True, "bad": []}
+    by_table = {}
+    for r in rows:
+        if r.get("old") != r.get("new"):
+            by_table.setdefault(r["source_table"], []).append(r)
+    plain = bytearray(erio.dcx_decompress(erio.regulation_decrypt(source)))
+    bad, n = [], 0
+    for table, rs in by_table.items():
+        tbl = find_row_table_in_plain(bytes(plain), table)
+        for r in rs:
+            try:
+                rid, slot = int(r["row_id"]), int(r["slot"] or 1)
+                want_id = int(r["old"].split(":")[1])
+            except (ValueError, KeyError, IndexError):
+                continue
+            if table.startswith("ItemLotParam"):
+                oi = pp.offset_of(table, tbl, rid, "lotItemId", slot)
+                oc = pp.offset_of(table, tbl, rid, "lotItemCategory", slot)
+                if oi is None or oc is None:
+                    continue
+                got_id, got_cat = pp.read_u32(plain, oi), pp.read_u32(plain, oc)
+                want_cat = pp.LOT_CAT.get(r.get("old_cat", ""))
+            else:
+                oi = pp.offset_of(table, tbl, rid, "equipId")
+                ot = pp.offset_of(table, tbl, rid, "equipType")
+                if oi is None or ot is None:
+                    continue
+                got_id, got_cat = pp.read_u32(plain, oi), pp.read_u8(plain, ot)
+                want_cat = pp.SHOP_CAT.get(r.get("old_cat", ""))
+            n += 1
+            if got_id != want_id:
+                bad.append(f"{table} 行{rid} 槽{slot}：文件里是 ID {got_id}，计划里是 {want_id}")
+            elif want_cat is not None and got_cat is not None and got_cat != want_cat:
+                bad.append(f"{table} 行{rid} 槽{slot}：类别不符（文件 {got_cat} / 计划 {want_cat}）")
+    if bad:
+        raise PreconditionError(
+            f"写前复核未通过（{len(bad)}/{n} 条与当前文件不一致）—— 已中止，文件一个字节都没改。\n"
+            f"最可能的原因：① 游戏文件不是本计划所基于的那一版（换过 MOD 版本？）"
+            f"② 上一次写入是半途结束的。\n" + "\n".join(bad[:5])
+        )
+    return {"checked": n, "legacy": False, "bad": []}
+
+
 def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False):
     source = source or os.path.join(MOD, "mod", "regulation.bin")
     out_path = out_path or source
+    pre = check_preconditions(plan_path, source, quiet=quiet)   # ← 先复核，再动文件
+    if not quiet and pre.get("checked"):
+        print(f"  写前复核通过：{pre['checked']} 条与当前文件一致")
     by_table = plan_by_table(plan_path)
     plain = bytearray(erio.dcx_decompress(erio.regulation_decrypt(source)))
     before = bytes(plain)
@@ -78,7 +136,7 @@ def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False
                 oi = pp.offset_of(table, rows, rid, "lotItemId", slot)
                 oc = pp.offset_of(table, rows, rid, "lotItemCategory", slot)
                 if oi is None or pp.read_u32(plain, oi) != oldid:
-                    skipped.append((table, rid, slot, "行未定位或原值不符")); continue
+                    raise PreconditionError(f"写入中途发现不一致（{table} 行{rid} 槽{slot}）—— 已中止")
                 pp.write_u32(plain, oi, newid)
                 cat = pp.LOT_CAT.get(r.get("new_cat", ""))
                 if cat:
@@ -87,7 +145,7 @@ def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False
                 oi = pp.offset_of(table, rows, rid, "equipId")
                 ot = pp.offset_of(table, rows, rid, "equipType")
                 if oi is None or pp.read_u32(plain, oi) != oldid:
-                    skipped.append((table, rid, slot, "行未定位或原值不符")); continue
+                    raise PreconditionError(f"写入中途发现不一致（{table} 行{rid} 槽{slot}）—— 已中止")
                 pp.write_u32(plain, oi, newid)
                 cat = pp.SHOP_CAT.get(r.get("new_cat", ""))
                 if cat is not None:

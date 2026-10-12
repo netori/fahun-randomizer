@@ -47,6 +47,8 @@ def part_of(iid):
 
 CASTER_ARCH = ("法师", "祷告", "法师/祷告混合", "祷告/感应")     # F2：这些倾向的护甲独立成池
 
+ENGINE_VERSION = "1.1"          # 计划里会记录，用于跨版本对照
+
 DEFAULT_CONFIG = {"domains": ["rune", "armor", "weapon"], "joins": [], "shops": True,
                   "merge_shadow": False, "sets": True, "seed": 20261010}
 
@@ -466,8 +468,9 @@ def _multiset_ok(plan, pools):
 
 
 def run(items, cfg, seed=None):
-    global world_ref
+    global world_ref, _CURRENT_CFG
     world_ref = items
+    _CURRENT_CFG = dict(cfg or {})        # 供模块级的 emit/_plan_meta 读取（与 world_ref 同样的做法）
     seed = cfg.get("seed", 20261010) if seed is None else seed
     pools = _coherence_apply(build_pools(items, cfg), cfg, items)
     _dbg = False
@@ -719,15 +722,42 @@ def emit(target, source, pool, keep):
             for c in world_ref[tkey]["cells"]:
                 rows.append({**c, "pool": pool, "unit": target["id"], "role": "set", "part": part,
                              "old": key_of(tkey), "old_cat": tkey[0],
-                             "new": key_of(skey), "new_cat": skey[0]})
+                             "new": key_of(skey), "new_cat": skey[0],
+                             **_plan_meta(keep, tkey)})
     else:
         tkey = target["items"][0]
         skey = tkey if keep else source["items"][0]
         for c in world_ref[tkey]["cells"]:
             rows.append({**c, "pool": pool, "unit": target["id"], "role": "item", "part": "",
                          "old": key_of(tkey), "old_cat": tkey[0],
-                         "new": key_of(skey), "new_cat": skey[0]})
+                         "new": key_of(skey), "new_cat": skey[0],
+                         **_plan_meta(keep, tkey)})
     return rows
+
+
+def _plan_meta(keep, tkey):
+    """计划行元信息：引擎版本 / 算法模式 / 未改动原因 / 写前复核条件（硬约束 H12）
+
+    · engine_version —— 跨版本对照用（同一个种子在不同引擎版本下是否等价）
+    · algorithm_mode —— 这次用的是哪种池结构，便于复盘
+    · unchanged_reason —— 这一行没换的原因（keep=True 表示按计划保持原样）
+    · preconditions —— 写回前必须复核的「旧物品 + 类别」，不一致就中止，不留半成品
+    """
+    cfg = _CURRENT_CFG or {}
+    doms = set(cfg.get("domains") or [])
+    joins = [g for g in (cfg.get("joins") or []) if len(set(g)) >= 2]
+    if joins:
+        mode = "tier_mixed+joins"
+    elif cfg.get("cross_domain") and len(doms) > 1:
+        mode = "tier_mixed"
+    else:
+        mode = "tier_uniform"
+    return {
+        "engine_version": ENGINE_VERSION,
+        "algorithm_mode": mode,
+        "unchanged_reason": "kept_by_plan" if keep else "",
+        "preconditions": f"old={key_of(tkey)}|cat={tkey[0]}",
+    }
 
 
 # ---------------------------------------------------------------- 校验
@@ -813,6 +843,7 @@ def verify(items, cfg, plan, pools):
 
 
 world_ref = {}
+_CURRENT_CFG = {}                 # run() 里赋值；供模块级 emit/_plan_meta 读取
 
 
 def main():

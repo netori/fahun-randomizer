@@ -124,9 +124,18 @@ def test_plan():
     dup = [k for k, v in multi.items() if len(v) != len(set(v))]
     check("N3 同一 Lot 的多 slot 不重复占用", not dup, f"多 slot 的 Lot {len(multi)} 个")
 
-    # N7 写前复核（H12）—— 目前没有实现，如实记为缺口
-    gap("H12 写前复核（old ID + category 一致性）",
-        "当前只在写入后回读校验，没有写前复核 —— 采纳建议③时补")
+    # N7 引擎新生成的计划必须带齐 4 个新字段（不依赖磁盘上可能陈旧的计划文件）
+    #   （写前复核的三态测试放在【四】test_preconditions）
+    r = load_engine()
+    items = r.load_world(False, "guide")
+    cfg = dict(domains=["rune", "armor", "weapon"], joins=[], basis="guide", shops=False,
+               merge_shadow=False, sets=True, seed=20260612, coherence=0.8,
+               density=1.0, cross_domain=True)
+    fresh, _p, _s2 = r.run(items, cfg, 20260612)
+    need = {"engine_version", "algorithm_mode", "unchanged_reason", "preconditions"}
+    have = set(fresh[0].keys())
+    check("N7 引擎生成的计划带齐 4 个新字段", need <= have,
+          "✓" if need <= have else f"缺: {sorted(need - have)}")
 
 
 # ═══════════════ 三、说明书管线负例 ═══════════════
@@ -194,6 +203,77 @@ def test_guide():
             gap("N12 标签破坏测试", "基准 XML 里没有 id=8800")
 
 
+# ═══════════════ 四、写前复核（H12）三态测试 ═══════════════
+def test_preconditions():
+    """H12 的三态：正确计划→通过 ／ 篡改 old id→中止 ／ 旧版计划→跳过（向后兼容）"""
+    import native_apply as na
+    pris = sorted(glob.glob(os.path.join(APPLY, "backup", "regulation.bin.orig_*")))
+    if not pris:
+        gap("H12 三态测试", "没有原版备份可作被测文件")
+        return
+    pris = pris[0]
+
+    # 用引擎现生成一份带新列的计划（等价于界面点「生成随机方案」+ 导出）
+    r = load_engine()
+    items = r.load_world(False, "guide")
+    cfg = dict(domains=["rune", "armor", "weapon"], joins=[], basis="guide", shops=False,
+               merge_shadow=False, sets=True, seed=20260612, coherence=0.8,
+               density=1.0, cross_domain=True)
+    plan, _p, _s = r.run(items, cfg, 20260612)
+    cols = ["pool", "role", "unit", "part", "old", "old_cat", "new", "new_cat",
+            "source_table", "row_id", "slot", "row_name",
+            "engine_version", "algorithm_mode", "unchanged_reason", "preconditions"]
+    d = tempfile.mkdtemp(prefix="_negplan_")
+    ok_plan = os.path.join(d, "ok.csv")
+    with open(ok_plan, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        for x in plan:
+            w.writerow({k: x.get(k, "") for k in cols})
+
+    # ① 正确计划 → 通过
+    try:
+        res = na.check_preconditions(ok_plan, pris)
+        check("H12① 正确计划：写前复核通过", res["checked"] > 0, f"核对 {res['checked']} 条")
+    except na.PreconditionError as e:
+        check("H12① 正确计划：写前复核通过", False, str(e).splitlines()[0][:60])
+
+    # ② 篡改一条 old id → 必须中止，且报出是哪一条
+    bad_plan = os.path.join(d, "bad.csv")
+    rows = list(csv.DictReader(open(ok_plan, encoding="utf-8-sig")))
+    n = 0
+    with open(bad_plan, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=cols)
+        w.writeheader()
+        for x in rows:
+            if x["old"] != x["new"] and n == 0:
+                x = dict(x, old=x["old"].split(":")[0] + ":99999999")
+                n += 1
+            w.writerow({k: x.get(k, "") for k in cols})
+    try:
+        na.check_preconditions(bad_plan, pris)
+        check("H12② 篡改 old id：必须中止", False, "没拦住 ✗")
+    except na.PreconditionError as e:
+        check("H12② 篡改 old id：必须中止", True, "已中止 ✓ " + str(e).splitlines()[0][:40])
+
+    # ③ 旧版计划（无 preconditions 列）→ 跳过复核，向后兼容
+    legacy = os.path.join(d, "legacy.csv")
+    lcols = [c for c in cols if c != "preconditions"]
+    with open(legacy, "w", encoding="utf-8-sig", newline="") as f:
+        w = csv.DictWriter(f, fieldnames=lcols)
+        w.writeheader()
+        for x in rows:
+            w.writerow({k: x.get(k, "") for k in lcols})
+    try:
+        res = na.check_preconditions(legacy, pris)
+        check("H12③ 旧版计划：自动跳过复核（向后兼容）", res.get("legacy") is True, "legacy=True ✓")
+    except na.PreconditionError as e:
+        check("H12③ 旧版计划：自动跳过复核（向后兼容）", False, str(e).splitlines()[0][:50])
+
+    import shutil as _sh
+    _sh.rmtree(d, ignore_errors=True)
+
+
 def main():
     print("  ═══ 负例 / 边界回归测试（只读，不碰游戏文件）═══\n")
     print("  【一】引擎级")
@@ -202,6 +282,8 @@ def main():
     test_plan()
     print("\n  【三】说明书管线级")
     test_guide()
+    print("\n  【四】写前复核（H12）")
+    test_preconditions()
     print(f"\n  ═══ 汇总 ═══")
     print(f"    通过 {len(PASS)} ｜ 失败 {len(FAIL)} ｜ 已知缺口 {len(GAP)}")
     for n, d in FAIL:

@@ -582,8 +582,10 @@ class App:
             return
         out = os.path.join(WORKSPACE, "investigation", "apply", "out", f"plan_seed{self.cfg['seed']}.csv")
         os.makedirs(os.path.dirname(out), exist_ok=True)
+        # 前 12 列保持原样（旧工具仍可读）；新增列一律追加在末尾
         cols = ["pool", "role", "unit", "part", "old", "old_cat", "new", "new_cat",
-                "source_table", "row_id", "slot", "row_name"]
+                "source_table", "row_id", "slot", "row_name",
+                "engine_version", "algorithm_mode", "unchanged_reason", "preconditions"]
         import csv as _csv
         with open(out, "w", encoding="utf-8-sig", newline="") as f:
             w = _csv.DictWriter(f, fieldnames=cols)
