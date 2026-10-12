@@ -192,10 +192,10 @@ def deploy(plan_csv, sync_guide=True, log=print):
             _base_xml = os.path.join(APPLY, "work", "msg", "zh", "GoodsCaption.fmg.xml")
             _fails = _guide_audit.audit(_base_xml, guide_xml, guide_xml, quiet=True)
             if _fails:
-                log(f"[③c] ✗ 说明书审计发现 {len(_fails)} 处问题：{_fails[:3]}")
+                log(f"[③c] [X] 说明书审计发现 {len(_fails)} 处问题：{_fails[:3]}")
                 rec.setdefault("guide_audit", _fails)
             else:
-                log("[③c] 说明书审计通过 ✓（标签/长度/物品名/空地点/串页/行数 全部符合原版）")
+                log("[③c] 说明书审计通过 [OK]（标签/长度/物品名/空地点/串页/行数 全部符合原版）")
         except Exception as _e:
             log(f"[③c] 审计跳过：{_e}")
         log(f"[③] 说明书同步：{'成功' if os.path.exists(guide_xml) else '失败'}")

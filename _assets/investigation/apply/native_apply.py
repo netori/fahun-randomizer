@@ -180,7 +180,7 @@ def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False
         print(f"  计划：{ {k: v['applied'] for k, v in stats.items()} }")
         print(f"  明文改动字节 {changed} 处 | 跳过 {len(skipped)} 行")
         for s in skipped[:5]:
-            print("   ✗", s)
+            print("   [X]", s)
     # 重新压 + 重新加密
     dcx = erio.dcx_compress(bytes(plain), getattr(erio_bnd_template(source), "dcx_template", None), 12)
     if out_path != source:

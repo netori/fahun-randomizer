@@ -119,11 +119,11 @@ def audit(base_xml, deploy_xml, fitted_xml=None, quiet=False):
         n = len([i for i in GIDS if a.get(i)])
         print(f"  审计范围: {n} 条职业说明书 ｜ 检查 7 组不变量")
         if fails:
-            print(f"  ✗ 发现 {len(fails)} 处问题：")
+            print(f"  [X] 发现 {len(fails)} 处问题：")
             for f in fails[:20]:
                 print("     ", f)
         else:
-            print("  ✓ 7 组不变量全部通过")
+            print("  [OK] 7 组不变量全部通过")
     return fails
 
 
@@ -162,7 +162,7 @@ def audit_fmg(fitted_xml, base_xml, quiet=False):
             # 原版文本还在是正常的（未改动的行），这里只提示
             pass
     if not quiet:
-        print(f"  FMG 核对: {'✓ 全部写入且未互相覆盖' if not fails else f'✗ {len(fails)} 处'}")
+        print(f"  FMG 核对: {'[OK] 全部写入且未互相覆盖' if not fails else f'[X] {len(fails)} 处'}")
     return fails
 
 
@@ -186,7 +186,7 @@ def main():
     _guide_fit.rewrite(fit, base, fit2)
     d1, d2 = rows(fit), rows(fit2)
     idem = all(d1.get(i) == d2.get(i) for i in GIDS)
-    print(f"\n  幂等性（再适配一次结果不变）: {'✓' if idem else '✗'}")
+    print(f"\n  幂等性（再适配一次结果不变）: {'[OK]' if idem else '[X]'}")
     if not idem:
         f1.append("[幂等] 二次适配结果不同")
     return 1 if f1 else 0

@@ -255,7 +255,7 @@ def main():
             continue
         if hashlib.sha256(data).hexdigest() != hashlib.sha256(open(p, "rb").read()).hexdigest():
             bad += 1
-            print(f"   ✗ {name} 内容不符")
+            print(f"   [X] {name} 内容不符")
     print(f"  ① 读取比对：{len(bnd.files)} 个文件，内容不符 {bad}，解包目录缺 {miss}")
     tmp = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs", "_rt_reg.bin")
     write_regulation(tmp, bnd)

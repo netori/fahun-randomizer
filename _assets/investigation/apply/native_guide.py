@@ -173,7 +173,7 @@ def selftest(out_path="logs/_native_msgbnd.dcx"):
     r = apply_guide("work/msg/zh/GoodsCaption.fmg.xml", "work/msg/zh/GoodsCaption.v2plan.fmg.xml",
                     out=os.path.join(APPLY, out_path))
     if not r["ok"]:
-        print("  ✗ 没有改写任何条目"); return 1
+        print("  [X] 没有改写任何条目"); return 1
     # 回读
     raw2, kind2, _d2 = raw_and_bnd(os.path.join(APPLY, out_path))
     bnd = erio.Bnd4.parse(raw2)
@@ -186,7 +186,7 @@ def selftest(out_path="logs/_native_msgbnd.dcx"):
         hit = probe in fmg
         ok += hit; bad += (not hit)
         if not hit:
-            print(f"   ✗ 条目 {eid} 回读未命中")
+            print(f"   [X] 条目 {eid} 回读未命中")
     print(f"  逐条回读：命中 {ok} / 未命中 {bad}")
     return 0 if bad == 0 else 1
 

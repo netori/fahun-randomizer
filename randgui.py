@@ -625,7 +625,7 @@ class App:
                                    f"{r.get('row_name', '')[:52]}")
                                   for r in sorted(rows, key=lambda x: (x["old"]))[:300]]))
             self.log(f"完成：置换行 {len(rows)} ｜ 物品 {len(items)} ｜ 种子 {seed}")
-            self.log("检查：" + "，".join(f"{k}={'通过' if v else '✗失败'}" for k, v in ck.items()))
+            self.log("检查：" + "，".join(f"{k}={'通过' if v else '[X]失败'}" for k, v in ck.items()))
             self._coh_hint()
             self.q.put(("status", f"生成完成（种子 {seed}）：可以点 ② 写入游戏了"))
         except Exception as e:
@@ -679,7 +679,7 @@ class App:
             sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
             import native_deploy
             rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log)
-            self.log("写入完成 ✓ " + str(rec.get("verify")))
+            self.log("写入完成 [OK] " + str(rec.get("verify")))
             self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
         except Exception as e:
             import traceback
@@ -733,7 +733,7 @@ class App:
             msg = os.path.join(native_deploy.MOD, "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx")
             shutil.copy2(native_deploy.find_original("regulation.bin.orig_*"), reg)
             shutil.copy2(native_deploy.find_original("item_dlc02.msgbnd.dcx.zhocn.orig_*"), msg)
-            self.log("已还原成原始版 ✓")
+            self.log("已还原成原始版 [OK]")
             self.q.put(("status", "已还原成原始版 ✓"))
         except Exception as e:
             self.log("还原出错：" + str(e))
