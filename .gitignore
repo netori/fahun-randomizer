@@ -56,3 +56,10 @@ investigation/**/evidence/
 # 例外：基准计划是验收台的一部分，必须在仓库里（否则克隆后跑不了 _golden_check.py）
 !investigation/randomization-dryrun/golden/
 !investigation/randomization-dryrun/golden/**
+
+# 凭据：绝不入库（N 网 API key 等）
+.env
+.env.*
+*.key
+*apikey*
+*nxmsq*
