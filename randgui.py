@@ -801,7 +801,7 @@ def cli_deploy(argv):
     import native_deploy
     plan = argv[argv.index("--deploy") + 1]
     rec = native_deploy.deploy(os.path.abspath(plan), sync_guide="--no-guide" not in argv, log=print)
-    print("写入完成 ✓", rec.get("verify"))
+    print("写入完成", rec.get("verify"))
     return 0
 
 
