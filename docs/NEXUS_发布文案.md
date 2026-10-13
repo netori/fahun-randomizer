@@ -206,6 +206,8 @@ Two bugs found this way are worth mentioning, because they shaped the release:
 
 [size=5][b]设计理念[/b][/size]
 
+[b]0. 方案库。[/b]生成出来的方案可以保存下来，随时改名、收藏、打标签、复制、导出成文件，并随时写回游戏；方案存在工具旁边，重装不丢。
+
 [b]1. 只换物品，不搬位置。[/b] 宝箱还是那个宝箱、掉落还是那个掉落，我们只改"里面放什么"。数量、概率、价格、库存、解锁条件、事件流程一律不动。[b]商店默认不参与[/b]（可在「更多设置」里开启；开启后也只换职业专属装备，价格、限量、解锁条件一律不动）。
 
 [b]2. 以职业说明书为准。[/b] 随机范围严格等于说明书里出现过的物品。换完之后翻开说明书，看到的就是这座世界的真实分布。
@@ -286,10 +288,10 @@ Two bugs found this way are worth mentioning, because they shaped the release:
 | **Name** | `Convergence Class Item Randomizer (法魂职业道具和装备随机器)` |
 | **Summary**（短，一行） | `Randomizes The Convergence's class-guide items — items only, locations untouched. Coherence controls tier span, cross-tier rate and weapon mix-in. The guides are rewritten to show where things really are.` |
 | **Category** | `Gameplay` → `Game Mechanics`（或 `Items`） |
-| **Version** | `1.0.0` |
+| **Version** | `1.1.0` |
 | **Requirements** | ELDEN RING（1.17.1）· The Convergence 法魂 V3.0.3（汉化本体 / YAFSML 注入式） |
 | **Permissions** | 见下方建议 ✓ |
-| **Files** | 上传 `ConvergenceClassItemRandomizer_v1.0.0.exe` ✓ |
+| **Files** | 上传 `ConvergenceClassItemRandomizer_v1.1.0.zip` ✓ |
 | **Credits / 必要的致谢** | 直接粘贴上面 Credits / 致谢 那一段 ✓（N 网有独立的 Credits 区块，建议贴那里 + 描述里也留一份 ✓） |
 
 ### Permissions 建议

@@ -36,7 +36,7 @@ My username: YOUR_NEXUS_USERNAME
 Mod page: MOD_PAGE_URL
 
 FILE IN QUESTION
-  ConvergenceClassItemRandomizer_v1.0.0.zip
+  ConvergenceClassItemRandomizer_v1.1.0.zip
   SHA-256 (zip): 56bdbbd21c0ba0bc804c64d29482fa7d233aadc57bd1ed71d5a71d8a33fa9d02
   It contains a single Windows executable, ConvergenceClassItemRandomizer.exe,
   SHA-256: 6c1cc9c4e7e0b5e307a0151ca03ea03173688233a5c42563b577a555ade1ab0a
@@ -103,7 +103,7 @@ YOUR_NEXUS_USERNAME
 mod 页：MOD_PAGE_URL
 
 【被隔离的文件】
-  ConvergenceClassItemRandomizer_v1.0.0.zip（附 SHA-256）
+  ConvergenceClassItemRandomizer_v1.1.0.zip（附 SHA-256）
   里面是一个 exe（附 SHA-256）
 
 【这是什么】
@@ -148,7 +148,7 @@ mod 页：MOD_PAGE_URL
 3. 哈希**已经填好了** ✓（就是这次发布包的真实值 ✓），不用再改 ✓
    - 若你之后重新打包过 ✓，用这条命令重新取一次 ✓：
      ```bat
-     certutil -hashfile ConvergenceClassItemRandomizer_v1.0.0.zip SHA256
+     certutil -hashfile ConvergenceClassItemRandomizer_v1.1.0.zip SHA256
      certutil -hashfile ConvergenceClassItemRandomizer.exe SHA256
      ```
 4. 等回信 ✓（一般几个工作日 ✓）。期间**别反复重传** ✗ —— 每次重传都会重新触发扫描 ✓

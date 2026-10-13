@@ -1,8 +1,8 @@
 # 后台重试上传发布包：GitHub REST API 抖动时（502）自动等待重试
 import hashlib, json, os, subprocess, sys, time
 
-REPO, TAG = "netori/fahun-randomizer", "v1.0.0"
-ZIP = "ConvergenceClassItemRandomizer_v1.0.0.zip"
+REPO, TAG = "netori/fahun-randomizer", "v1.1.0"
+ZIP = "ConvergenceClassItemRandomizer_v1.1.0.zip"
 SH = hashlib.sha256(open(ZIP, "rb").read()).hexdigest()
 print(f"[{time.strftime('%H:%M:%S')}] 目标: {ZIP}  {os.path.getsize(ZIP)/1048576:.2f} MB  sha256 {SH[:16]}", flush=True)
 

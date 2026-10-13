@@ -103,6 +103,7 @@ Click [b]Restore original[/b] in the same window. That is all it takes — the o
 ```
 [list]
 [*][b]Randomizes only the class-guide items[/b] — the set of items the mod's own guides describe. Nothing outside that list is touched.
+[*][b]Plan library.[/b] Save any generated plan, rename it, favourite it, tag it, duplicate it, export it as a file, and write it to the game again at any time. Plans are stored next to the tool, so reinstalling the tool never loses them.
 [*][b]Items only, never locations.[/b] Quantities, probabilities, prices, stock, unlock flags and event conditions are left exactly as they were. Merchants are off by default; when enabled in the advanced settings, only the item changes — prices, stock limits and unlock conditions stay exactly as they were.
 [*][b]One coherence slider[/b] that separately controls tier span, cross-tier rate and weapon mix-in — so "not too crazy" is something you can actually dial in, instead of a vague promise.
 [*][b]Four-tier model taken from the game itself[/b] — runes, armor parts and region progression. Armor and runes line up one-to-one, so a mixed pool stays sane.
@@ -292,6 +293,7 @@ And thanks to everyone who tries this and reports back — especially anyone who
 ```
 [list]
 [*][b]只随机「职业说明书」里出现的道具[/b]——范围就是法魂自己那份指南写到的那些，名单之外的东西一概不碰。
+[*][b]方案库。[/b]生成出来的方案可以保存下来，随时改名、收藏、打标签、复制、导出成文件，并随时写回游戏；方案存放在工具旁边，重装工具不会丢。
 [*][b]只换物品，不搬位置。[/b] 数量、概率、价格、库存、解锁条件、事件条件全部原样保留；商店默认不参与，可在「更多设置」里开启（开启后价格、限量、解锁条件仍然不动）。
 [*][b]一个合理度旋钮[/b]，分别控制越档幅度、越档率和武器掺入比例——"别太离谱"是一个能调出来的东西，不是一句承诺。
 [*][b]四级档位取自游戏本身[/b]：卢恩阶位、护甲部位、地区推进度。护甲与卢恩逐档一一对应，混池也不乱。

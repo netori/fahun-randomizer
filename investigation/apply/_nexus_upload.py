@@ -14,7 +14,7 @@
 
      python _nexus_upload.py --check
      python _nexus_upload.py --list --mod-id 1234567
-     python _nexus_upload.py --mod-id 1234567 --file xxx.exe --name "显示名" --version 1.0.0
+     python _nexus_upload.py --mod-id 1234567 --file xxx.exe --name "显示名" --version 1.1.0
 
    流程（对应 N 网规范里的四步）：
      ① POST /uploads                       建上传会话 → 拿 presigned_url
@@ -108,7 +108,7 @@ def main():
     ap.add_argument("--mod-id", help="mod 页地址里的数字（创建 mod 必须先在网页做）")
     ap.add_argument("--file", help="要上传的文件路径")
     ap.add_argument("--name", help="文件显示名（不给就用文件名）")
-    ap.add_argument("--version", default="1.0.0", help="版本号")
+    ap.add_argument("--version", default="1.1.0", help="版本号")
     ap.add_argument("--desc", default="", help="文件说明")
     ap.add_argument("--category", default="main",
                     choices=["main", "optional", "miscellaneous", "old_version", "archived"],

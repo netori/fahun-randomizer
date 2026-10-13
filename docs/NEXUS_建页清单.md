@@ -9,7 +9,7 @@
 
 | 需要的东西 | 文件 / 位置 | 状态 |
 |---|---|---|
-| 上传的包 | `ConvergenceClassItemRandomizer_v1.0.0.zip`（15.5 MB ✓ 含 exe + README.txt ✓） | ✓ 已打好 |
+| 上传的包 | `ConvergenceClassItemRandomizer_v1.1.0.zip`（15.5 MB ✓ 含 exe + README.txt ✓） | ✓ 已打好 |
 | 备用（如果你想只传 exe） | `ConvergenceClassItemRandomizer.exe` | ✓ |
 | 简介文字 | 本文件第 2 步直接粘 ✓ | ✓ |
 | 详细描述 | [NEXUS_发布文案.md](NEXUS_发布文案.md) 里的**英文版**（BBCode ✓） | ✓ |
@@ -57,7 +57,7 @@ Gameplay
 
 ### ⑥ Version（版本）
 ```
-1.0.0
+1.1.0
 ```
 
 ### ⑦ Requirements（前置要求）
@@ -75,11 +75,11 @@ No
 
 ## 第 3 步 · 上传文件
 
-- **File**（文件）：选 `ConvergenceClassItemRandomizer_v1.0.0.zip` ✓
-- **File name**（显示名）：`Convergence Class Item Randomizer v1.0.0` ✓
-- **File version**：`1.0.0` ✓
+- **File**（文件）：选 `ConvergenceClassItemRandomizer_v1.1.0.zip` ✓
+- **File name**（显示名）：`Convergence Class Item Randomizer v1.1.0` ✓
+- **File version**：`1.1.0` ✓
 - **File category**：`Main files` ✓
-- **Description**（这一项的文件说明）：`Convergence Class Item Randomizer v1.0.0 — Chinese-localized build only.` ✓
+- **Description**（这一项的文件说明）：`Convergence Class Item Randomizer v1.1.0 — Chinese-localized build only.` ✓
 
 > ⚠️ 传完可能显示 **"Your upload is being processed"** 并**卡住一会儿** ✓ —— 这是 N 网的老毛病 ✓，
 > **别反复点** ✗。等 5 分钟 ✓；还不动就刷新页面看看 Files 标签下有没有 ✓。
@@ -133,7 +133,7 @@ FromSoftware & Bandai Namco — ELDEN RING.
 - [ ] Summary 前两句能看出「**items only**」和「**Chinese-localized build only**」✓
 - [ ] Description 开头有 **Language notice** ✓
 - [ ] Category = **Gameplay** ✓
-- [ ] 版本 `1.0.0` ✓
+- [ ] 版本 `1.1.0` ✓
 - [ ] 文件传上去了，Files 标签下**能看到** ✓
 - [ ] Permissions 四项填了 ✓ Credit 里列了法魂 ✓
 - [ ] 至少**一张截图** ✓

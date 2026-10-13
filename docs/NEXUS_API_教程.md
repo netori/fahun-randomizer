@@ -74,7 +74,7 @@ https://www.nexusmods.com/settings/api-keys
 
 ```
 ① POST /uploads
-   body: {"size_bytes": 16526580, "filename": "ConvergenceClassItemRandomizer_v1.0.0.exe"}
+   body: {"size_bytes": 16526580, "filename": "ConvergenceClassItemRandomizer_v1.1.0.exe"}
    → 返回 { id: "上传会话id", presigned_url: "https://...." }
 
 ② PUT <presigned_url>
@@ -86,7 +86,7 @@ https://www.nexusmods.com/settings/api-keys
 
 ④ POST /mod-files
    body: {"upload_id": "...", "mod_id": "你的mod数字id", "name": "Convergence Class Item Randomizer",
-          "version": "1.0.0", "description": "...", "file_category": "main"}
+          "version": "1.1.0", "description": "...", "file_category": "main"}
    → 文件出现在 mod 页的 Files 标签下
 ```
 
@@ -121,9 +121,9 @@ python investigation\apply\_nexus_upload.py --check
 :: 正式上传到 mod 的文件区
 python investigation\apply\_nexus_upload.py ^
   --mod-id 1234567 ^
-  --file ConvergenceClassItemRandomizer_v1.0.0.exe ^
+  --file ConvergenceClassItemRandomizer_v1.1.0.exe ^
   --name "Convergence Class Item Randomizer" ^
-  --version 1.0.0 ^
+  --version 1.1.0 ^
   --desc "Chinese-localized build only. See description." ^
   --category main
 ```
