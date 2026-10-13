@@ -332,8 +332,8 @@ class App:
     def __init__(self, root):
         self.root = root
         root.title("法魂职业道具和装备随机器")
-        root.geometry("980x740")
-        root.minsize(900, 680)
+        root.geometry("1180x820")          # 两页都需要宽度
+        root.minsize(1020, 720)
         self.engine = None
         self.plan = None
         self.pools = None
@@ -356,15 +356,52 @@ class App:
 
     # ══════════ 界面 ══════════
     def _build(self):
-        mid = tkfont.Font(family="Microsoft YaHei UI", size=11, weight="bold")
-
-        # 标题
-        head = ttk.Frame(self.root, padding=(16, 12, 16, 4))
+        """一屏两页：顶部标题 + 两个页签（随机设置 / 方案库）"""
+        head = ttk.Frame(self.root, padding=(16, 12, 16, 2))
         head.pack(fill="x")
         ttk.Label(head, text="法魂职业道具和装备随机器", style="Title.TLabel").pack(side="left")
+        ttk.Label(head, text="只换物品、不搬位置；随时可以一键还原",
+                  style="Hint.TLabel").pack(side="left", padx=(12, 0), pady=(6, 0))
 
-        body = ttk.Frame(self.root, padding=(16, 4, 16, 8))
-        body.pack(fill="both", expand=True)
+        self.nb = ttk.Notebook(self.root)
+        self.nb.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        self.page_set = ttk.Frame(self.nb)
+        self.nb.add(self.page_set, text="  ⚙ 随机设置  ")
+        self.page_lib = ttk.Frame(self.nb, padding=(10, 8, 10, 4))
+        self.nb.add(self.page_lib, text="  📚 方案库  ")
+        self._build_settings(self._scrollable(self.page_set))
+        self._build_library(self.page_lib)
+
+    def _scrollable(self, parent):
+        """给一页加竖向滚动，返回放内容的 frame。
+
+        为什么需要：把「更多设置」和「详细记录」都展开时，内容比窗口高 —— 不滚动的话
+        Tk 会把最后几块**压扁**（实测只剩 1 像素高），看着就是坏的。"""
+        outer = ttk.Frame(parent)
+        outer.pack(fill="both", expand=True)
+        canvas = tk.Canvas(outer, bg=BG, highlightthickness=0, borderwidth=0,
+                           yscrollincrement=24)
+        vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        inner = ttk.Frame(canvas, padding=(2, 4, 10, 10))
+        win = canvas.create_window((0, 0), window=inner, anchor="nw")
+        canvas.configure(yscrollcommand=vsb.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+        inner.bind("<Configure>", lambda _e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win, width=e.width))
+
+        def wheel(e):
+            canvas.yview_scroll(int(-1 * (e.delta / 120)), "units")
+
+        # 只在鼠标进这一页时接管滚轮，走了就还回去（否则会影响另一页的列表）
+        outer.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", wheel))
+        outer.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
+        self.page_set_inner = inner
+        return inner
+
+    # ── 页 1 · 随机设置 ──
+    def _build_settings(self, body):
+        mid = tkfont.Font(family="Microsoft YaHei UI", size=11, weight="bold")
 
         # ── 第 1 步 ──
         s1 = ttk.LabelFrame(body, text=" 第 1 步 · 随机项目 ", padding=(12, 8))
@@ -489,6 +526,12 @@ class App:
                            relief="flat", highlightthickness=1,
                            highlightbackground=EDGE, highlightcolor=GOLD)
         self.txt.pack(fill="both", expand=True, pady=(8, 0))
+
+    # ── 页 2 · 方案库 ──
+    def _build_library(self, body):
+        """方案库页（第 3 步接线；这一版先占位，避免页签点开是空的）"""
+        ttk.Label(body, text="方案库正在接线：左边列表 + 右边详情。",
+                  style="Hint.TLabel").pack(anchor="w")
 
     def _picked_doms(self):
         return [d for d in ("rune", "armor", "weapon") if self.doms[d].get()]
@@ -1201,12 +1244,20 @@ def audit_light_widgets(root, limit=0.80):
     return bad
 
 
+# 页 1 上必须存在的控件（拆页签时最容易漏掉几个）——「功能没少」的机械证据
+SETTINGS_WIDGETS = ("b_gen", "b_dep", "lbl_env", "cb_mode", "lbl_combo", "lbl_coh", "lbl_cohtxt",
+                    "lbl_den", "checks", "tbl", "txt", "summary", "status", "adv", "detail",
+                    "doms", "mode", "seed", "coherence", "density", "sets", "shadow", "guide",
+                    "shops")
+
+
 def uicheck():
     """只建界面不进入事件循环（自动化测试用）。
 
-    这是施工单第五节每步都要过的闸门：界面建得起来 + 用的是 clam 主题 + 扫不到白块。"""
+    这是施工单第五节每步都要过的闸门：界面建得起来 + 用的是 clam 主题 + 扫不到白块
+    + 两页页签都在 + 页 1 的控件一个不少。"""
     root = tk.Tk()
-    App(root)
+    app = App(root)
     root.update_idletasks()
     root.update()
     st = ttk.Style(root)
@@ -1215,7 +1266,27 @@ def uicheck():
     print(f"UICHECK: 主题 {theme} ｜ 窗口 {root.winfo_width()}x{root.winfo_height()} ｜ 亮块 {len(bad)} 处")
     for cls, path, col in bad[:10]:
         print(f"   ✗ 疑似白块：{cls} {path} 背景 {col}")
-    ok = (theme == "clam") and not bad
+
+    problems = []
+    tabs = [str(app.nb.tab(t, "text")).strip() for t in app.nb.tabs()]
+    print(f"   页签：{' ｜ '.join(tabs)}")
+    if len(tabs) != 2:
+        problems.append(f"页签不是两个：{tabs}")
+    for want, page in (("随机设置", app.page_set), ("方案库", app.page_lib)):
+        if not any(want in t for t in tabs):
+            problems.append(f"缺页签：{want}")
+        if not str(page).startswith(str(app.nb)):
+            problems.append(f"{want} 页不在页签控件里")
+    missing = [a for a in SETTINGS_WIDGETS if not hasattr(app, a)]
+    print(f"   页 1 控件：{len(SETTINGS_WIDGETS) - len(missing)}/{len(SETTINGS_WIDGETS)}")
+    if missing:
+        problems.append("页 1 缺控件：" + ", ".join(missing))
+
+    if theme != "clam":
+        problems.append(f"主题不是 clam：{theme}")
+    ok = not problems and not bad
+    for p in problems:
+        print(f"   ✗ {p}")
     print("UICHECK PASS: 界面构建成功" if ok else "UICHECK FAIL: 见上面的问题")
     root.destroy()
     return 0 if ok else 1
