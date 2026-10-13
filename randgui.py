@@ -3,7 +3,7 @@
 #   · 只换物品，不搬位置；随时可一键还原
 #   · 同一种子 = 完全一样的结果
 #   · 命令行：--selftest 自检 ｜ --uicheck 只建界面不显示（供自动化测试）｜ --deploy plan.csv 部署
-import importlib.util, json, os, queue, random, shutil, sys, threading
+import importlib.util, json, os, queue, random, re, shutil, sys, threading, time
 import tkinter as tk
 from tkinter import messagebox, ttk
 from tkinter import font as tkfont
@@ -228,6 +228,106 @@ def plain_summary(plan, items, engine):
     return stat
 
 
+# ══════════════════════════════════════════════════════════════════════
+#  暗色金主题（法环味）—— 施工图见 docs/界面改版_方案库.md 第四节
+# ══════════════════════════════════════════════════════════════════════
+#  为什么必须 clam：vista / winnative 会**忽略**你设的 background / foreground，
+#  界面上会一半暗一半亮。clam 是唯一会老实使用给定颜色的内置主题。
+BG        = "#1a1714"   # 窗口底
+PANEL     = "#232019"   # 面板底
+FIELD     = "#15130f"   # 输入框底
+EDGE      = "#3a342a"   # 边框 / 分隔
+FG        = "#e8e2d4"   # 主文字
+SUB       = "#a09884"   # 次文字（说明 / 时间）
+GOLD      = "#c9a227"   # 金：标题 / 强调 / 选中
+GOLD_LT   = "#e8c860"   # 亮金
+DANGER    = "#b6433c"   # 危险（删除 / 还原）
+SEL_BG    = "#3d3527"   # 选中行底
+DISABLED  = "#6b665c"   # 禁用文字
+BTN_HOVER = "#302a20"   # 按钮悬停
+BTN_PRESS = "#3d3527"   # 按钮按下
+HEAD_BG   = "#2b261d"   # 表头
+WHITE     = "#ffffff"   # 选中时的文字
+
+FONT_UI = ("Microsoft YaHei UI", 10)
+
+
+def apply_theme(root):
+    """装上整套暗色金主题。**必须在建控件之前调用**，否则先建的还是旧配色。
+
+    ttk 控件认这套样式表；不带 ttk 的 tk 控件（tk.Text 等）不认 —— 那些只能逐个传
+    bg= / fg=，见 _build 里的 tk.Text。uicheck() 会扫一遍亮块，漏了就报出来。
+    """
+    st = ttk.Style(root)
+    try:
+        st.theme_use("clam")                      # 唯一老实使用给定颜色的内置主题
+    except tk.TclError:
+        pass
+    try:
+        st.configure(".", font=FONT_UI)
+    except tk.TclError:
+        pass
+    st.configure(".", background=BG, foreground=FG, fieldbackground=FIELD, bordercolor=EDGE)
+    for w in ("TFrame", "TLabelframe", "TLabel", "TPanedwindow"):
+        st.configure(w, background=BG, foreground=FG)
+    st.configure("TLabelframe.Label", background=BG, foreground=GOLD)      # 分组框标题
+    st.configure("TButton", background=PANEL, foreground=FG, borderwidth=1, focusthickness=0)
+    st.map("TButton", background=[("active", BTN_HOVER), ("pressed", BTN_PRESS)],
+           foreground=[("disabled", DISABLED)])
+    st.configure("Accent.TButton", background=GOLD, foreground=BG, font=("Microsoft YaHei UI", 10, "bold"))
+    st.map("Accent.TButton", background=[("active", GOLD_LT), ("pressed", GOLD)],
+           foreground=[("disabled", DISABLED)])
+    st.configure("Danger.TButton", background=PANEL, foreground=DANGER)
+    st.map("Danger.TButton", background=[("active", DANGER), ("pressed", DANGER)],
+           foreground=[("active", WHITE), ("pressed", WHITE), ("disabled", DISABLED)])
+    st.configure("Link.TButton", background=BG, foreground=GOLD, borderwidth=0, focusthickness=0, padding=(2, 0))
+    st.map("Link.TButton", background=[("active", BG)], foreground=[("active", GOLD_LT)])
+    st.configure("TEntry", fieldbackground=FIELD, foreground=FG, insertcolor=FG, bordercolor=EDGE)
+    st.map("TEntry", bordercolor=[("focus", GOLD)])
+    st.configure("TCombobox", fieldbackground=FIELD, background=PANEL, foreground=FG,
+                 arrowcolor=GOLD, bordercolor=EDGE)
+    st.map("TCombobox", fieldbackground=[("readonly", FIELD)], foreground=[("readonly", FG)],
+           bordercolor=[("focus", GOLD)])
+    # clam 的勾选框指示器不吃 indicatorcolor：它的元素选项是 indicatorbackground /
+    # indicatorforeground（勾是用前景色画上去的），边框另有 upper/lowerbordercolor。
+    st.configure("TCheckbutton", background=BG, foreground=FG,
+                 indicatorbackground=FIELD, indicatorforeground=GOLD,
+                 upperbordercolor=EDGE, lowerbordercolor=EDGE,
+                 indicatormargin=(0, 1, 6, 1), focuscolor=BG)
+    st.map("TCheckbutton", background=[("active", BG)], foreground=[("disabled", DISABLED)],
+           indicatorbackground=[("selected", GOLD), ("active", "selected", GOLD_LT)],
+           indicatorforeground=[("selected", BG)])
+    # Scale 的滑块与槽是分开的两个东西：background=滑块、troughcolor=槽，配完要实际拖一下看
+    st.configure("TScale", background=GOLD, troughcolor=FIELD,
+                 lightcolor=GOLD, darkcolor=GOLD, bordercolor=EDGE, focuscolor=BG)
+    st.configure("TNotebook", background=BG, bordercolor=EDGE, tabmargins=(6, 4, 6, 0))
+    st.configure("TNotebook.Tab", background=PANEL, foreground=SUB, padding=(18, 8))
+    st.map("TNotebook.Tab", background=[("selected", BG)], foreground=[("selected", GOLD)])
+    st.configure("Treeview", background=PANEL, fieldbackground=PANEL, foreground=FG,
+                 bordercolor=EDGE, rowheight=34)
+    st.configure("Treeview.Heading", background=HEAD_BG, foreground=GOLD, relief="flat")  # 最容易漏
+    st.map("Treeview.Heading", background=[("active", BTN_HOVER)])
+    st.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", WHITE)])
+    for sb in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
+        st.configure(sb, background=PANEL, troughcolor=BG, bordercolor=EDGE, arrowcolor=SUB)
+        st.map(sb, background=[("active", SEL_BG)])
+    st.configure("TSeparator", background=EDGE)
+    # 文字风格（tk 控件不认样式表；ttk 的用这些名字）
+    st.configure("Title.TLabel", background=BG, foreground=GOLD,
+                 font=("Microsoft YaHei UI", 13, "bold"))
+    st.configure("Sub.TLabel", background=BG, foreground=SUB)
+    st.configure("Hint.TLabel", background=BG, foreground=SUB, font=("Microsoft YaHei UI", 9))
+    st.configure("Gold.TLabel", background=BG, foreground=GOLD_LT)
+    st.configure("Status.TLabel", background=BG, foreground=GOLD_LT)
+    st.configure("Bad.TLabel", background=BG, foreground=DANGER)
+    st.configure("Card.TFrame", background=PANEL)
+    try:
+        root.configure(bg=BG)
+    except tk.TclError:
+        pass
+    return st
+
+
 class App:
     def __init__(self, root):
         self.root = root
@@ -242,6 +342,7 @@ class App:
         self.q = queue.Queue()
         self._adv_open = False
         self._detail_open = False
+        apply_theme(root)                 # 必须在建任何控件之前
         self._build()
         root.after(120, self._pump)
         self.log(f"工作区: {WORKSPACE or '未找到（请把本程序放到 随机mod 目录下）'}")
@@ -255,19 +356,12 @@ class App:
 
     # ══════════ 界面 ══════════
     def _build(self):
-        base = ttk.Style()
-        try:
-            base.configure(".", font=("Microsoft YaHei UI", 10))
-        except Exception:
-            pass
-        big = tkfont.Font(family="Microsoft YaHei UI", size=13, weight="bold")
         mid = tkfont.Font(family="Microsoft YaHei UI", size=11, weight="bold")
-        hint = tkfont.Font(family="Microsoft YaHei UI", size=9)
 
         # 标题
         head = ttk.Frame(self.root, padding=(16, 12, 16, 4))
         head.pack(fill="x")
-        ttk.Label(head, text="法魂职业道具和装备随机器", font=big).pack(side="left")
+        ttk.Label(head, text="法魂职业道具和装备随机器", style="Title.TLabel").pack(side="left")
 
         body = ttk.Frame(self.root, padding=(16, 4, 16, 8))
         body.pack(fill="both", expand=True)
@@ -290,7 +384,7 @@ class App:
                                     state="readonly", width=34)
         self.cb_mode.pack(side="left", padx=(4, 0))
         self.cb_mode.bind("<<ComboboxSelected>>", lambda _e: self._combo_hint())
-        self.lbl_combo = ttk.Label(s1, text="", font=hint, foreground="#777")
+        self.lbl_combo = ttk.Label(s1, text="", style="Hint.TLabel")
         self.lbl_combo.pack(anchor="w", pady=(4, 0))
 
         # ── 第 2 步 ──
@@ -304,8 +398,8 @@ class App:
                   ).pack(side="left", padx=(0, 10))
         self.lbl_coh.pack(side="left")
         r4 = ttk.Frame(s2); r4.pack(fill="x", pady=(2, 0))
-        ttk.Label(r4, text="100%  同等级互换      0%  等级完全放开", font=hint, foreground="#777").pack(side="left")
-        self.lbl_cohtxt = ttk.Label(s2, text="", foreground="#0a6")
+        ttk.Label(r4, text="100%  同等级互换      0%  等级完全放开", style="Hint.TLabel").pack(side="left")
+        self.lbl_cohtxt = ttk.Label(s2, text="", style="Hint.TLabel")
         self.lbl_cohtxt.pack(anchor="w", pady=(2, 0))
 
         # ── 第 3 步 ──
@@ -320,7 +414,7 @@ class App:
         # ── 本地文件识别 ──
         s4 = ttk.LabelFrame(body, text=" 本地文件 ", padding=(12, 6))
         s4.pack(fill="x", pady=(0, 8))
-        self.lbl_env = ttk.Label(s4, text="检测中…", font=hint, justify="left")
+        self.lbl_env = ttk.Label(s4, text="检测中…", style="Hint.TLabel", justify="left")
         self.lbl_env.pack(anchor="w")
         r6 = ttk.Frame(s4); r6.pack(fill="x", pady=(4, 0))
         ttk.Button(r6, text="重新检测", width=10, command=self.refresh_env).pack(side="left")
@@ -337,7 +431,8 @@ class App:
         ttk.Button(bar, text="更多设置", command=self._toggle_adv, width=12).pack(side="left")
         ttk.Button(bar, text="方案库", command=self.open_library, width=10).pack(side="left", padx=(8, 0))
         self.status = tk.StringVar(value="先点 ① 生成方案，看过结果再点 ② 写入游戏")
-        ttk.Label(bar, textvariable=self.status, foreground="#06c").pack(side="left", padx=14)
+        self.lbl_status = ttk.Label(bar, textvariable=self.status, style="Status.TLabel")
+        self.lbl_status.pack(side="left", padx=14)
 
         # ── 结果（人话）──
         s4 = ttk.LabelFrame(body, text=" 这次会改什么 ", padding=(12, 8))
@@ -359,7 +454,7 @@ class App:
         ttk.Checkbutton(a2b, text="商店里的职业装备也一起换",
                         variable=self.shops).pack(side="left")
         ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
-                  foreground="#888").pack(side="left", padx=8)
+                  style="Hint.TLabel").pack(side="left", padx=8)
         a2 = ttk.Frame(self.adv); a2.pack(fill="x", pady=(6, 0))
         ttk.Label(a2, text="改动比例").pack(side="left")
         self.density = tk.DoubleVar(value=1.0)
@@ -388,7 +483,11 @@ class App:
         for c, w, t in (("old", 150, "原来"), ("new", 150, "换成"), ("where", 330, "在哪里")):
             self.tbl.heading(c, text=t); self.tbl.column(c, width=w)
         self.tbl.pack(fill="both", expand=True)
-        self.txt = tk.Text(self.detail, height=6, wrap="word")
+        # tk.Text 不带 ttk，样式表管不到它 —— 颜色必须逐个传（否则是一块白）
+        self.txt = tk.Text(self.detail, height=6, wrap="word", bg=FIELD, fg=FG,
+                           insertbackground=FG, selectbackground=SEL_BG, selectforeground=WHITE,
+                           relief="flat", highlightthickness=1,
+                           highlightbackground=EDGE, highlightcolor=GOLD)
         self.txt.pack(fill="both", expand=True, pady=(8, 0))
 
     def _picked_doms(self):
@@ -463,7 +562,11 @@ class App:
                 if kind == "log":
                     self.txt.insert("end", str(payload) + "\n"); self.txt.see("end")
                 elif kind == "status":
-                    self.status.set(str(payload))
+                    _s = str(payload)
+                    self.status.set(_s)
+                    # 失败一律用危险色，成功/进行中用亮金（暗底上的可读性靠这个）
+                    self.lbl_status.config(style="Bad.TLabel" if _s.startswith(("失败", "出错", "写入失败", "还原出错"))
+                                           else "Status.TLabel")
                 elif kind == "done":
                     self.b_gen.config(state="normal")
                 elif kind == "table":
@@ -507,11 +610,11 @@ class App:
         for name, ok, note, path in rows:
             lines.append(("✓ " if ok else "✗ ") + f"{name}　{note}")
         self.env_rows = rows
-        self.lbl_env.config(text="\n".join(lines), foreground="#333")
+        self.lbl_env.config(text="\n".join(lines), style="Hint.TLabel")
         bad = [n for n, ok, _note, _p in rows if not ok]
         self.b_dep.config(state="normal" if not bad else "disabled")
         if bad:
-            self.lbl_env.config(foreground="#a00")
+            self.lbl_env.config(style="Bad.TLabel")
 
     def pick_mod(self):
         from tkinter import filedialog
@@ -691,7 +794,7 @@ class App:
         w.title("方案库"); w.geometry("1080x620"); w.transient(self.root)
         tip = ttk.Label(w, text="方案存在 MOD 目录下的 plans 文件夹里（不放进 exe，重装不丢）。"
                                 "双击一行可看该方案详情；「写入游戏」走的是和主界面同一个写入流程。",
-                        foreground="#555", wraplength=1040, justify="left")
+                        style="Hint.TLabel", wraplength=1040, justify="left")
         tip.pack(fill="x", padx=12, pady=(10, 4))
 
         body = ttk.Frame(w); body.pack(fill="both", expand=True, padx=12)
@@ -723,7 +826,7 @@ class App:
         btn("刷新", self._lib_refresh, 7)
         btn("打开文件夹", self._lib_open, 11)
         self._lib_status = tk.StringVar(value="")
-        ttk.Label(w, textvariable=self._lib_status, foreground="#06c").pack(anchor="w", padx=14, pady=(0, 10))
+        ttk.Label(w, textvariable=self._lib_status, style="Status.TLabel").pack(anchor="w", padx=14, pady=(0, 10))
         self._lib_refresh()
         w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "_libwin", None)))
 
@@ -1016,18 +1119,106 @@ class App:
             self.q.put(("status", f"还原出错：{e}"))
 
 
-def uicheck():
-    """只建界面不进入事件循环（自动化测试用）"""
-    root = tk.Tk()
+def _lum(col):
+    """把 #rrggbb 算成亮度 0~1；认不出的颜色返回 None（那些也算可疑）"""
+    h = (col or "").strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return None
     try:
-        ttk.Style().theme_use("vista")
+        r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    except ValueError:
+        return None
+    return (0.299 * r + 0.587 * g + 0.114 * b) / 255.0
+
+
+# 主题色板：这些颜色一定是故意的（金色滑块之类的亮色不该被当成白块）
+THEME_COLORS = {c.lower() for c in
+                (BG, PANEL, FIELD, EDGE, FG, SUB, GOLD, GOLD_LT, DANGER, SEL_BG,
+                 BTN_HOVER, BTN_PRESS, HEAD_BG, DISABLED)}
+
+_TTK_STYLE_OF = {
+    "TLabel": "TLabel", "TFrame": "TFrame", "TLabelframe": "TLabelframe", "TButton": "TButton",
+    "TEntry": "TEntry", "TCombobox": "TCombobox", "TCheckbutton": "TCheckbutton",
+    "TRadiobutton": "TRadiobutton", "TScale": "TScale", "TNotebook": "TNotebook",
+    "Treeview": "Treeview", "TSpinbox": "TSpinbox", "TProgressbar": "TProgressbar",
+}
+# 「有输入区」的控件：真正露出来的是 fieldbackground，不是 background
+_CTL_WITH_FIELD = ("TEntry", "TCombobox", "Treeview", "TSpinbox", "TProgressbar")
+
+
+def _widget_colors(w, st):
+    """这个控件实际会用到的颜色（用来找白块）"""
+    cols = []
+    try:
+        bg = str(w.cget("background")).strip()
     except Exception:
-        pass
+        bg = ""                       # ttk 的多数控件没有 background 选项
+    if bg:
+        cols.append(bg)               # 显式设过的（tk 控件都是这一路）
+    if isinstance(w, ttk.Widget):
+        cls = w.winfo_class()
+        style = str(w.cget("style")).strip() or _TTK_STYLE_OF.get(cls, "")
+        if cls == "TScrollbar":
+            style = style or f"{str(w.cget('orient')).capitalize()}.TScrollbar"
+            opts = ("background", "troughcolor")
+        elif cls in _CTL_WITH_FIELD:
+            opts = ("fieldbackground", "background")
+        else:
+            opts = ("background",)
+        for opt in opts:
+            try:
+                v = str(st.lookup(style, opt)).strip()
+            except Exception:
+                v = ""
+            if v:
+                cols.append(v)
+    return cols
+
+
+def audit_light_widgets(root, limit=0.80):
+    """扫出「暗色应用里的一块白」。
+
+    判定：颜色**不在**主题色板里，而且亮度超过 limit —— 认不出的颜色（SystemButtonFace
+    之类）同样算可疑。ttk 控件认样式表，不带 ttk 的（tk.Text / tk.Frame / tk.Label）不认，
+    只能逐个查背景色。"""
+    st = ttk.Style(root)
+    bad = []
+
+    def walk(w):
+        for c in w.winfo_children():
+            for col in _widget_colors(c, st):
+                if str(col).strip().lower() in THEME_COLORS:
+                    continue
+                L = _lum(col)
+                if L is None or L > limit:
+                    bad.append((c.winfo_class(), str(c), col))
+                    break
+            walk(c)
+
+    walk(root)
+    return bad
+
+
+def uicheck():
+    """只建界面不进入事件循环（自动化测试用）。
+
+    这是施工单第五节每步都要过的闸门：界面建得起来 + 用的是 clam 主题 + 扫不到白块。"""
+    root = tk.Tk()
     App(root)
     root.update_idletasks()
-    print("UICHECK PASS: 界面构建成功")
+    root.update()
+    st = ttk.Style(root)
+    theme = st.theme_use()
+    bad = audit_light_widgets(root)
+    print(f"UICHECK: 主题 {theme} ｜ 窗口 {root.winfo_width()}x{root.winfo_height()} ｜ 亮块 {len(bad)} 处")
+    for cls, path, col in bad[:10]:
+        print(f"   ✗ 疑似白块：{cls} {path} 背景 {col}")
+    ok = (theme == "clam") and not bad
+    print("UICHECK PASS: 界面构建成功" if ok else "UICHECK FAIL: 见上面的问题")
     root.destroy()
-    return 0
+    return 0 if ok else 1
 
 
 def selftest(seed=20261010):
@@ -1133,11 +1324,7 @@ def main():
     if "--uicheck" in sys.argv:
         return uicheck()
     root = tk.Tk()
-    try:
-        ttk.Style().theme_use("vista")
-    except Exception:
-        pass
-    App(root)
+    App(root)                      # App 起来时自己会装暗色金主题
     root.mainloop()
     return 0
 
