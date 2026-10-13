@@ -326,6 +326,11 @@ def apply_theme(root):
     st.configure("Status.TLabel", background=BG, foreground=GOLD_LT)
     st.configure("Bad.TLabel", background=BG, foreground=DANGER)
     st.configure("Card.TFrame", background=PANEL)
+    # 标签筹码（详情面板里的小方块）
+    st.configure("Chip.TLabel", background=PANEL, foreground=GOLD, padding=(6, 2),
+                 borderwidth=1, relief="solid", bordercolor=EDGE)
+    st.configure("ChipHot.TLabel", background=SEL_BG, foreground=GOLD_LT, padding=(6, 2),
+                 borderwidth=1, relief="solid", bordercolor=GOLD)
     try:
         root.configure(bg=BG)
     except tk.TclError:
@@ -573,19 +578,56 @@ class App:
         self.lib_sub = ttk.Label(right, text="左边点一行，这里就是它的全部信息", style="Hint.TLabel")
         self.lib_sub.pack(anchor="w", pady=(2, 8))
 
+        # ── 就地编辑：名字 / 备注 / 标签（点一下直接改，不再弹对话框）──
+        self._lib_filling = False
+        self.lib_name_e = self._lib_field(right, "名字")
+        self.lib_note_e = self._lib_field(right, "备注")
+        for e, fn in ((self.lib_name_e, self._lib_commit_name),
+                      (self.lib_note_e, self._lib_commit_note)):
+            e.bind("<Return>", fn)
+            e.bind("<FocusOut>", fn)
+        trow = ttk.Frame(right)
+        trow.pack(fill="x", pady=3)
+        ttk.Label(trow, text="标签", width=7, style="Sub.TLabel").pack(side="left")
+        self.lib_tag_box = ttk.Frame(trow)
+        self.lib_tag_box.pack(side="left", fill="x", expand=True)
+        self.lib_tag_entry = ttk.Entry(trow, width=8)
+        ttk.Button(trow, text="+ 添加", style="Link.TButton",
+                   command=self._lib_tag_add).pack(side="left", padx=(6, 0))
+        self.lib_tag_entry.bind("<Return>", lambda _e: self._lib_tag_commit())
+        self.lib_tag_entry.bind("<Escape>", lambda _e: self.lib_tag_entry.pack_forget())
+
+        ttk.Separator(right, orient="horizontal").pack(fill="x", pady=(8, 6))
         self.lib_vals = {}
-        for key, label in (("note", "备注"), ("tags", "标签"), ("seed", "种子"),
-                           ("coh", "合理度"), ("density", "改动比例"), ("shops", "商店参与"),
-                           ("rows", "改动行"), ("engine", "引擎版本"), ("fp", "指纹"),
-                           ("time", "保存时间")):
+        for key, label in (("seed", "种子"), ("coh", "合理度"), ("density", "改动比例"),
+                           ("shops", "商店参与"), ("rows", "改动行"), ("engine", "引擎版本"),
+                           ("fp", "指纹"), ("time", "保存时间")):
             row = ttk.Frame(right)
             row.pack(fill="x", pady=1)
             ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
             v = ttk.Label(row, text="—", wraplength=280, justify="left")
             v.pack(side="left", fill="x", expand=True)
             self.lib_vals[key] = v
+        # 底部一行：说清刚刚发生了什么（删除后可以从这里进回收站）
+        self.lib_toast = ttk.Label(right, text="", style="Hint.TLabel", wraplength=340,
+                                   justify="left")
+        self.lib_toast.pack(side="bottom", anchor="w", pady=(8, 0))
         self._lib_cur = None
         self._lib_metas = {}
+
+    def _lib_field(self, parent, label):
+        """详情面板里的一行可编辑字段"""
+        row = ttk.Frame(parent)
+        row.pack(fill="x", pady=2)
+        ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
+        e = ttk.Entry(row)
+        e.pack(side="left", fill="x", expand=True)
+        return e
+
+    def _lib_toast(self, text, bad=False):
+        """底部的状态行（不弹窗）"""
+        if hasattr(self, "lib_toast"):
+            self.lib_toast.config(text=text, style="Bad.TLabel" if bad else "Gold.TLabel")
 
     # ── 方案库：读 ──
     def _lib_mod(self):
@@ -654,6 +696,9 @@ class App:
         if not pid:
             self.lib_title.config(text="还没有方案")
             self.lib_sub.config(text="先到「随机设置」生成一套，再点「保存到方案库」")
+            self._lib_set_field(self.lib_name_e, "")
+            self._lib_set_field(self.lib_note_e, "")
+            self._lib_tags_render([])
             for v in self.lib_vals.values():
                 v.config(text="—")
             return
@@ -661,6 +706,9 @@ class App:
         if m and m.get("broken"):
             self.lib_title.config(text=f"{m['name']}（文件损坏）")
             self.lib_sub.config(text=m.get("error", ""))
+            self._lib_set_field(self.lib_name_e, "")
+            self._lib_set_field(self.lib_note_e, "")
+            self._lib_tags_render([])
             for v in self.lib_vals.values():
                 v.config(text="—")
             return
@@ -679,8 +727,9 @@ class App:
         self.lib_title.config(text=d.get("name") or pid)
         self.lib_sub.config(text="下面这些都能就地改：点一下直接编辑")
         t = d.get("modified") or d.get("created") or 0
-        self.lib_vals["note"].config(text=d.get("note") or "（空）")
-        self.lib_vals["tags"].config(text="、".join(d.get("tags") or []) or "（空）")
+        self._lib_set_field(self.lib_name_e, d.get("name") or "")
+        self._lib_set_field(self.lib_note_e, d.get("note") or "")
+        self._lib_tags_render(d.get("tags") or [])
         self.lib_vals["seed"].config(text=str(d.get("seed", "—")))
         self.lib_vals["coh"].config(text=f"{float(cfg.get('coherence', 0)) * 100:.0f}%")
         self.lib_vals["density"].config(text=f"{float(cfg.get('density', 1)) * 100:.0f}%")
@@ -689,6 +738,107 @@ class App:
         self.lib_vals["engine"].config(text=str(d.get("engine_version") or "—"))
         self.lib_vals["fp"].config(text=(d.get("fingerprint") or "")[:16] + "…")
         self.lib_vals["time"].config(text=time.strftime("%Y-%m-%d %H:%M", time.localtime(t)))
+
+    def _lib_set_field(self, entry, text):
+        """程序填字段：期间把提交闸门关上，免得 FocusOut 把界面刷新当成"用户改完了" """
+        self._lib_filling = True
+        try:
+            entry.delete(0, "end")
+            entry.insert(0, text)
+        finally:
+            self._lib_filling = False
+
+    # ── 方案库：就地改（名字 / 备注 / 标签）──
+    def _lib_commit_name(self, *_a):
+        if self._lib_filling or not self._lib_cur:
+            return
+        pl = self._lib_mod()
+        if not pl:
+            return
+        new = self.lib_name_e.get().strip()
+        old = (self._lib_metas.get(self._lib_cur) or {}).get("name", "")
+        if not new:
+            self._lib_toast("名字不能空着，已改回去", bad=True)
+            self._lib_show(self._lib_cur)
+            return
+        if new == old:
+            return
+        try:
+            pl.rename_plan(self._lib_cur, new)
+        except Exception as e:
+            self._lib_toast(f"改名没成功：{e}", bad=True)
+            self._lib_show(self._lib_cur)
+            return
+        self._lib_refresh(keep=self._lib_cur)
+        self._lib_toast(f"已改名：{old} → {new}")
+
+    def _lib_commit_note(self, *_a):
+        if self._lib_filling or not self._lib_cur:
+            return
+        pl = self._lib_mod()
+        if not pl:
+            return
+        new = self.lib_note_e.get()
+        try:
+            old = (pl.get_plan(self._lib_cur).get("note") or "")
+        except Exception:
+            return
+        if new == old:
+            return
+        try:
+            pl.set_meta(self._lib_cur, note=new)
+        except Exception as e:
+            self._lib_toast(f"备注没存上：{e}", bad=True)
+            return
+        self._lib_refresh(keep=self._lib_cur)
+        self._lib_toast("备注已保存" if new else "备注已清空")
+
+    def _lib_tags_render(self, tags):
+        """标签画成一排小筹码：点筹码上的 ✕ 就去掉"""
+        for w in self.lib_tag_box.winfo_children():
+            w.destroy()
+        for tg in tags:
+            chip = ttk.Label(self.lib_tag_box, text=f"{tg} ✕", style="Chip.TLabel")
+            chip.pack(side="left", padx=(0, 4))
+            chip.bind("<Button-1>", lambda _e, t=tg: self._lib_tag_del(t))
+            chip.bind("<Enter>", lambda _e, c=chip: c.config(style="ChipHot.TLabel"))
+            chip.bind("<Leave>", lambda _e, c=chip: c.config(style="Chip.TLabel"))
+        if not tags:
+            ttk.Label(self.lib_tag_box, text="（还没标签）", style="Hint.TLabel").pack(side="left")
+
+    def _lib_tag_add(self):
+        """就地加标签：在原地冒出一个输入框，回车就加上（不弹对话框）"""
+        self.lib_tag_entry.pack(side="right", padx=(6, 0))
+        self.lib_tag_entry.delete(0, "end")
+        self.lib_tag_entry.focus_set()
+
+    def _lib_tag_commit(self):
+        txt = self.lib_tag_entry.get().strip()
+        self.lib_tag_entry.pack_forget()
+        if not txt or not self._lib_cur:
+            return
+        self._lib_tag_del(txt, add=True)
+
+    def _lib_tag_del(self, tag, add=False):
+        """加成 / 去掉一个标签（同一套写回）"""
+        pl = self._lib_mod()
+        if not pl or not self._lib_cur:
+            return
+        try:
+            d = pl.get_plan(self._lib_cur)
+        except Exception as e:
+            self._lib_toast(f"读不出来：{e}", bad=True)
+            return
+        tags = [t for t in (d.get("tags") or []) if t != tag]
+        if add:
+            tags.append(tag)
+        try:
+            pl.set_meta(self._lib_cur, tags=tags)
+        except Exception as e:
+            self._lib_toast(f"标签没存上：{e}", bad=True)
+            return
+        self._lib_refresh(keep=self._lib_cur)
+        self._lib_toast(f"已添加标签「{tag}」" if add else f"已去掉标签「{tag}」")
 
     def open_library(self):
         """跳到方案库页（原来是一扇独立小窗）"""
@@ -1277,6 +1427,54 @@ def uitest():
         root.update()
         ck("切到方案库页会自动刷新", len(app.lib_tree.get_children()) == 3,
            f"{len(app.lib_tree.get_children())} 行")
+
+        # ── 第 4 步：就地编辑名字 / 备注 / 标签 ──
+        app.lib_tree.selection_set(a["id"])
+        app._lib_on_select()
+        root.update()
+        app.lib_name_e.delete(0, "end")
+        app.lib_name_e.insert(0, "稳健档（改过）")
+        app._lib_commit_name()
+        root.update()
+        ck("就地改名：列表里也跟着变",
+           app.lib_tree.item(a["id"], "text").startswith("★ 稳健档（改过）"),
+           repr(app.lib_tree.item(a["id"], "text")[:14]))
+        ck("就地改名：详情标题跟着变", app.lib_title.cget("text") == "稳健档（改过）",
+           repr(app.lib_title.cget("text")))
+        ck("就地改名：落到盘上", planlib.get_plan(a["id"])["name"] == "稳健档（改过）",
+           repr(planlib.get_plan(a["id"])["name"]))
+
+        app.lib_note_e.delete(0, "end")
+        app.lib_note_e.insert(0, "改成这条备注")
+        app._lib_commit_note()
+        root.update()
+        ck("就地改备注：落到实处", planlib.get_plan(a["id"])["note"] == "改成这条备注",
+           repr(planlib.get_plan(a["id"])["note"]))
+
+        app._lib_tag_del("第二标签", add=True)
+        root.update()
+        ck("就地改标签：加一个", planlib.get_plan(a["id"])["tags"] == ["主打", "第二标签"],
+           repr(planlib.get_plan(a["id"])["tags"]))
+        ck("就地改标签：筹码画出来了", len(app.lib_tag_box.winfo_children()) == 2,
+           f"{len(app.lib_tag_box.winfo_children())} 个筹码")
+        app._lib_tag_del("主打")
+        root.update()
+        ck("就地改标签：去掉一个", planlib.get_plan(a["id"])["tags"] == ["第二标签"],
+           repr(planlib.get_plan(a["id"])["tags"]))
+
+        # 重新读一遍：改完的东西要还在（这正是「刷新仍在」）
+        app._lib_refresh()
+        root.update()
+        ck("改完刷新仍在", app.lib_name_e.get() == "稳健档（改过）"
+           and app.lib_note_e.get() == "改成这条备注",
+           f"{app.lib_name_e.get()!r} / {app.lib_note_e.get()!r}")
+
+        # 空名字要被挡回去，不能把方案改成没名字
+        app.lib_name_e.delete(0, "end")
+        app._lib_commit_name()
+        root.update()
+        ck("空名字被挡回去", planlib.get_plan(a["id"])["name"] == "稳健档（改过）",
+           repr(planlib.get_plan(a["id"])["name"]))
 
         root.destroy()
         root = None
