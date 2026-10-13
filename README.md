@@ -44,7 +44,7 @@
 
 ### 3) 合理度是一个旋钮，但它的含义必须精确
 
-滑块 0~100%，但它同时控制**三件互相独立的事**（完整定义见 [随机化算法规格.md](随机化算法规格.md)）：
+滑块 0~100%，但它同时控制**三件互相独立的事**（完整定义见 [随机化算法规格.md](docs/随机化算法规格.md)）：
 
 | 合理度 | 越档幅度（最远能跨几档） | 越档率（多少东西真的跨） | 武器掺进混池的比例 |
 |---|---|---|---|
@@ -192,13 +192,23 @@ regulation.bin
 ## 八、目录结构
 
 ```
-ConvergenceClassItemRandomizer.exe   发布包（本工具）
 randgui.py                           界面（本工具的唯一入口）
-随机化算法规格.md                     算法规格：定义、公式、不变量、已确认的取舍
-RELEASE_v1.0.0.md                    发布说明
-investigation/
-  apply/                             原生读写管线（AES/DCX/BND4/PARAM/FMG）+ 写入与审计
+build_exe.py                         一键打包：同步资源 → 清缓存 → 打包 → 空目录自检
+_bundle_stub.py                      仅供打包器分析依赖用（不参与运行）
+ConvergenceClassItemRandomizer.spec  打包配置（含运行时资源与依赖声明）
+README.md                            本文件
+
+investigation/                       核心：原生读写管线与随机引擎
+  apply/                             AES/DCX/BND4/PARAM/FMG 读写 + 写入与审计
   randomization-dryrun/scripts/      随机引擎（池构造、合理度、守恒校验）
   randomization-catalog/             从职业说明书解析出的道具与地点目录
-  …
+
+_assets/                             发布版运行时资源（打包时打进 exe，首次运行释放到 exe 旁）
+docs/                                文档与素材（与运行无关）
+  NEXUS_*.md                         N 网发布用：页面字段 / 整段版 / 建页清单 / 复核邮件 / API 教程
+  随机化算法规格.md                   算法规格：定义、公式、不变量、已确认的取舍
+  使用说明（给玩家）.md               面向玩家的玩法说明
+  RELEASE_v1.0.0.md                  发布说明
+  素材/ 宣传素材/                     截图与横幅
+  dev/                               开发期的一次性补丁脚本（留档）
 ```
