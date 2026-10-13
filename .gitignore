@@ -70,3 +70,6 @@ investigation/**/evidence/
 # 发布版运行时资源：必须入库（打包要用，且 *.csv 规则会挡住里面的数据文件）
 !_assets/
 !_assets/**
+
+# 例外：打包用的 spec 必须入库 —— 否则别人克隆下来无法按 BUILD 步骤复现 exe
+!ConvergenceClassItemRandomizer.spec
