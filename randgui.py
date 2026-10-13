@@ -197,6 +197,7 @@ names_for_join = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
 MODES = [("mix", "全部混合（勾选的几类一起混）"),
          ("sep", "各自随机（勾选的几类各随各的）")]
 ITEMS = [("rune", "卢恩"), ("armor", "护甲"), ("weapon", "装备（武器）")]
+LIBSORT = ("时间（新→旧）", "名字", "改动量（多→少）")
 
 
 # ── 把计划翻译成人话 ──
@@ -565,20 +566,49 @@ class App:
         wrap.columnconfigure(1, weight=38, minsize=320)
         wrap.rowconfigure(0, weight=1)
 
-        # ── 左：列表 ──
+        # ── 左：搜索/排序 + 列表（空库时这里是引导文案）──
         left = ttk.Frame(wrap)
         left.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
-        self.lib_tree = ttk.Treeview(left, columns=(), show="tree", selectmode="browse",
-                                     style="Lib.Treeview")
+        bar = ttk.Frame(left)
+        bar.pack(fill="x", pady=(0, 6))
+        ttk.Label(bar, text="🔍", style="Sub.TLabel").pack(side="left")
+        self.lib_search = tk.StringVar(value="")
+        e_search = ttk.Entry(bar, textvariable=self.lib_search)
+        e_search.pack(side="left", fill="x", expand=True, padx=(6, 8))
+        e_search.bind("<KeyRelease>", lambda _e: self._lib_refresh())
+        e_search.bind("<Escape>", lambda _e: (self.lib_search.set(""), self._lib_refresh()))
+        ttk.Label(bar, text="排序", style="Hint.TLabel").pack(side="left", padx=(0, 4))
+        self.lib_sort = tk.StringVar(value=LIBSORT[0])
+        cb = ttk.Combobox(bar, textvariable=self.lib_sort, values=list(LIBSORT),
+                          state="readonly", width=13)
+        cb.pack(side="left")
+        cb.bind("<<ComboboxSelected>>", lambda _e: self._lib_refresh())
+
+        self.lib_box = ttk.Frame(left)
+        self.lib_box.pack(fill="both", expand=True)
+        self.lib_list = ttk.Frame(self.lib_box)
+        self.lib_list.pack(fill="both", expand=True)
+        self.lib_tree = ttk.Treeview(self.lib_list, columns=(), show="tree",
+                                     selectmode="browse", style="Lib.Treeview")
         self.lib_tree.column("#0", width=520, stretch=True)
-        vsb = ttk.Scrollbar(left, orient="vertical", command=self.lib_tree.yview)
+        vsb = ttk.Scrollbar(self.lib_list, orient="vertical", command=self.lib_tree.yview)
         self.lib_tree.configure(yscrollcommand=vsb.set)
         self.lib_tree.pack(side="left", fill="both", expand=True)
         vsb.pack(side="right", fill="y")
         self.lib_tree.tag_configure("star", foreground=GOLD_LT)
         self.lib_tree.tag_configure("broken", foreground=DANGER)
         self.lib_tree.bind("<<TreeviewSelect>>", lambda _e: self._lib_on_select())
-        self.lib_tree.bind("<Button-3>", self._lib_ctx)          # 右键菜单
+        self.lib_tree.bind("<Button-3>", self._lib_ctx)                  # 右键菜单
+        self.lib_tree.bind("<Double-1>", lambda _e: self._lib_write())   # 双击=写入游戏
+        # 空状态：一个方案都没有时，告诉人下一步该干什么
+        self.lib_empty = ttk.Frame(self.lib_box)
+        ttk.Label(self.lib_empty, text="还没有方案", style="Gold.TLabel").pack(anchor="w", pady=(20, 4))
+        self.lib_empty_txt = ttk.Label(
+            self.lib_empty, style="Hint.TLabel", justify="left", wraplength=380,
+            text="先到「随机设置」生成一套（点 ① 生成随机方案），\n再点那里的「💾 保存到方案库」，方案就会出现在这里。")
+        self.lib_empty_txt.pack(anchor="w")
+        ttk.Button(self.lib_empty, text="去「随机设置」生成一套", style="Link.TButton",
+                   command=lambda: self.nb.select(self.page_set)).pack(anchor="w", pady=(8, 0))
 
         # ── 右：详情（常驻，取代弹窗）──
         right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(12, 8))
@@ -619,9 +649,13 @@ class App:
             v.pack(side="left", fill="x", expand=True)
             self.lib_vals[key] = v
         # 底部一行：说清刚刚发生了什么（删除后可以从这里进回收站）
-        self.lib_toast = ttk.Label(right, text="", style="Hint.TLabel", wraplength=340,
+        trow2 = ttk.Frame(right)
+        trow2.pack(side="bottom", fill="x", pady=(8, 0))
+        self.lib_toast = ttk.Label(trow2, text="", style="Hint.TLabel", wraplength=250,
                                    justify="left")
-        self.lib_toast.pack(side="bottom", anchor="w", pady=(8, 0))
+        self.lib_toast.pack(side="left", fill="x", expand=True)
+        self.lib_trash_btn = ttk.Button(trow2, text="打开回收站", style="Link.TButton",
+                                        command=self._lib_open_trash)
         # 详情面板的动作按钮（对着选中的那一个方案干活）
         act = ttk.Frame(right)
         act.pack(side="bottom", fill="x", pady=(10, 0))
@@ -651,10 +685,15 @@ class App:
         e.pack(side="left", fill="x", expand=True)
         return e
 
-    def _lib_toast(self, text, bad=False):
-        """底部的状态行（不弹窗）"""
+    def _lib_toast(self, text, bad=False, trash=False):
+        """底部的状态行（不弹窗）。trash=True 时旁边给出「打开回收站」"""
         if hasattr(self, "lib_toast"):
             self.lib_toast.config(text=text, style="Bad.TLabel" if bad else "Gold.TLabel")
+        if hasattr(self, "lib_trash_btn"):
+            if trash:
+                self.lib_trash_btn.pack(side="left", padx=(6, 0))
+            else:
+                self.lib_trash_btn.pack_forget()
 
     # ── 方案库：读 ──
     def _lib_mod(self):
@@ -682,6 +721,7 @@ class App:
         except Exception as e:
             self.lib_hint.config(text=f"读取方案库出错：{e}", style="Bad.TLabel")
             return
+        total = len(metas)
         self._lib_metas = {}
         seen = set()
         dup = []
@@ -694,7 +734,15 @@ class App:
             seen.add(m["id"])
             kept.append(m)
             self._lib_metas[m["id"]] = m
-        metas = kept
+        metas = self._lib_filter(kept)
+        # 收藏永远排最前，其余按选的排序来
+        key = self.lib_sort.get() if hasattr(self, "lib_sort") else LIBSORT[0]
+        if key == "名字":
+            metas.sort(key=lambda m: (not m.get("star"), str(m.get("name") or "")))
+        elif key.startswith("改动量"):
+            metas.sort(key=lambda m: (not m.get("star"), -(m.get("changed") or 0)))
+        else:
+            metas.sort(key=lambda m: (not m.get("star"), -(m.get("modified") or 0)))
         for m in metas:
             if m.get("broken"):
                 tv.insert("", "end", iid=m["id"], tags=("broken",),
@@ -708,15 +756,30 @@ class App:
             star = "★ " if m.get("star") else "   "
             tv.insert("", "end", iid=m["id"], tags=("star",) if m.get("star") else (),
                       text=f"{star}{m['name']}\n     {' · '.join(line2)}")
-        n = len(metas)
         broken = sum(1 for m in metas if m.get("broken"))
         tail = f"（其中 {broken} 个文件损坏）" if broken else ""
         if dup:
             tail += f"（有 {len(dup)} 份 id 撞车被跳过：{'、'.join(dup[:3])}）"
+        kw = self.lib_search.get().strip() if hasattr(self, "lib_search") else ""
+        if kw:
+            tail += f" ｜ 筛「{kw}」出 {len(metas)}/{total}"
         self.lib_hint.config(
-            text=f"共 {n} 个方案{tail} ｜ 存在 MOD 目录的 plans 文件夹里：{pl.plans_dir()}",
+            text=f"共 {total} 个方案{tail} ｜ 存在 MOD 目录的 plans 文件夹里：{pl.plans_dir()}",
             style="Hint.TLabel")
+        # 空状态：一个方案都没有 → 换成引导文案；只是搜不到 → 说清是筛没了
         kids = tv.get_children()
+        if not kids:
+            if total == 0:
+                self.lib_empty_txt.config(
+                    text="先到「随机设置」生成一套（点 ① 生成随机方案），\n"
+                         "再点那里的「💾 保存到方案库」，方案就会出现在这里。")
+            else:
+                self.lib_empty_txt.config(text=f"没有匹配「{kw}」的方案。\n换个词，或把搜索框清空。")
+            self.lib_list.pack_forget()
+            self.lib_empty.pack(fill="both", expand=True)
+        else:
+            self.lib_empty.pack_forget()
+            self.lib_list.pack(fill="both", expand=True)
         if kids:
             pick = want if want in kids else kids[0]
             tv.selection_set(pick)
@@ -725,6 +788,24 @@ class App:
             self._lib_show(pick)
         else:
             self._lib_show(None)
+
+    def _lib_filter(self, metas):
+        """按搜索框过滤：名字 / 标签 / 备注 命中任意一个就留下"""
+        kw = (self.lib_search.get() if hasattr(self, "lib_search") else "").strip().lower()
+        if not kw:
+            return list(metas)
+        out = []
+        for m in metas:
+            hay = " ".join([str(m.get("name") or ""), str(m.get("note") or ""),
+                            " ".join(m.get("tags") or [])]).lower()
+            if kw in hay:
+                out.append(m)
+        return out
+
+    def _lib_search_set(self, text):
+        """给自动化用：等价于在搜索框里敲字（走的是同一条刷新路）"""
+        self.lib_search.set(text)
+        self._lib_refresh()
 
     def _lib_on_select(self):
         sel = self.lib_tree.selection()
@@ -985,7 +1066,21 @@ class App:
             return
         self._lib_cur = None
         self._lib_refresh()
-        self._lib_toast(f"已把「{name}」移到回收站")
+        # 删完不是"啪一下没了"：说清进了回收站，并且给一个能立刻打开的入口
+        self._lib_toast(f"已把「{name}」移到回收站", trash=True)
+
+    def _lib_open_trash(self):
+        """打开 plans/.trash —— 手滑了还能自己捞回来"""
+        pl = self._lib_mod()
+        if not pl:
+            return
+        try:
+            d = os.path.join(pl.plans_dir(), ".trash")
+            if not os.path.isdir(d):
+                os.makedirs(d, exist_ok=True)
+            os.startfile(d)  # noqa
+        except Exception as e:
+            self._lib_toast(f"打不开回收站：{e}", bad=True)
 
     def _lib_export(self):
         from tkinter import filedialog
@@ -1857,6 +1952,11 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("删除：文件真进了回收站",
        os.path.isdir(trash) and any(a["id"] in f for f in os.listdir(trash)),
        str(os.listdir(trash) if os.path.isdir(trash) else "没有 .trash"))
+    # 这两条要紧接着删除检查：底部那行是"最新一件事"，后面的写入会把提示换掉
+    ck("删完给出了回收站入口", bool(app.lib_trash_btn.winfo_manager()),
+       f"manager={app.lib_trash_btn.winfo_manager()!r}")
+    ck("删完的提示说了回收站", "回收站" in app.lib_toast.cget("text"),
+       repr(app.lib_toast.cget("text")))
 
     # 写入游戏：真跑会动游戏文件，这里把"写入工人"换成记录器，验证走的是同一条流程
     called = {}
@@ -1888,6 +1988,72 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     menu.destroy()
     for want in ("写入游戏", "载入到设置", "改名", "收藏", "复制", "导出", "删除", "导入"):
         ck(f"右键菜单有「{want}」", any(want in x for x in labels), "；".join(labels))
+
+    # ── 第 6 步：搜索 / 排序 / 空状态 / 删除提示 ──
+    app._lib_search_set("放开")
+    ck("搜索：按名字筛", len(app.lib_tree.get_children()) == 1,
+       f"{len(app.lib_tree.get_children())} 行")
+    app._lib_search_set("不存在的词儿")
+    ck("搜索：筛没了就走空状态",
+       not app.lib_list.winfo_manager() and bool(app.lib_empty.winfo_manager()),
+       f"list={app.lib_list.winfo_manager()!r} empty={app.lib_empty.winfo_manager()!r}")
+    ck("搜索：空状态说清了是筛没了", "匹配" in app.lib_empty_txt.cget("text"),
+       repr(app.lib_empty_txt.cget("text")[:24]))
+    app._lib_search_set("")
+    ck("搜索：清空后列表回来",
+       bool(app.lib_list.winfo_manager()) and not app.lib_empty.winfo_manager(),
+       f"list={app.lib_list.winfo_manager()!r}")
+
+    app.lib_sort.set("名字")
+    app._lib_refresh()
+    kids = app.lib_tree.get_children()
+    names = [planlib.get_plan(k)["name"] for k in kids]
+    stars = [bool(planlib.get_plan(k).get("star")) for k in kids]
+    ok_order = (stars == sorted(stars, reverse=True)
+                and names == [n for _s, n in sorted(zip(stars, names), key=lambda p: (not p[0], p[1]))])
+    ck("排序：收藏优先、其余按名字", ok_order, "｜".join(names))
+    app.lib_sort.set("改动量（多→少）")
+    app._lib_refresh()
+    kids = app.lib_tree.get_children()
+    chs = [len(planlib.get_plan(k).get("rows") or []) for k in kids]
+    sts = [bool(planlib.get_plan(k).get("star")) for k in kids]
+    ok_ch = (sts == sorted(sts, reverse=True)
+             and chs == [c for _s, c in sorted(zip(sts, chs), key=lambda p: (not p[0], -p[1]))])
+    ck("排序：按改动量（收藏仍在前）", ok_ch, "｜".join(map(str, chs)))
+    app.lib_sort.set(LIBSORT[0])
+    app._lib_refresh()
+
+    # 双击 = 写入游戏（确认框自动答是，写入工人换成记录器）
+    # 注意：Tk 不让 event_generate 造 Double-1（双击由系统认），所以这里查"绑没绑" +
+    # 直接跑它所绑的那一个动作 —— 两件事合起来才是"双击一行 = 写入游戏"
+    called.clear()
+    App._deploy_worker = lambda self, plan, sync: called.update(plan=plan, sync=sync)
+    try:
+        kids = app.lib_tree.get_children()
+        app.lib_tree.selection_set(kids[0])
+        app._lib_on_select()
+        ck("双击：列表上绑了双击事件", any("Double" in s for s in app.lib_tree.bind()),
+           str(app.lib_tree.bind()))
+        app._lib_write()
+        for _ in range(12):
+            root.update()
+            time.sleep(0.02)
+    finally:
+        App._deploy_worker = real_worker
+    ck("双击那一下 = 写入游戏", bool(called.get("plan")), f"csv={called.get('plan')!r}")
+
+    # 整库空掉：空状态要给"下一步干什么"的引导
+    for f in os.listdir(tmp):
+        if f.endswith(".json"):
+            os.remove(os.path.join(tmp, f))
+    app._lib_search_set("")
+    ck("空库：换成引导文案", bool(app.lib_empty.winfo_manager()),
+       f"empty={app.lib_empty.winfo_manager()!r}")
+    ck("空库：引导去随机设置生成",
+       "随机设置" in app.lib_empty_txt.cget("text") and "保存到方案库" in app.lib_empty_txt.cget("text"),
+       repr(app.lib_empty_txt.cget("text")[:40]))
+    ck("空库：详情面板也回到空态", app.lib_title.cget("text") == "还没有方案",
+       repr(app.lib_title.cget("text")))
 
 
 def selftest(seed=20261010):
