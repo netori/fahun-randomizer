@@ -18,7 +18,7 @@
 
 【五条设计理念】
 
-一、只换物品，不搬位置。宝箱还是那个宝箱、掉落还是那个掉落，我们只改里面放什么。数量、概率、价格、库存、解锁条件、事件流程一律不动。商店完全不参与——商店牵扯解锁与库存，风险不成比例。
+一、只换物品，不搬位置。宝箱还是那个宝箱、掉落还是那个掉落，我们只改里面放什么。数量、概率、价格、库存、解锁条件、事件流程一律不动。商店默认不参与，可在「更多设置」里开启——开启后也只换职业专属装备，价格、限量、解锁条件一律不动。
 
 二、以职业说明书为准。随机范围严格等于说明书里出现过的物品；换完之后翻开说明书，看到的就是这座世界的真实分布。
 
@@ -50,7 +50,7 @@
 
 【主要特性】
 
-只随机职业说明书里出现的道具，名单之外一概不碰。只换物品不搬位置，数量、概率、价格、库存、解锁条件、事件条件全部原样保留，商店永不参与。一个合理度旋钮分别控制越档幅度、越档率和武器掺入比例——"别太离谱"是一个能调出来的东西，不是一句承诺。四级档位取自游戏本身（卢恩阶位、护甲部位、地区推进度），护甲与卢恩逐档一一对应，混池也不乱。法师/祷告护甲全程隔离，0% 也不例外。套装整组进出，不会只给你半套。说明书同步改写，物品名不动、只改地点，字体颜色排版与原版一致。种子确定、完全可复现。一键还原，随时可用。每次写入自动备份与自动审计；写入前还有一道复核，文件与方案对不上就直接中止，绝不写半成品。
+只随机职业说明书里出现的道具，名单之外一概不碰。只换物品不搬位置，数量、概率、价格、库存、解锁条件、事件条件全部原样保留，商店默认不参与，可在「更多设置」里开启（开启后价格、限量、解锁条件仍然不动）。一个合理度旋钮分别控制越档幅度、越档率和武器掺入比例——"别太离谱"是一个能调出来的东西，不是一句承诺。四级档位取自游戏本身（卢恩阶位、护甲部位、地区推进度），护甲与卢恩逐档一一对应，混池也不乱。法师/祷告护甲全程隔离，0% 也不例外。套装整组进出，不会只给你半套。说明书同步改写，物品名不动、只改地点，字体颜色排版与原版一致。种子确定、完全可复现。一键还原，随时可用。每次写入自动备份与自动审计；写入前还有一道复核，文件与方案对不上就直接中止，绝不写半成品。
 
 怎么测的：矩阵测试 90 组（15 配置 × 6 种子），覆盖守恒、可复现、法祷零违规；每一种配置都真实启动过一次游戏、确认能进主菜单；说明书八项审计，连审计本身也做了变异测试；另外冻结了一份基准方案，每次改引擎都逐行对比，防止"无意改动了随机结果"。
 
@@ -94,7 +94,7 @@
 
 [line]
 
-[b]Main features.[/b] Randomizes only the class-guide items — nothing outside that list is touched. Items only, never locations: quantities, probabilities, prices, stock, unlock flags and event conditions are left exactly as they were, and merchants never take part. One coherence slider separately controls tier span, cross-tier rate and weapon mix-in, so "not too crazy" is something you can actually dial in instead of a vague promise. The four-tier model is taken from the game itself (rune ranks, armor parts, region progression), and armor and runes line up one-to-one, so a mixed pool stays sane. Caster armor is isolated from melee armor at every setting. Sets are swapped as whole sets, so you never receive half of an armor set. The class guides are rewritten to show where things actually are, with names, fonts, colors and layout matching the original. Seed-based and reproducible: the same seed gives exactly the same world. One-click restore at any time, automatic backup and audit on every write, and a pre-write check that compares your files against the plan and refuses to write if they do not match. It was tested with a 90-run matrix (15 configurations × 6 seeds) covering conservation and reproducibility, every configuration actually launched to the main menu, an eight-check guide audit including an audit of the audit itself, and a frozen reference plan compared line by line on every engine change.
+[b]Main features.[/b] Randomizes only the class-guide items — nothing outside that list is touched. Items only, never locations: quantities, probabilities, prices, stock, unlock flags and event conditions are left exactly as they were, and merchants are off by default; when enabled in the advanced settings, only the item changes — prices, stock limits and unlock conditions stay exactly as they were. One coherence slider separately controls tier span, cross-tier rate and weapon mix-in, so "not too crazy" is something you can actually dial in instead of a vague promise. The four-tier model is taken from the game itself (rune ranks, armor parts, region progression), and armor and runes line up one-to-one, so a mixed pool stays sane. Caster armor is isolated from melee armor at every setting. Sets are swapped as whole sets, so you never receive half of an armor set. The class guides are rewritten to show where things actually are, with names, fonts, colors and layout matching the original. Seed-based and reproducible: the same seed gives exactly the same world. One-click restore at any time, automatic backup and audit on every write, and a pre-write check that compares your files against the plan and refuses to write if they do not match. It was tested with a 90-run matrix (15 configurations × 6 seeds) covering conservation and reproducibility, every configuration actually launched to the main menu, an eight-check guide audit including an audit of the audit itself, and a frozen reference plan compared line by line on every engine change.
 
 [line]
 

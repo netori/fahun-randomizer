@@ -48,7 +48,7 @@ You are still a Glintstone Sorcerer — but [b]this run, your key items are some
 
 [size=5][b]Design principles[/b][/size]
 
-[b]1. Items only — never locations.[/b] A chest stays a chest, a drop stays a drop. We only change [i]what[/i] is inside. Quantities, probabilities, prices, stock, unlock flags and event flow are never touched. [b]Merchants are excluded entirely[/b] (shops involve unlock/stock logic — the risk isn't worth the reward).
+[b]1. Items only — never locations.[/b] A chest stays a chest, a drop stays a drop. We only change [i]what[/i] is inside. Quantities, probabilities, prices, stock, unlock flags and event flow are never touched. [b]Merchants are off by default.[/b] An advanced option can also include the class gear that merchants sell — and even then only the item changes: prices, stock limits and unlock conditions are never touched (verified byte-for-byte).
 
 [b]2. The class guides are the source of truth.[/b] The randomization pool is exactly the set of items listed in the mod's own class guides. After randomizing, opening the guide shows you the [b]true[/b] state of the world.
 
@@ -206,7 +206,7 @@ Two bugs found this way are worth mentioning, because they shaped the release:
 
 [size=5][b]设计理念[/b][/size]
 
-[b]1. 只换物品，不搬位置。[/b] 宝箱还是那个宝箱、掉落还是那个掉落，我们只改"里面放什么"。数量、概率、价格、库存、解锁条件、事件流程一律不动。[b]商店完全不参与[/b]（商店牵扯解锁与库存，风险不成比例）。
+[b]1. 只换物品，不搬位置。[/b] 宝箱还是那个宝箱、掉落还是那个掉落，我们只改"里面放什么"。数量、概率、价格、库存、解锁条件、事件流程一律不动。[b]商店默认不参与[/b]（可在「更多设置」里开启；开启后也只换职业专属装备，价格、限量、解锁条件一律不动）。
 
 [b]2. 以职业说明书为准。[/b] 随机范围严格等于说明书里出现过的物品。换完之后翻开说明书，看到的就是这座世界的真实分布。
 
