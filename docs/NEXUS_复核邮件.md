@@ -37,9 +37,9 @@ Mod page: MOD_PAGE_URL
 
 FILE IN QUESTION
   ConvergenceClassItemRandomizer_v1.1.0.zip
-  SHA-256 (zip): 56bdbbd21c0ba0bc804c64d29482fa7d233aadc57bd1ed71d5a71d8a33fa9d02
+  SHA-256 (zip): 066ab2bc9b49aea05189713f242b8c644a7899ea3e80f09cc5cbf3d0f24b56b7
   It contains a single Windows executable, ConvergenceClassItemRandomizer.exe,
-  SHA-256: 6c1cc9c4e7e0b5e307a0151ca03ea03173688233a5c42563b577a555ade1ab0a
+  SHA-256: 97ef57facad6b7b32e221e0267bc8a23514e354b852a69ed2e8495119241c9fc
 
 WHAT IT IS
   A single-player utility for ELDEN RING. It randomizes the items listed in the
