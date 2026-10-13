@@ -2,7 +2,8 @@
 #
 #   · 只换物品，不搬位置；随时可一键还原
 #   · 同一种子 = 完全一样的结果
-#   · 命令行：--selftest 自检 ｜ --uicheck 只建界面不显示（供自动化测试）｜ --deploy plan.csv 部署
+#   · 命令行：--selftest 自检 ｜ --uicheck 只建界面不显示（供自动化测试）
+#              --uitest 方案库交互自检 ｜ --planlib 方案库模块自检 ｜ --deploy plan.csv 部署
 import importlib.util, json, os, queue, random, re, shutil, sys, threading, time
 import tkinter as tk
 from tkinter import messagebox, ttk
@@ -308,6 +309,10 @@ def apply_theme(root):
     st.configure("Treeview.Heading", background=HEAD_BG, foreground=GOLD, relief="flat")  # 最容易漏
     st.map("Treeview.Heading", background=[("active", BTN_HOVER)])
     st.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", WHITE)])
+    # 方案库的列表：两行式行（第一行名字、第二行小字摘要），行高要够
+    st.configure("Lib.Treeview", background=PANEL, fieldbackground=PANEL, foreground=FG,
+                 borderwidth=0, rowheight=46)
+    st.map("Lib.Treeview", background=[("selected", SEL_BG)], foreground=[("selected", WHITE)])
     for sb in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
         st.configure(sb, background=PANEL, troughcolor=BG, bordercolor=EDGE, arrowcolor=SUB)
         st.map(sb, background=[("active", SEL_BG)])
@@ -371,6 +376,7 @@ class App:
         self.nb.add(self.page_lib, text="  📚 方案库  ")
         self._build_settings(self._scrollable(self.page_set))
         self._build_library(self.page_lib)
+        self.nb.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
     def _scrollable(self, parent):
         """给一页加竖向滚动，返回放内容的 frame。
@@ -527,11 +533,171 @@ class App:
                            highlightbackground=EDGE, highlightcolor=GOLD)
         self.txt.pack(fill="both", expand=True, pady=(8, 0))
 
-    # ── 页 2 · 方案库 ──
+    # ══════════ 页 2 · 方案库 ══════════
     def _build_library(self, body):
-        """方案库页（第 3 步接线；这一版先占位，避免页签点开是空的）"""
-        ttk.Label(body, text="方案库正在接线：左边列表 + 右边详情。",
-                  style="Hint.TLabel").pack(anchor="w")
+        """方案库页：左边常驻列表 + 右边常驻详情面板。
+
+        这一页取代了原来的「一扇独立小窗 + 一排 12 个按钮 + 每个动作都弹对话框」：
+        列表行是两行式（第一行名字，第二行小字摘要），详情常驻右侧、单击哪行就显示哪行。"""
+        head = ttk.Frame(body)
+        head.pack(fill="x", pady=(0, 6))
+        ttk.Label(head, text="方案库", style="Title.TLabel").pack(side="left")
+        self.lib_hint = ttk.Label(head, text="", style="Hint.TLabel")
+        self.lib_hint.pack(side="left", padx=(14, 0), pady=(8, 0))
+
+        wrap = ttk.Frame(body)
+        wrap.pack(fill="both", expand=True)
+        wrap.columnconfigure(0, weight=62, minsize=340)
+        wrap.columnconfigure(1, weight=38, minsize=320)
+        wrap.rowconfigure(0, weight=1)
+
+        # ── 左：列表 ──
+        left = ttk.Frame(wrap)
+        left.grid(row=0, column=0, sticky="nsew", padx=(0, 12))
+        self.lib_tree = ttk.Treeview(left, columns=(), show="tree", selectmode="browse",
+                                     style="Lib.Treeview")
+        self.lib_tree.column("#0", width=520, stretch=True)
+        vsb = ttk.Scrollbar(left, orient="vertical", command=self.lib_tree.yview)
+        self.lib_tree.configure(yscrollcommand=vsb.set)
+        self.lib_tree.pack(side="left", fill="both", expand=True)
+        vsb.pack(side="right", fill="y")
+        self.lib_tree.tag_configure("star", foreground=GOLD_LT)
+        self.lib_tree.tag_configure("broken", foreground=DANGER)
+        self.lib_tree.bind("<<TreeviewSelect>>", lambda _e: self._lib_on_select())
+
+        # ── 右：详情（常驻，取代弹窗）──
+        right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(12, 8))
+        right.grid(row=0, column=1, sticky="nsew")
+        self.lib_title = ttk.Label(right, text="还没选方案", style="Title.TLabel", wraplength=300)
+        self.lib_title.pack(anchor="w")
+        self.lib_sub = ttk.Label(right, text="左边点一行，这里就是它的全部信息", style="Hint.TLabel")
+        self.lib_sub.pack(anchor="w", pady=(2, 8))
+
+        self.lib_vals = {}
+        for key, label in (("note", "备注"), ("tags", "标签"), ("seed", "种子"),
+                           ("coh", "合理度"), ("density", "改动比例"), ("shops", "商店参与"),
+                           ("rows", "改动行"), ("engine", "引擎版本"), ("fp", "指纹"),
+                           ("time", "保存时间")):
+            row = ttk.Frame(right)
+            row.pack(fill="x", pady=1)
+            ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
+            v = ttk.Label(row, text="—", wraplength=280, justify="left")
+            v.pack(side="left", fill="x", expand=True)
+            self.lib_vals[key] = v
+        self._lib_cur = None
+        self._lib_metas = {}
+
+    # ── 方案库：读 ──
+    def _lib_mod(self):
+        """加载 planlib；拿不到就如实说明，不抛异常"""
+        try:
+            sys.path.insert(0, os.path.join(WORKSPACE or "", "investigation", "apply"))
+            import planlib
+            return planlib
+        except Exception as e:
+            self.lib_hint.config(text=f"方案库不可用：{e}", style="Bad.TLabel")
+            return None
+
+    def _lib_refresh(self, keep=None):
+        """重新读一遍方案库。keep=要保住的选中项（没有就选第一行）"""
+        if not hasattr(self, "lib_tree"):
+            return
+        pl = self._lib_mod()
+        if not pl:
+            return
+        want = keep or self._lib_cur
+        tv = self.lib_tree
+        tv.delete(*tv.get_children())
+        try:
+            metas = pl.list_plans()
+        except Exception as e:
+            self.lib_hint.config(text=f"读取方案库出错：{e}", style="Bad.TLabel")
+            return
+        self._lib_metas = {m["id"]: m for m in metas}
+        for m in metas:
+            if m.get("broken"):
+                tv.insert("", "end", iid=m["id"], tags=("broken",),
+                          text=f"⚠ {m['name']}（文件损坏）\n    {m.get('error', '')[:60]}")
+                continue
+            when = time.strftime("%m-%d %H:%M", time.localtime(m.get("modified") or 0))
+            line2 = [when, f"{m.get('changed', 0)}/{m.get('rows', 0)} 行",
+                     "商店 " + ("开" if (m.get("cfg") or {}).get("shops") else "关")]
+            if m.get("tags"):
+                line2.append("·".join(m["tags"]))
+            star = "★ " if m.get("star") else "   "
+            tv.insert("", "end", iid=m["id"], tags=("star",) if m.get("star") else (),
+                      text=f"{star}{m['name']}\n     {' · '.join(line2)}")
+        n = len(metas)
+        broken = sum(1 for m in metas if m.get("broken"))
+        tail = f"（其中 {broken} 个文件损坏）" if broken else ""
+        self.lib_hint.config(
+            text=f"共 {n} 个方案{tail} ｜ 存在 MOD 目录的 plans 文件夹里：{pl.plans_dir()}",
+            style="Hint.TLabel")
+        kids = tv.get_children()
+        if kids:
+            pick = want if want in kids else kids[0]
+            tv.selection_set(pick)
+            tv.focus(pick)
+            tv.see(pick)
+            self._lib_show(pick)
+        else:
+            self._lib_show(None)
+
+    def _lib_on_select(self):
+        sel = self.lib_tree.selection()
+        if sel:
+            self._lib_show(sel[0])
+
+    def _lib_show(self, pid):
+        """把某个方案摊在右侧详情面板上"""
+        self._lib_cur = pid
+        if not pid:
+            self.lib_title.config(text="还没有方案")
+            self.lib_sub.config(text="先到「随机设置」生成一套，再点「保存到方案库」")
+            for v in self.lib_vals.values():
+                v.config(text="—")
+            return
+        m = self._lib_metas.get(pid)
+        if m and m.get("broken"):
+            self.lib_title.config(text=f"{m['name']}（文件损坏）")
+            self.lib_sub.config(text=m.get("error", ""))
+            for v in self.lib_vals.values():
+                v.config(text="—")
+            return
+        pl = self._lib_mod()
+        if not pl:
+            return
+        try:
+            d = pl.get_plan(pid)
+        except Exception as e:
+            self.lib_title.config(text="读不出来")
+            self.lib_sub.config(text=str(e))
+            return
+        cfg = d.get("cfg") or {}
+        rows = d.get("rows") or []
+        changed = sum(1 for r in rows if r.get("old") != r.get("new"))
+        self.lib_title.config(text=d.get("name") or pid)
+        self.lib_sub.config(text="下面这些都能就地改：点一下直接编辑")
+        t = d.get("modified") or d.get("created") or 0
+        self.lib_vals["note"].config(text=d.get("note") or "（空）")
+        self.lib_vals["tags"].config(text="、".join(d.get("tags") or []) or "（空）")
+        self.lib_vals["seed"].config(text=str(d.get("seed", "—")))
+        self.lib_vals["coh"].config(text=f"{float(cfg.get('coherence', 0)) * 100:.0f}%")
+        self.lib_vals["density"].config(text=f"{float(cfg.get('density', 1)) * 100:.0f}%")
+        self.lib_vals["shops"].config(text="是" if cfg.get("shops") else "否")
+        self.lib_vals["rows"].config(text=f"{changed} / {len(rows)}")
+        self.lib_vals["engine"].config(text=str(d.get("engine_version") or "—"))
+        self.lib_vals["fp"].config(text=(d.get("fingerprint") or "")[:16] + "…")
+        self.lib_vals["time"].config(text=time.strftime("%Y-%m-%d %H:%M", time.localtime(t)))
+
+    def open_library(self):
+        """跳到方案库页（原来是一扇独立小窗）"""
+        self.nb.select(self.page_lib)
+        self._lib_refresh()
+
+    def _on_tab_changed(self, *_a):
+        if hasattr(self, "lib_tree") and self.nb.select() == str(self.page_lib):
+            self._lib_refresh()
 
     def _picked_doms(self):
         return [d for d in ("rune", "armor", "weapon") if self.doms[d].get()]
@@ -819,267 +985,6 @@ class App:
         if os.path.isdir(p):
             os.startfile(p)  # noqa
 
-    # ─────────────────────────── 方案库 ───────────────────────────
-    def open_library(self):
-        """方案库窗口：保存 / 载入并写入 / 改名 / 收藏 / 备注 / 标签 / 复制 / 删除 / 导出 / 导入"""
-        import tkinter as tk
-        from tkinter import ttk
-        try:
-            sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
-            import planlib
-        except Exception as e:
-            messagebox.showerror("方案库不可用", f"读不到方案库模块：{e}")
-            return
-        if getattr(self, "_libwin", None) and self._libwin.winfo_exists():
-            self._libwin.lift(); self._lib_refresh(); return
-
-        w = tk.Toplevel(self.root); self._libwin = w
-        w.title("方案库"); w.geometry("1080x620"); w.transient(self.root)
-        tip = ttk.Label(w, text="方案存在 MOD 目录下的 plans 文件夹里（不放进 exe，重装不丢）。"
-                                "双击一行可看该方案详情；「写入游戏」走的是和主界面同一个写入流程。",
-                        style="Hint.TLabel", wraplength=1040, justify="left")
-        tip.pack(fill="x", padx=12, pady=(10, 4))
-
-        body = ttk.Frame(w); body.pack(fill="both", expand=True, padx=12)
-        cols = ("star", "name", "seed", "rows", "shops", "mtime", "tags", "note")
-        tv = ttk.Treeview(body, columns=cols, show="headings", selectmode="browse", height=16)
-        for c, t, wd in (("star", "★", 36), ("name", "名字", 260), ("seed", "种子", 96),
-                         ("rows", "改动/总行", 96), ("shops", "商店", 56),
-                         ("mtime", "保存时间", 132), ("tags", "标签", 120), ("note", "备注", 200)):
-            tv.heading(c, text=t); tv.column(c, width=wd, anchor="w")
-        vs = ttk.Scrollbar(body, orient="vertical", command=tv.yview)
-        tv.configure(yscrollcommand=vs.set)
-        tv.pack(side="left", fill="both", expand=True); vs.pack(side="right", fill="y")
-        self._lib_tv = tv
-        tv.bind("<Double-1>", lambda e: self._lib_detail())
-
-        bar = ttk.Frame(w); bar.pack(fill="x", padx=12, pady=8)
-        def btn(t, cmd, wd=10):
-            b = ttk.Button(bar, text=t, command=cmd, width=wd); b.pack(side="left", padx=3); return b
-        btn("保存当前方案", self._lib_save, 13)
-        btn("写入游戏", self._lib_write, 10)
-        btn("载入到设置", self._lib_apply_cfg, 11)
-        btn("改名", self._lib_rename, 7)
-        btn("收藏★", self._lib_star, 8)
-        btn("备注/标签", self._lib_meta, 11)
-        btn("复制", self._lib_dup, 7)
-        btn("删除", self._lib_delete, 7)
-        btn("导出", self._lib_export, 7)
-        btn("导入", self._lib_import, 7)
-        btn("刷新", self._lib_refresh, 7)
-        btn("打开文件夹", self._lib_open, 11)
-        self._lib_status = tk.StringVar(value="")
-        ttk.Label(w, textvariable=self._lib_status, style="Status.TLabel").pack(anchor="w", padx=14, pady=(0, 10))
-        self._lib_refresh()
-        w.protocol("WM_DELETE_WINDOW", lambda: (w.destroy(), setattr(self, "_libwin", None)))
-
-    def _lib_sel(self):
-        """当前选中的方案 id；没选就提示"""
-        tv = getattr(self, "_lib_tv", None)
-        if not tv:
-            return None
-        sel = tv.selection()
-        if not sel:
-            messagebox.showinfo("先选一个", "请先在列表里点一个方案。")
-            return None
-        return sel[0]
-
-    def _lib_refresh(self):
-        import planlib
-        tv = getattr(self, "_lib_tv", None)
-        if not tv:
-            return
-        tv.delete(*tv.get_children())
-        try:
-            for m in planlib.list_plans():
-                if m.get("broken"):
-                    tv.insert("", "end", iid=m["id"],
-                              values=("⚠", m["name"] + "（文件损坏）", "", "", "", "", "",
-                                      m.get("error", "")[:60]))
-                    continue
-                t = time.strftime("%m-%d %H:%M", time.localtime(m.get("modified") or 0))
-                tv.insert("", "end", iid=m["id"],
-                          values=("★" if m.get("star") else "", m["name"], m.get("seed", ""),
-                                  f"{m.get('changed',0)}/{m.get('rows',0)}",
-                                  "开" if (m.get("cfg") or {}).get("shops") else "关",
-                                  t, " ".join(m.get("tags") or []), m.get("note", "")[:40]))
-            n = len(tv.get_children())
-            self._lib_status.set(f"共 {n} 个方案 ｜ 存放位置：{planlib.plans_dir()}")
-        except Exception as e:
-            self._lib_status.set(f"读取方案库出错：{e}")
-
-    def _lib_detail(self):
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        d = planlib.get_plan(pid)
-        cfg = d.get("cfg") or {}
-        messagebox.showinfo(
-            d.get("name", pid),
-            f"种子：{d.get('seed')}\n"
-            f"行数：{len(d.get('rows') or [])}（改动 "
-            f"{sum(1 for r in d['rows'] if r.get('old') != r.get('new'))}）\n"
-            f"商店参与：{'是' if cfg.get('shops') else '否'}\n"
-            f"合理度：{float(cfg.get('coherence', 0)) * 100:.0f}% ｜ 改动比例："
-            f"{float(cfg.get('density', 1)) * 100:.0f}%\n"
-            f"引擎版本：{d.get('engine_version')}\n"
-            f"指纹：{(d.get('fingerprint') or '')[:16]}…\n"
-            f"备注：{d.get('note') or '（无）'}\n"
-            f"标签：{'、'.join(d.get('tags') or []) or '（无）'}")
-
-    def _lib_save(self):
-        import planlib
-        if not self.plan:
-            messagebox.showinfo("还没生成", "先点主界面的「① 生成随机方案」，再来保存。")
-            return
-        from tkinter import simpledialog
-        default = f"方案 {time.strftime('%m-%d %H:%M')}"
-        name = simpledialog.askstring("保存方案", "给这个方案起个名字：", initialvalue=default, parent=self._libwin)
-        if not name:
-            return
-        try:
-            m = planlib.save_plan(self.plan, name, cfg=self.cfg,
-                                  seed=(self.cfg or {}).get("seed"), note="")
-            self.log(f"方案已保存：{m['name']}（{m['changed']}/{m['rows']} 行）")
-            self._lib_refresh()
-            self._lib_status.set(f"已保存「{m['name']}」")
-        except Exception as e:
-            messagebox.showerror("保存失败", str(e))
-
-    def _lib_write(self):
-        """载入方案并写入游戏 —— 复用主界面同一个写入流程"""
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        d = planlib.get_plan(pid)
-        try:
-            os.makedirs(os.path.join(WORKSPACE, "investigation", "apply", "out"), exist_ok=True)
-            csvp = os.path.join(WORKSPACE, "investigation", "apply", "out", f"plan_lib_{pid[-8:]}.csv")
-            planlib.write_csv(pid, csvp)
-        except Exception as e:
-            messagebox.showerror("导出失败", str(e))
-            return
-        if not messagebox.askyesno("确认写入游戏",
-                                   f"要把「{d.get('name')}」写进游戏吗？\n\n"
-                                   f"种子 {d.get('seed')} ｜ {len(d.get('rows') or [])} 行\n\n"
-                                   "写入前会自动备份，随时可以点「还原成原始」。"):
-            return
-        sync = bool((d.get("cfg") or {}).get("sync_guide", True))
-        self.log(f"从方案库写入：{d.get('name')}")
-        self.q.put(("status", "写入中…"))
-        threading.Thread(target=self._deploy_worker, args=(csvp, sync), daemon=True).start()
-
-    def _lib_apply_cfg(self):
-        """把方案里的参数填回主界面（不写游戏）—— 便于在此基础上改一改再生成"""
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        cfg = (planlib.get_plan(pid).get("cfg") or {})
-        try:
-            self.seed.set(str(cfg.get("seed", self.seed.get())))
-            self.sets.set(cfg.get("sets", True))
-            self.shadow.set(cfg.get("merge_shadow", False))
-            self.density.set(float(cfg.get("density", 1.0)))
-            self.coherence.set(float(cfg.get("coherence", 0.8)))
-            self.lbl_coh.config(text=f"{float(cfg.get('coherence',0.8))*100:.0f}%")
-            self.lbl_den.config(text=f"{float(cfg.get('density',1.0))*100:.0f}%")
-            self.guide.set(cfg.get("sync_guide", True))
-            if hasattr(self, "shops"):
-                self.shops.set(bool(cfg.get("shops", False)))
-            for k, v in self.doms.items():
-                v.set(k in (cfg.get("domains") or ["rune", "armor", "weapon"]))
-            self._refresh_modes()
-            self._lib_status.set("参数已填回主界面 —— 可以改一改再点「① 生成随机方案」")
-        except Exception as e:
-            messagebox.showerror("载入失败", str(e))
-
-    def _lib_rename(self):
-        import planlib
-        from tkinter import simpledialog
-        pid = self._lib_sel()
-        if not pid:
-            return
-        cur = planlib.get_plan(pid).get("name", "")
-        new = simpledialog.askstring("改名", "新名字：", initialvalue=cur, parent=self._libwin)
-        if new:
-            planlib.rename_plan(pid, new); self._lib_refresh()
-
-    def _lib_star(self):
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        cur = bool(planlib.get_plan(pid).get("star"))
-        planlib.set_meta(pid, star=not cur); self._lib_refresh()
-
-    def _lib_meta(self):
-        import planlib
-        from tkinter import simpledialog
-        pid = self._lib_sel()
-        if not pid:
-            return
-        d = planlib.get_plan(pid)
-        note = simpledialog.askstring("备注", "备注（给自己看的）：",
-                                      initialvalue=d.get("note", ""), parent=self._libwin)
-        if note is None:
-            return
-        tags = simpledialog.askstring("标签", "标签（用空格或逗号分开）：",
-                                      initialvalue=" ".join(d.get("tags") or []), parent=self._libwin)
-        tl = [t for t in re.split(r"[\s,，]+", tags or "") if t]
-        planlib.set_meta(pid, note=note, tags=tl); self._lib_refresh()
-
-    def _lib_dup(self):
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        planlib.duplicate_plan(pid); self._lib_refresh()
-
-    def _lib_delete(self):
-        import planlib
-        pid = self._lib_sel()
-        if not pid:
-            return
-        name = planlib.get_plan(pid).get("name", pid)
-        if messagebox.askyesno("删除方案", f"删除「{name}」？\n\n（会移到 plans/.trash，手滑还能找回）"):
-            planlib.delete_plan(pid); self._lib_refresh()
-
-    def _lib_export(self):
-        import planlib
-        from tkinter import filedialog
-        pid = self._lib_sel()
-        if not pid:
-            return
-        d = planlib.get_plan(pid)
-        p = filedialog.asksaveasfilename(defaultextension=".json",
-                                         initialfile=f"{d.get('name','方案')}.json")
-        if p:
-            planlib.export_plan(pid, p)
-            self._lib_status.set(f"已导出 → {p}")
-
-    def _lib_import(self):
-        import planlib
-        from tkinter import filedialog
-        p = filedialog.askopenfilename(filetypes=[("方案文件", "*.json")])
-        if not p:
-            return
-        try:
-            m = planlib.import_plan(p)
-            self._lib_refresh(); self._lib_status.set(f"已导入「{m['name']}」")
-        except Exception as e:
-            messagebox.showerror("导入失败", str(e))
-
-    def _lib_open(self):
-        import planlib
-        try:
-            os.startfile(planlib.plans_dir())  # noqa
-        except Exception as e:
-            messagebox.showerror("打不开", str(e))
-
-    # ─────────────────────────── 方案库 结束 ───────────────────────────
 
     def deploy(self):
         if not self.plan:
@@ -1292,6 +1197,111 @@ def uicheck():
     return 0 if ok else 1
 
 
+def _fake_rows(n=60, tag="weapon"):
+    """造几行假方案（只给方案库用，不碰引擎）"""
+    out = []
+    for j in range(n):
+        ch = tag if j % 3 else "armor"
+        out.append({"old": f"{ch}:{1000+j}", "new": f"{ch}:{2000+j}",
+                    "source_table": "ItemLotParam_map", "row_id": str(700000 + j),
+                    "slot": str(j % 4), "unit": f"u{j}", "old_cat": ch, "new_cat": ch,
+                    "engine_version": "1.1.0", "pool": "p", "role": "r", "part": "",
+                    "row_name": f"箱{j}", "algorithm_mode": "guide",
+                    "unchanged_reason": "", "preconditions": ""})
+    return out
+
+
+def uitest():
+    """方案库的交互自检：建出来、列出来、点一下看详情对不对。
+
+    全程用**临时目录**当方案库（绝不碰玩家真正的 plans/），所以在打包版的空目录里
+    也能跑。施工单第 3~6 步的每一步都往这张检查表里加行。"""
+    import tempfile, shutil
+    tmp = tempfile.mkdtemp(prefix="_uitest_plans_")
+    rows = _fake_rows()
+    checks = []
+
+    def ck(name, ok, detail=""):
+        checks.append((name, bool(ok), detail))
+
+    root = None
+    try:
+        sys.path.insert(0, os.path.join(WORKSPACE or HERE, "investigation", "apply"))
+        import planlib
+        planlib.plans_dir = lambda ws=None: tmp
+        sys.modules["planlib"] = planlib
+        a = planlib.save_plan(rows, "稳健档", cfg={"seed": 20261010, "shops": False,
+                                                   "coherence": 0.8, "density": 1.0},
+                              seed=20261010, note="主打流程用", tags=["主打"])
+        planlib.set_meta(a["id"], star=True)
+        b = planlib.save_plan(rows[:40], "放开档", cfg={"seed": 20261011, "shops": True,
+                                                        "coherence": 0.0, "density": 0.5},
+                              seed=20261011)
+
+        root = tk.Tk()
+        app = App(root)
+        root.update_idletasks()
+        root.update()
+        app.nb.select(app.page_lib)
+        app._lib_refresh()
+        root.update()
+
+        kids = app.lib_tree.get_children()
+        ck("列表列出来了", len(kids) == 2, f"{len(kids)} 行")
+        ck("收藏排在最前", bool(kids) and kids[0] == a["id"], f"第一行={kids[0] if kids else '—'}")
+        ck("列表是两行式", "\n" in (app.lib_tree.item(kids[0], "text") if kids else ""),
+           "行里含换行符")
+
+        # 单击第二行 → 详情面板要跟着变（这一步就是「取代弹窗」的核心）
+        if len(kids) > 1:
+            app.lib_tree.selection_set(kids[1])
+            app.lib_tree.focus(kids[1])
+            app._lib_on_select()
+            root.update()
+        ck("单击换详情：名字", app.lib_title.cget("text") == "放开档",
+           f"标题={app.lib_title.cget('text')!r}")
+        ck("单击换详情：种子", app.lib_vals["seed"].cget("text") == "20261011",
+           f"种子={app.lib_vals['seed'].cget('text')!r}")
+        ck("单击换详情：商店参与", app.lib_vals["shops"].cget("text") == "是",
+           f"商店={app.lib_vals['shops'].cget('text')!r}")
+        ck("单击换详情：合理度", app.lib_vals["coh"].cget("text") == "0%",
+           f"合理度={app.lib_vals['coh'].cget('text')!r}")
+        ck("详情是常驻面板（不是弹窗）", not getattr(app, "_libwin", None),
+           "没有额外的 Toplevel")
+
+        # 切回方案库页要自己刷新（不然在别处存了方案、回到这页看不见）
+        planlib.save_plan(rows[:30], "新来的", cfg={"seed": 20261012}, seed=20261012)
+        app.nb.select(app.page_set)
+        root.update()
+        app.nb.select(app.page_lib)
+        root.update()
+        ck("切到方案库页会自动刷新", len(app.lib_tree.get_children()) == 3,
+           f"{len(app.lib_tree.get_children())} 行")
+
+        root.destroy()
+        root = None
+    except Exception:
+        import traceback
+        ck("自检过程没抛异常", False, traceback.format_exc(limit=3))
+    finally:
+        if root is not None:
+            try:
+                root.destroy()
+            except Exception:
+                pass
+        shutil.rmtree(tmp, ignore_errors=True)
+
+    n_bad = 0
+    for name, ok, detail in checks:
+        if ok:
+            print(f"   ✓ {name}")
+        else:
+            n_bad += 1
+            print(f"   ✗ {name}　{detail}")
+    print("UITEST PASS: 方案库交互正常" if not n_bad else f"UITEST FAIL: {n_bad} 项没过")
+    return 0 if not n_bad else 1
+
+
 def selftest(seed=20261010):
     """不需要开窗口：验证引擎可用 + 同种子可复现 + 不同种子不同"""
     print(f"工作区: {WORKSPACE}")
@@ -1392,6 +1402,8 @@ def main():
         return selftest()
     if "--planlib" in sys.argv:
         return cli_planlib()
+    if "--uitest" in sys.argv:
+        return uitest()
     if "--uicheck" in sys.argv:
         return uicheck()
     root = tk.Tk()
