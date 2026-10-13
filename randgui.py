@@ -353,6 +353,12 @@ class App:
         ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets).pack(side="left")
         ttk.Checkbutton(a1, text="幽影卢恩与普通卢恩一起换", variable=self.shadow).pack(side="left", padx=12)
         ttk.Checkbutton(a1, text="说明书跟着一起改", variable=self.guide).pack(side="left", padx=12)
+        a2b = ttk.Frame(self.adv); a2b.pack(fill="x", pady=(6, 0))
+        self.shops = tk.BooleanVar(value=False)      # 默认关：老玩法完全不受影响
+        ttk.Checkbutton(a2b, text="商店里的职业装备也一起换",
+                        variable=self.shops).pack(side="left")
+        ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
+                  foreground="#888").pack(side="left", padx=8)
         a2 = ttk.Frame(self.adv); a2.pack(fill="x", pady=(6, 0))
         ttk.Label(a2, text="改动比例").pack(side="left")
         self.density = tk.DoubleVar(value=1.0)
@@ -558,6 +564,13 @@ class App:
     def _dice(self):
         self.seed.set(str(random.randrange(1, 2 ** 31 - 1)))
 
+    def _shops(self):
+        """商店是否参与（默认关）。取不到就按关处理。"""
+        try:
+            return bool(self.shops.get())
+        except Exception:
+            return False
+
     def _collect(self):
         doms = [d for d, v in self.doms.items() if v.get()]
         sep = ("各自" in self.mode.get()) or len(doms) <= 1
@@ -569,7 +582,7 @@ class App:
             if len(pair) == 2:
                 joins = [pair]
         return {"domains": doms or ["rune", "armor", "weapon"],
-                "basis": "guide", "shops": False,   # 固定：说明书范围、商店不参与（均不给选项）
+                "basis": "guide", "shops": self._shops(),  # 说明书范围固定；商店是否参与看「更多设置」
                 "joins": joins,                      # 两两混：只给这一组建混池
                 "cross_domain": (not sep) and not joins,   # 全部混合=建混池；两两混/各自=不建
                 "merge_shadow": self.shadow.get(), "sets": self.sets.get(),

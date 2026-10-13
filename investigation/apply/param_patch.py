@@ -87,6 +87,11 @@ def offset_of(table: str, rows: dict, row_id: int, field: str, slot: int = 1):
     return rows[row_id] + base + stride * (slot - 1)
 
 
+def read_u8(raw, off):
+    """读一个字节。商店表的 equipType 用它（写侧是 write_u8，这里补上读侧对称）。"""
+    return raw[off]
+
+
 def read_u32(raw, off):
     return struct.unpack_from("<I", raw, off)[0]
 

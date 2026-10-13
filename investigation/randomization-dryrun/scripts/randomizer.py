@@ -103,8 +103,16 @@ def load_world(with_shops=False, basis="guide"):
                                               "slot": str(s["slot"]), "category": code,
                                               "row_name": L.get("row_name", "")})
     if with_shops:
+        # 商店格的判定（2026-10-13 修正）：
+        #   · 原来要求 quality == "clean" → 只接上 9 条，漏掉 60 条真实售卖
+        #     （就是法魂那个"500 卢恩买一套铠甲"的便利商人）
+        #   · 真在售的判据是「price 有值」；price 为 0 / -1 / 空 的是职业初始装备表那一类，不是货架
+        #   · 且只接"属于说明书"的物品（职业专属），商店里其它货一律不参与
+        #   · 价格 / 库存 / 解锁条件一律不动（写入端只写 equipId + equipType）
         for r in json.load(open(os.path.join(ROOT, "evidence", "shop_analysis.json"), encoding="utf-8"))["rows"]:
-            if r["quality"] != "clean" or r["is_starter_set_piece"]:
+            if r["is_starter_set_piece"]:
+                continue
+            if r["price"] in ("", "0", "-1", None):
                 continue
             cat = {"weapon": "weapon", "protector": "protector", "goods": "goods"}.get(r["equip_type_name"])
             k = (cat, r["equipId"]) if cat else None
