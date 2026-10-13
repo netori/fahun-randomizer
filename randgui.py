@@ -476,8 +476,12 @@ class App:
         self.b_dep = ttk.Button(bar, text="② 写入游戏", command=self.deploy, width=16)
         self.b_dep.pack(side="left", padx=8)
         ttk.Button(bar, text="还原成原始", command=self.rollback, width=14).pack(side="left", padx=(0, 8))
+        # 生成之后才可点：没有方案可保存
+        self.b_save_lib = ttk.Button(bar, text="💾 保存到方案库", style="Accent.TButton",
+                                     command=self._lib_save_current, width=15)
+        self.b_save_lib.pack(side="left", padx=(0, 8))
+        self.b_save_lib.config(state="disabled")
         ttk.Button(bar, text="更多设置", command=self._toggle_adv, width=12).pack(side="left")
-        ttk.Button(bar, text="方案库", command=self.open_library, width=10).pack(side="left", padx=(8, 0))
         self.status = tk.StringVar(value="先点 ① 生成方案，看过结果再点 ② 写入游戏")
         self.lbl_status = ttk.Label(bar, textvariable=self.status, style="Status.TLabel")
         self.lbl_status.pack(side="left", padx=14)
@@ -549,6 +553,11 @@ class App:
         ttk.Label(head, text="方案库", style="Title.TLabel").pack(side="left")
         self.lib_hint = ttk.Label(head, text="", style="Hint.TLabel")
         self.lib_hint.pack(side="left", padx=(14, 0), pady=(8, 0))
+        # 这一页的主按钮只有这几个；其余动作进右键菜单（权重不再都一样）
+        ttk.Button(head, text="导入", width=7, command=self._lib_import).pack(side="right", padx=(6, 0))
+        ttk.Button(head, text="打开文件夹", width=11,
+                   command=self._lib_open_folder).pack(side="right", padx=(6, 0))
+        ttk.Button(head, text="刷新", width=7, command=self._lib_refresh).pack(side="right")
 
         wrap = ttk.Frame(body)
         wrap.pack(fill="both", expand=True)
@@ -569,6 +578,7 @@ class App:
         self.lib_tree.tag_configure("star", foreground=GOLD_LT)
         self.lib_tree.tag_configure("broken", foreground=DANGER)
         self.lib_tree.bind("<<TreeviewSelect>>", lambda _e: self._lib_on_select())
+        self.lib_tree.bind("<Button-3>", self._lib_ctx)          # 右键菜单
 
         # ── 右：详情（常驻，取代弹窗）──
         right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(12, 8))
@@ -612,6 +622,23 @@ class App:
         self.lib_toast = ttk.Label(right, text="", style="Hint.TLabel", wraplength=340,
                                    justify="left")
         self.lib_toast.pack(side="bottom", anchor="w", pady=(8, 0))
+        # 详情面板的动作按钮（对着选中的那一个方案干活）
+        act = ttk.Frame(right)
+        act.pack(side="bottom", fill="x", pady=(10, 0))
+        act.columnconfigure(0, weight=1)
+        act.columnconfigure(1, weight=1)
+        self.lib_btns = {}
+        for i, (key, text, cmd, sty) in enumerate((
+                ("write", "写入游戏", self._lib_write, "Accent.TButton"),
+                ("dup", "复制一份", self._lib_dup, "TButton"),
+                ("load", "载入到设置", self._lib_apply_cfg, "TButton"),
+                ("star", "收藏 ★", self._lib_star, "TButton"),
+                ("export", "导出…", self._lib_export, "TButton"),
+                ("delete", "删除", self._lib_delete, "Danger.TButton"))):
+            b = ttk.Button(act, text=text, command=cmd, style=sty)
+            b.grid(row=i // 2, column=i % 2, sticky="ew", padx=(0 if i % 2 == 0 else 6, 0),
+                   pady=(0, 6))
+            self.lib_btns[key] = b
         self._lib_cur = None
         self._lib_metas = {}
 
@@ -655,7 +682,19 @@ class App:
         except Exception as e:
             self.lib_hint.config(text=f"读取方案库出错：{e}", style="Bad.TLabel")
             return
-        self._lib_metas = {m["id"]: m for m in metas}
+        self._lib_metas = {}
+        seen = set()
+        dup = []
+        kept = []
+        for m in metas:
+            # 同一份方案被复制成两个文件时，id 会撞车：界面不能就此崩掉，只跳过多的那份
+            if m["id"] in seen:
+                dup.append(m["name"])
+                continue
+            seen.add(m["id"])
+            kept.append(m)
+            self._lib_metas[m["id"]] = m
+        metas = kept
         for m in metas:
             if m.get("broken"):
                 tv.insert("", "end", iid=m["id"], tags=("broken",),
@@ -672,6 +711,8 @@ class App:
         n = len(metas)
         broken = sum(1 for m in metas if m.get("broken"))
         tail = f"（其中 {broken} 个文件损坏）" if broken else ""
+        if dup:
+            tail += f"（有 {len(dup)} 份 id 撞车被跳过：{'、'.join(dup[:3])}）"
         self.lib_hint.config(
             text=f"共 {n} 个方案{tail} ｜ 存在 MOD 目录的 plans 文件夹里：{pl.plans_dir()}",
             style="Hint.TLabel")
@@ -693,6 +734,12 @@ class App:
     def _lib_show(self, pid):
         """把某个方案摊在右侧详情面板上"""
         self._lib_cur = pid
+        usable = bool(pid) and not (self._lib_metas.get(pid) or {}).get("broken")
+        for key, b in getattr(self, "lib_btns", {}).items():
+            if key == "delete":
+                b.config(state="normal" if pid else "disabled")
+            else:
+                b.config(state="normal" if usable else "disabled")
         if not pid:
             self.lib_title.config(text="还没有方案")
             self.lib_sub.config(text="先到「随机设置」生成一套，再点「保存到方案库」")
@@ -845,6 +892,225 @@ class App:
         self.nb.select(self.page_lib)
         self._lib_refresh()
 
+    # ── 方案库：动作 ──
+    def _lib_menu_build(self):
+        """右键菜单（内容与顺序只有一处，自动化自检也读它）"""
+        m = tk.Menu(self.root, tearoff=0, bg=PANEL, fg=FG, activebackground=SEL_BG,
+                    activeforeground=GOLD_LT, activeborderwidth=0, bd=1,
+                    relief="solid", font=FONT_UI)
+        for text, cmd in (("▶ 写入游戏", self._lib_write),
+                          ("载入到设置", self._lib_apply_cfg),
+                          ("改名（在右边直接改）", lambda: self.lib_name_e.focus_set()),
+                          ("收藏 / 取消收藏", self._lib_star),
+                          ("复制一份", self._lib_dup),
+                          ("导出…", self._lib_export),
+                          ("删除", self._lib_delete)):
+            m.add_command(label=text, command=cmd)
+        m.add_separator()
+        m.add_command(label="导入方案…", command=self._lib_import)
+        m.add_command(label="打开 plans 文件夹", command=self._lib_open_folder)
+        m.add_command(label="刷新", command=self._lib_refresh)
+        return m
+
+    def _lib_ctx(self, event):
+        """右键菜单：不常用的动作都收在这里（页面上只留 2~3 个主按钮）"""
+        row = self.lib_tree.identify_row(event.y)
+        if row:
+            self.lib_tree.selection_set(row)
+            self.lib_tree.focus(row)
+            self._lib_show(row)
+        if not getattr(self, "_lib_menu", None):
+            self._lib_menu = self._lib_menu_build()
+        state = "normal" if (self._lib_cur or row) else "disabled"
+        for i in range(0, 7):                     # 头 7 条要对着某个方案
+            try:
+                self._lib_menu.entryconfig(i, state=state)
+            except tk.TclError:
+                pass
+        try:
+            self._lib_menu.tk_popup(event.x_root, event.y_root)
+        finally:
+            self._lib_menu.grab_release()
+
+    def _lib_need(self):
+        """动作前提：得选中一个能用的方案"""
+        if not self._lib_cur or (self._lib_metas.get(self._lib_cur) or {}).get("broken"):
+            self._lib_toast("先在左边点一个方案", bad=True)
+            return None
+        return self._lib_cur
+
+    def _lib_star(self):
+        """收藏 / 取消收藏（收藏的永远排最前）"""
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        try:
+            cur = bool(pl.get_plan(pid).get("star"))
+            pl.set_meta(pid, star=not cur)
+        except Exception as e:
+            self._lib_toast(f"收藏没成功：{e}", bad=True)
+            return
+        self._lib_refresh(keep=pid)
+        self._lib_toast("已取消收藏" if cur else "已收藏（会排在最前）")
+
+    def _lib_dup(self):
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        try:
+            m = pl.duplicate_plan(pid)
+        except Exception as e:
+            self._lib_toast(f"复制没成功：{e}", bad=True)
+            return
+        self._lib_refresh(keep=m["id"])
+        self._lib_toast(f"已复制一份：{m['name']}（可以直接在右边改名）")
+
+    def _lib_delete(self):
+        """删除：进回收站，明确告诉你还能找回来"""
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        name = (self._lib_metas.get(pid) or {}).get("name", pid)
+        if not messagebox.askyesno("删掉这个方案？",
+                                   f"「{name}」会被移到 plans/.trash 里。\n"
+                                   "手滑了还能从那里找回，但它不会再出现在列表里。\n\n确定删除吗？"):
+            return
+        try:
+            pl.delete_plan(pid)
+        except Exception as e:
+            self._lib_toast(f"删除没成功：{e}", bad=True)
+            return
+        self._lib_cur = None
+        self._lib_refresh()
+        self._lib_toast(f"已把「{name}」移到回收站")
+
+    def _lib_export(self):
+        from tkinter import filedialog
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        name = (self._lib_metas.get(pid) or {}).get("name", "方案")
+        p = filedialog.asksaveasfilename(defaultextension=".json", initialfile=f"{name}.json",
+                                         filetypes=[("方案文件", "*.json")], parent=self.root)
+        if not p:
+            return
+        try:
+            pl.export_plan(pid, p)
+        except Exception as e:
+            self._lib_toast(f"导出没成功：{e}", bad=True)
+            return
+        self._lib_toast(f"已导出 → {p}")
+
+    def _lib_import(self):
+        from tkinter import filedialog
+        pl = self._lib_mod()
+        if not pl:
+            return
+        paths = filedialog.askopenfilenames(filetypes=[("方案文件", "*.json")], parent=self.root)
+        if not paths:
+            return
+        done, fail = [], []
+        for p in paths:
+            try:
+                done.append(pl.import_plan(p)["name"])
+            except Exception as e:
+                fail.append(f"{os.path.basename(p)}：{e}")
+        self._lib_refresh()
+        if done:
+            self._lib_toast(f"已导入 {len(done)} 个：" + "、".join(done))
+        if fail:
+            self._lib_toast("导入失败：" + "；".join(fail), bad=True)
+
+    def _lib_apply_cfg(self):
+        """把方案里的参数填回「随机设置」页（不写游戏）—— 便于在此基础上改一改再生成"""
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        try:
+            cfg = pl.get_plan(pid).get("cfg") or {}
+            self.seed.set(str(cfg.get("seed", self.seed.get())))
+            self.sets.set(cfg.get("sets", True))
+            self.shadow.set(cfg.get("merge_shadow", False))
+            self.density.set(float(cfg.get("density", 1.0)))
+            self.coherence.set(float(cfg.get("coherence", 0.8)))
+            self.lbl_coh.config(text=f"{float(cfg.get('coherence', 0.8)) * 100:.0f}%")
+            self.lbl_den.config(text=f"{float(cfg.get('density', 1.0)) * 100:.0f}%")
+            self.guide.set(cfg.get("sync_guide", True))
+            self.shops.set(bool(cfg.get("shops", False)))
+            for k, v in self.doms.items():
+                v.set(k in (cfg.get("domains") or ["rune", "armor", "weapon"]))
+            self._refresh_modes()
+        except Exception as e:
+            self._lib_toast(f"载入没成功：{e}", bad=True)
+            return
+        self.nb.select(self.page_set)
+        self._lib_toast("参数已填回「随机设置」页")
+        self.status.set("参数已从方案库填回来了 —— 改一改再点 ① 生成随机方案")
+
+    def _lib_open_folder(self):
+        pl = self._lib_mod()
+        if not pl:
+            return
+        try:
+            os.startfile(pl.plans_dir())  # noqa
+        except Exception as e:
+            self._lib_toast(f"打不开文件夹：{e}", bad=True)
+
+    def _lib_write(self):
+        """把选中的方案写进游戏（走的是和主界面同一个写入流程）"""
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        name = (self._lib_metas.get(pid) or {}).get("name", pid)
+        try:
+            out = os.path.join(WORKSPACE or HERE, "investigation", "apply", "out")
+            os.makedirs(out, exist_ok=True)
+            csvp = os.path.join(out, f"plan_lib_{pid[-8:]}.csv")
+            pl.write_csv(pid, csvp)
+        except Exception as e:
+            self._lib_toast(f"导出写入表没成功：{e}", bad=True)
+            return
+        d = pl.get_plan(pid)
+        if not messagebox.askyesno(
+                "确认写入游戏",
+                f"要把「{name}」写进游戏吗？\n\n"
+                f"种子 {d.get('seed')} ｜ {len(d.get('rows') or [])} 行\n\n"
+                "写入前会自动备份，随时可以点「还原成原始」。"):
+            return
+        self.log(f"从方案库写入：{name}")
+        self.status.set(f"写入中…（方案库：{name}）")
+        self._lib_toast(f"正在写入「{name}」…")
+        threading.Thread(target=self._deploy_worker,
+                         args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True))),
+                         daemon=True).start()
+
+    def _lib_save_current(self):
+        """把主界面刚生成的那套存进方案库。
+
+        名字先用自动生成的一个 —— 想改就到方案库右边就地改（不再弹输入框）。"""
+        pl = self._lib_mod()
+        if not pl:
+            return
+        if not self.plan:
+            self.status.set("还没生成方案 —— 先点 ① 生成随机方案")
+            return
+        name = f"方案 {time.strftime('%m-%d %H:%M')}"
+        try:
+            m = pl.save_plan(self.plan, name, cfg=self.cfg, seed=(self.cfg or {}).get("seed"))
+        except Exception as e:
+            messagebox.showerror("保存失败", str(e))
+            return
+        self.log(f"已保存到方案库：{m['name']}（{m['changed']}/{m['rows']} 行）")
+        self.nb.select(self.page_lib)
+        self._lib_refresh(keep=m["id"])
+        self._lib_toast(f"已存进方案库：{m['name']}（名字 / 备注 / 标签在右边直接改）")
+
     def _on_tab_changed(self, *_a):
         if hasattr(self, "lib_tree") and self.nb.select() == str(self.page_lib):
             self._lib_refresh()
@@ -928,6 +1194,8 @@ class App:
                                            else "Status.TLabel")
                 elif kind == "done":
                     self.b_gen.config(state="normal")
+                    # 生成过了才有东西可存进方案库
+                    self.b_save_lib.config(state="normal" if self.plan else "disabled")
                 elif kind == "table":
                     for row in payload:
                         self.tbl.insert("", "end", values=row)
@@ -1476,6 +1744,21 @@ def uitest():
         ck("空名字被挡回去", planlib.get_plan(a["id"])["name"] == "稳健档（改过）",
            repr(planlib.get_plan(a["id"])["name"]))
 
+        # ── 第 5 步：每个动作都点一遍 ──
+        # 这一段会碰到确认框：全换成"自动答是"，否则自动化会卡在一个真对话框上
+        import tkinter.messagebox as mb
+        asked, said = [], []
+        real_boxes = (mb.askyesno, mb.showinfo, mb.showwarning, mb.showerror)
+        mb.askyesno = lambda *a, **k: (asked.append(a[0] if a else ""), True)[1]
+        mb.showinfo = mb.showwarning = mb.showerror = \
+            lambda *a, **k: said.append(a[0] if a else "")
+        try:
+            _uitest_actions(app, root, planlib, a, b, tmp, checks, ck)
+        finally:
+            mb.askyesno, mb.showinfo, mb.showwarning, mb.showerror = real_boxes
+        ck("确认框问过了：写入游戏", any("写入游戏" in x for x in asked), "；".join(asked))
+        ck("确认框问过了：删除", any("删掉这个方案" in x for x in asked), "；".join(asked))
+
         root.destroy()
         root = None
     except Exception:
@@ -1498,6 +1781,113 @@ def uitest():
             print(f"   ✗ {name}　{detail}")
     print("UITEST PASS: 方案库交互正常" if not n_bad else f"UITEST FAIL: {n_bad} 项没过")
     return 0 if not n_bad else 1
+
+
+def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
+    """第 5 步：把方案库的每个动作都点一遍（对话框已被换成自动答是）"""
+    import tempfile
+    import tkinter.filedialog as fd
+
+    n0 = len(planlib.list_plans())
+    app.nb.select(app.page_lib)
+    app.lib_tree.selection_set(a["id"])
+    app._lib_on_select()
+    app._lib_star()                              # 取消收藏
+    root.update()
+    ck("收藏：点一下能取消", not planlib.get_plan(a["id"])["star"],
+       f"star={planlib.get_plan(a['id'])['star']}")
+    app._lib_star()                              # 再收藏回来
+    root.update()
+    ck("收藏：再点回来（并排到最前）",
+       planlib.get_plan(a["id"])["star"] and app.lib_tree.get_children()[0] == a["id"],
+       f"第一行={app.lib_tree.get_children()[0]}")
+
+    app._lib_dup()
+    root.update()
+    ck("复制一份", len(planlib.list_plans()) == n0 + 1,
+       f"{len(planlib.list_plans())} 个（原来 {n0}）")
+
+    # 导出 / 导入：文件对话框换成"直接给个路径"，其余全走真实代码
+    out_json = os.path.join(tempfile.mkdtemp(prefix="_uitest_out_"), "导出试试.json")
+    old_save, old_open = fd.asksaveasfilename, fd.askopenfilenames
+    fd.asksaveasfilename = lambda **k: out_json
+    try:
+        app.lib_tree.selection_set(a["id"])
+        app._lib_on_select()
+        app._lib_export()
+    finally:
+        fd.asksaveasfilename = old_save
+    ck("导出：文件真写出来了", os.path.isfile(out_json), out_json)
+
+    n1 = len(planlib.list_plans())
+    fd.askopenfilenames = lambda **k: (out_json,)
+    try:
+        app._lib_import()
+    finally:
+        fd.askopenfilenames = old_open
+    ck("导入：库里多了一个", len(planlib.list_plans()) == n1 + 1,
+       f"{len(planlib.list_plans())} 个（原来 {n1}）")
+
+    # 手动复制一份 json 进库（id 撞车）：界面要跳过它而不是崩掉
+    import shutil as _sh
+    _sh.copy2(os.path.join(tmp, a["id"] + ".json"), os.path.join(tmp, "手抄一份.json"))
+    app._lib_refresh()
+    root.update()
+    ck("库里有 id 撞车的文件也不崩", len(app.lib_tree.get_children()) == n1 + 1,
+       f"{len(app.lib_tree.get_children())} 行")
+    os.remove(os.path.join(tmp, "手抄一份.json"))
+
+    # 载入到设置：参数要真的填回页 1
+    app.lib_tree.selection_set(a["id"])
+    app._lib_on_select()
+    app._lib_apply_cfg()
+    root.update()
+    ck("载入到设置：种子填回去了", app.seed.get() == "20261010", repr(app.seed.get()))
+    ck("载入到设置：切回了随机设置页", app.nb.select() == str(app.page_set),
+       str(app.nb.select()))
+
+    # 删除：删完库里少一个，文件进回收站
+    app.nb.select(app.page_lib)
+    app._lib_refresh(keep=a["id"])
+    app._lib_delete()
+    root.update()
+    ck("删除：库里少了一个", len(planlib.list_plans()) == n1,
+       f"{len(planlib.list_plans())} 个")
+    trash = os.path.join(tmp, ".trash")
+    ck("删除：文件真进了回收站",
+       os.path.isdir(trash) and any(a["id"] in f for f in os.listdir(trash)),
+       str(os.listdir(trash) if os.path.isdir(trash) else "没有 .trash"))
+
+    # 写入游戏：真跑会动游戏文件，这里把"写入工人"换成记录器，验证走的是同一条流程
+    called = {}
+    real_worker = App._deploy_worker
+    App._deploy_worker = lambda self, plan, sync: called.update(plan=plan, sync=sync)
+    try:
+        app._lib_refresh(keep=b["id"])
+        app.lib_tree.selection_set(b["id"])
+        app._lib_on_select()
+        app._lib_write()
+    finally:
+        App._deploy_worker = real_worker
+    root.update()
+    ck("写入游戏：确认后交给了写入流程", bool(called.get("plan")), f"csv={called.get('plan')!r}")
+    ck("写入游戏：用的是方案导出的 CSV",
+       bool(called.get("plan")) and called["plan"].endswith(".csv"), f"{called.get('plan')!r}")
+
+    # 右键菜单：条目齐不齐（改名/收藏/复制/删除/导出/导入 都要在）
+    # 注意：不能真 tk_popup —— 它会抓住事件循环，等用户点一下才回来（自动化会卡死）
+    app.lib_tree.selection_set(b["id"])
+    app._lib_on_select()
+    menu = app._lib_menu_build()
+    labels = []
+    for i in range(menu.index("end") + 1):
+        try:
+            labels.append(str(menu.entrycget(i, "label")))
+        except tk.TclError:
+            pass
+    menu.destroy()
+    for want in ("写入游戏", "载入到设置", "改名", "收藏", "复制", "导出", "删除", "导入"):
+        ck(f"右键菜单有「{want}」", any(want in x for x in labels), "；".join(labels))
 
 
 def selftest(seed=20261010):
