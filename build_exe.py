@@ -30,7 +30,8 @@ SPEC = "ConvergenceClassItemRandomizer.spec"
 
 PIPELINE = ["erio.py", "param_layout.py", "param_patch.py", "fmg.py", "oodle.py",
             "native_apply.py", "native_deploy.py", "native_guide.py",
-            "fix_guide.py", "_guide_rebuild.py", "_guide_fit.py", "_guide_audit.py"]
+            "fix_guide.py", "_guide_rebuild.py", "_guide_fit.py", "_guide_audit.py",
+            "planlib.py"]
 ENGINE = "investigation/randomization-dryrun/scripts/randomizer.py"
 DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/randomization-catalog/manifest.json",

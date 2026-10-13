@@ -5,6 +5,7 @@
 # 只被管线用到的标准库不会被收进 exe，玩家那边一写入就 ModuleNotFoundError。
 # 这里把它们显式 import 一遍，让打包器把依赖收全。
 import erio, param_layout, param_patch, fmg, oodle                      # noqa
+import planlib  # noqa
 import native_apply, native_deploy, native_guide, fix_guide            # noqa
 import _guide_rebuild, _guide_fit, _guide_audit                        # noqa
 import randomizer                                                      # noqa
