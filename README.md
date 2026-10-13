@@ -84,6 +84,9 @@
 
 ## 三、怎么用
 
+界面是**一屏两页**：顶上 **⚙ 随机设置**（生成 / 写入）和 **📚 方案库**（管方案）两个页签。
+方案库是**左边列表 + 右边详情**，详情里的名字 / 备注 / 标签**点一下直接改**，不弹框。
+
 1. 把 `ConvergenceClassItemRandomizer.exe` 放到 **MOD 根目录**（该目录下应有 `mod\regulation.bin`），双击打开。
    界面里的「**本地文件**」会逐项自检：MOD 目录、游戏数据、说明书、原始备份、说明书基准、随机引擎。
    缺哪项会标红并**禁用「写入游戏」**；可按提示「指定 MOD 目录…」或「补一份原始备份」。
@@ -95,8 +98,10 @@
 
 ```bat
 ConvergenceClassItemRandomizer.exe --deploy <plan.csv> [--no-guide]   :: 只写入，不开界面
-ConvergenceClassItemRandomizer.exe --selftest                          :: 自检
-ConvergenceClassItemRandomizer.exe --uicheck                           :: 只构建界面（自动化测试用）
+ConvergenceClassItemRandomizer.exe --selftest                          :: 自检（引擎 / 同种子可复现）
+ConvergenceClassItemRandomizer.exe --uicheck                           :: 只构建界面 + 查主题白块（自动化测试用）
+ConvergenceClassItemRandomizer.exe --uitest                            :: 方案库交互自检（临时目录，不碰真 plans）
+ConvergenceClassItemRandomizer.exe --planlib                           :: 方案库模块自检（保存/列出/改名/导出/删除）
 ```
 
 **同一种子 = 完全一样的结果**；换种子就是另一套世界。种子记下来就能复盘，也能分享给别人复现。

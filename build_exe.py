@@ -15,7 +15,8 @@
         ⚠️ 这一步最容易被忘：exe 运行时释放的是 _assets 里那份快照，
         改完源码不打这一步，发出去的还是旧代码（这个坑我们踩过）。
      ② 用 spec 打包（依赖桩 + hiddenimports + _assets 都在 spec 里）。
-     ③ 隔离自检 —— 在一个**空目录**里跑新 exe 的 --selftest。
+     ③ 隔离自检 —— 在一个**空目录**里跑新 exe 的
+        --selftest / --planlib / --uicheck / --uitest 四道闸门。
         在开发目录里跑通不算数：开发目录里有整棵树，掩盖了"资源没打进去"的问题。
 """
 import os
@@ -100,16 +101,27 @@ def main():
     print("  ③ 隔离自检（空目录，只放 exe）…")
     d = tempfile.mkdtemp(prefix="_iso_")
     shutil.copy2(exe, d)
+    n_bad = 0
     try:
-        r = subprocess.run([os.path.join(d, "ConvergenceClassItemRandomizer.exe"), "--selftest"],
-                           cwd=d, capture_output=True, timeout=300)
-        _dec = lambda b: (b or b"").decode("utf-8", "replace") if isinstance(b, bytes) else (b or "")
-        out = _dec(r.stdout) + _dec(r.stderr)
-        ok = "SELFTEST PASS" in out
-        print(f"     {'✓ 通过' if ok else '✗ 失败'}")
-        if not ok:
-            print("\n".join(out.splitlines()[-14:]))
-        return 0 if ok else 1
+        # 四道闸门都要在**空目录**里过一遍：开发目录里有整棵树，会掩盖"资源没打进去"。
+        # --uicheck / --uitest 会短暂开一个窗口（界面自检），属于预期。
+        for flag, want in (("--selftest", "SELFTEST PASS"), ("--planlib", "PLANLIB PASS"),
+                           ("--uicheck", "UICHECK PASS"), ("--uitest", "UITEST PASS")):
+            try:
+                r = subprocess.run([os.path.join(d, "ConvergenceClassItemRandomizer.exe"), flag],
+                                   cwd=d, capture_output=True, timeout=300)
+            except subprocess.TimeoutExpired:
+                print(f"     ✗ {flag} 超时（300 秒没结束）")
+                n_bad += 1
+                continue
+            _dec = lambda b: (b or b"").decode("utf-8", "replace") if isinstance(b, bytes) else (b or "")
+            out = _dec(r.stdout) + _dec(r.stderr)
+            ok = want in out
+            print(f"     {'✓' if ok else '✗'} {flag}")
+            if not ok:
+                n_bad += 1
+                print("\n".join(out.splitlines()[-14:]))
+        return 0 if not n_bad else 1
     finally:
         shutil.rmtree(d, ignore_errors=True)
 

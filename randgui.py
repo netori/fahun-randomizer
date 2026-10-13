@@ -815,6 +815,7 @@ class App:
     def _lib_show(self, pid):
         """把某个方案摊在右侧详情面板上"""
         self._lib_cur = pid
+        self.lib_tag_entry.pack_forget()          # 换方案时把"加标签"的输入框收回去
         usable = bool(pid) and not (self._lib_metas.get(pid) or {}).get("broken")
         for key, b in getattr(self, "lib_btns", {}).items():
             if key == "delete":
@@ -924,7 +925,8 @@ class App:
     def _lib_tags_render(self, tags):
         """标签画成一排小筹码：点筹码上的 ✕ 就去掉"""
         for w in self.lib_tag_box.winfo_children():
-            w.destroy()
+            if w is not self.lib_tag_entry:          # 那个输入框是常驻控件，别销毁
+                w.destroy()
         for tg in tags:
             chip = ttk.Label(self.lib_tag_box, text=f"{tg} ✕", style="Chip.TLabel")
             chip.pack(side="left", padx=(0, 4))
@@ -935,8 +937,8 @@ class App:
             ttk.Label(self.lib_tag_box, text="（还没标签）", style="Hint.TLabel").pack(side="left")
 
     def _lib_tag_add(self):
-        """就地加标签：在原地冒出一个输入框，回车就加上（不弹对话框）"""
-        self.lib_tag_entry.pack(side="right", padx=(6, 0))
+        """就地加标签：在筹码后面冒出一个输入框，回车就加上（不弹对话框）"""
+        self.lib_tag_entry.pack(side="left", padx=(6, 0))
         self.lib_tag_entry.delete(0, "end")
         self.lib_tag_entry.focus_set()
 
@@ -967,11 +969,6 @@ class App:
             return
         self._lib_refresh(keep=self._lib_cur)
         self._lib_toast(f"已添加标签「{tag}」" if add else f"已去掉标签「{tag}」")
-
-    def open_library(self):
-        """跳到方案库页（原来是一扇独立小窗）"""
-        self.nb.select(self.page_lib)
-        self._lib_refresh()
 
     # ── 方案库：动作 ──
     def _lib_menu_build(self):
@@ -1299,6 +1296,8 @@ class App:
                         self.checks.insert("", "end", values=(k, v))
                 elif kind == "summary":
                     self.summary.set(str(payload))
+                elif kind == "coh":
+                    self._coh_hint()            # 后台线程只投消息，动界面的事都在这里做
         except queue.Empty:
             pass
         self.root.after(120, self._pump)
@@ -1465,7 +1464,7 @@ class App:
                                   for r in sorted(rows, key=lambda x: (x["old"]))[:300]]))
             self.log(f"完成：置换行 {len(rows)} ｜ 物品 {len(items)} ｜ 种子 {seed}")
             self.log("检查：" + "，".join(f"{k}={'通过' if v else '[X]失败'}" for k, v in ck.items()))
-            self._coh_hint()
+            self.q.put(("coh", None))       # 这句要回主线程再做：Tk 控件不能被后台线程碰
             self.q.put(("status", f"生成完成（种子 {seed}）：可以点 ② 写入游戏了"))
         except Exception as e:
             import traceback
@@ -2144,7 +2143,28 @@ def cli_planlib():
         shutil.rmtree(ws, ignore_errors=True)
 
 
+def _console_utf8():
+    """让命令行输出在 Windows 上也安全。
+
+    为什么必须做：打包成 windowed exe 后，输出被重定向（管道/写文件）时 Python 用**系统
+    本地编码**（中文 Windows 是 GBK），而 GBK 里没有 ✓ ⚙ ✗ 这些字符 —— 一句 print 就会
+    抛 UnicodeEncodeError，窗口版还会弹出 PyInstaller 的错误框把自动化卡死（踩过）。
+    做法：管道/重定向时改成 UTF-8；真控制台不动（Python 走 Windows 控制台 API，中文本来就正常）。
+    """
+    for s in (sys.stdout, sys.stderr):
+        try:
+            if s is None:
+                continue
+            if not s.isatty():
+                s.reconfigure(encoding="utf-8", errors="replace")
+            else:
+                s.reconfigure(errors="replace")
+        except Exception:
+            pass
+
+
 def main():
+    _console_utf8()
     # 尽早发布 MOD 路径：写入管线在 import 时就会读取它（打包版尤其重要）
     try:
         publish_mod_root(find_mod_root())
