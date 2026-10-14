@@ -161,6 +161,27 @@ def main():
     s_b = stats(pl_b, it_b)
     ck("单独合理度·卢恩（各自随机时）", s["buckets"] < s_b["buckets"],
        f"卢恩 0%：桶 {s_b['buckets']} → {s['buckets']}")
+    # 护甲那条（各自随机时才有自己的池）
+    # 判据别看"池个数" —— 100% 时是 4 档 × (法祷/近战 × 部位) ，0% 时是 1 档 × 同样多的组合，
+    # 个数可能**刚好相等**（实测都是 9），得直接看档位名。
+    _arm_pools = lambda c: sorted({x["pool"] for x in
+                                   run(dict(BASE, cross_domain=False, coherence=1.0,
+                                            coh_domain={"armor": c}))[0]
+                                   if x["pool"].startswith("armor")})
+    _a1, _a0 = _arm_pools(1.0), _arm_pools(0.0)
+    ck("单独合理度·护甲（各自随机时）",
+       _a1 != _a0 and all("档组0" in p for p in _a0) and any("档组0" not in p for p in _a1),
+       f"100%→{len(_a1)} 个护甲池（含非 0 档）；0%→{len(_a0)} 个、全部并到档组0")
+
+    def _mix_weapons(c):
+        _it = _R.load_world(True, "guide")
+        return sum(1 for x in _R.run(_it, dict(BASE, coh_domain={"weapon": c}), 20261010)[0]
+                   if x["old"] != x["new"] and x["pool"].startswith("mixed")
+                   and (_it.get(tuple(str(x["old"]).split(":"))) or {}).get("domain") == "weapon")
+
+    ck("单独合理度·装备（它同时决定掺进混池的比例）",
+       _mix_weapons(1.0) == 0 and _mix_weapons(0.0) > 0,
+       f"装备 100%→掺入 {_mix_weapons(1.0)} 行；50%→{_mix_weapons(0.5)}；0%→{_mix_weapons(0.0)}")
 
     # ⑥ 改动比例
     prev = None

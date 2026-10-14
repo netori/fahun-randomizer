@@ -145,6 +145,15 @@ def main():
         ck("掉落表确实被改写（抽检）", hits > 0,
            f"{hits} 行 itemId 变了；没变的 {len(miss)} 行"
            + (f"，样例 {miss[:2]}" if miss else ""))
+
+        # 还原成原始：与 GUI「还原成原始」同一套逻辑（把两份原始备份拷回去）→ 必须逐字节复原
+        shutil.copy2(orig_reg[-1], os.path.join(sb, "mod", "regulation.bin"))
+        shutil.copy2(_orig_msg[-1], os.path.join(sb, msg_rel))
+        _after_restore = _plain()
+        ck("还原成原始·两份都逐字节复原",
+           _after_restore == pristine and _msg_hash() == pristine_msg,
+           f"regulation {'一致' if _after_restore == pristine else '不一致'}"
+           f"｜说明书 {after_on} → {_msg_hash()}（原始 {pristine_msg}）")
     finally:
         os.environ.pop("CONVERGENCE_MOD_ROOT", None)
         native_deploy.MOD = here_mod
