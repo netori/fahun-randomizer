@@ -79,6 +79,37 @@ def engine_dir():
     return os.path.join(BUNDLE, "engine")
 
 
+# ── 装饰件（AI 生的图，见 tools/_make_deco.py）──────────────────────
+#   打包版从 exe 内部的释放目录读（spec 里 _assets 整个打进去了）；
+#   图缺了**不影响使用** —— 全部返回 None，界面照常建起来。
+_deco_cache = {}
+
+
+def deco_path(name):
+    for base in (os.path.join(BUNDLE, "_assets", "deco"), os.path.join(HERE, "_assets", "deco")):
+        p = os.path.join(base, name)
+        if os.path.isfile(p):
+            return p
+    return None
+
+
+def deco_image(name, scale=None):
+    """按屏幕缩放挑 1× / 2× 那张（150% 屏用 2×，不然会糊）"""
+    key = (name, scale)
+    if key in _deco_cache:
+        return _deco_cache[key]
+    fname = f"{name}@2x.png" if (scale or S) >= 1.5 else f"{name}.png"
+    img = None
+    p = deco_path(fname) or deco_path(f"{name}.png")
+    if p:
+        try:
+            img = tk.PhotoImage(file=p)
+        except Exception:
+            img = None
+    _deco_cache[key] = img
+    return img
+
+
 def load_engine():
     """加载引擎模块，并把它的路径常量指到真实工作区"""
     p = os.path.join(engine_dir(), "scripts", "randomizer.py")
@@ -325,7 +356,9 @@ def apply_theme(root):
            foreground=[("disabled", DISABLED)])
     st.configure("Accent.TButton", background=GOLD, foreground=BG,
                  font=(FONT_NAME, 11, "bold"))
-    st.map("Accent.TButton", background=[("active", GOLD_LT), ("pressed", GOLD)],
+    # 禁用态：底色退回输入框底（灰字压金底只有 1.5:1，等于看不见 —— 实测踩过）
+    st.map("Accent.TButton", background=[("active", GOLD_LT), ("pressed", GOLD),
+                                         ("disabled", FIELD)],
            foreground=[("disabled", DISABLED)])
     st.configure("Danger.TButton", background=PANEL, foreground=DANGER)
     st.map("Danger.TButton", background=[("active", DANGER_FILL), ("pressed", DANGER_FILL)],
@@ -379,6 +412,8 @@ def apply_theme(root):
     st.configure("Status.TLabel", background=BG, foreground=GOLD_LT)
     st.configure("Bad.TLabel", background=BG, foreground=DANGER)
     st.configure("Card.TFrame", background=PANEL)
+    # 装饰图（标题下的金藤蔓、空库插画）：底色要显式给，不然图周围一圈不对
+    st.configure("Deco.TLabel", background=BG)
     # 标签筹码（详情面板里的小方块）
     st.configure("Chip.TLabel", background=PANEL, foreground=GOLD, padding=(px(6), px(2)),
                  borderwidth=1, relief="solid", bordercolor=EDGE)
@@ -406,6 +441,13 @@ class App:
         self.q = queue.Queue()
         self._adv_open = False
         self._detail_open = False
+        ic = deco_image("icon", scale=1)      # 窗口/任务栏图标（256px 那张够用）
+        if ic:
+            self._deco_icon = ic
+            try:
+                root.iconphoto(True, ic)
+            except Exception:
+                pass
         apply_theme(root)                 # 必须在建任何控件之前
         self._build()
         root.after(120, self._pump)
@@ -423,16 +465,28 @@ class App:
         """一屏两页：顶部标题 + 两个页签（随机设置 / 方案库）"""
         head = ttk.Frame(self.root, padding=(px(16), px(12), px(16), px(2)))
         head.pack(fill="x")
-        ttk.Label(head, text="法魂职业道具和装备随机器", style="Title.TLabel").pack(side="left")
-        ttk.Label(head, text="只换物品、不搬位置；随时可以一键还原",
-                  style="Hint.TLabel").pack(side="left", padx=(12, 0), pady=(6, 0))
+        row = ttk.Frame(head)
+        row.pack(fill="x")
+        ttk.Label(row, text="法魂职业道具和装备随机器", style="Title.TLabel").pack(side="left")
+        ttk.Label(row, text="只换物品、不搬位置；随时可以一键还原",
+                  style="Hint.TLabel").pack(side="left", padx=(px(12), 0), pady=(px(6), 0))
+        div = deco_image("divider")              # 标题下的一条金藤蔓
+        if div:
+            self._deco_div = div                 # 得留个引用，不然 Tk 会把图回收掉
+            ttk.Label(head, image=div, style="Deco.TLabel").pack(pady=(px(6), 0))
 
         self.nb = ttk.Notebook(self.root)
-        self.nb.pack(fill="both", expand=True, padx=10, pady=(4, 10))
+        self.nb.pack(fill="both", expand=True, padx=px(10), pady=(px(4), px(10)))
         self.page_set = ttk.Frame(self.nb)
-        self.nb.add(self.page_set, text="  ⚙ 随机设置  ")
         self.page_lib = ttk.Frame(self.nb, padding=(px(10), px(8), px(10), px(4)))
-        self.nb.add(self.page_lib, text="  📚 方案库  ")
+        self._deco_tabs = []
+        for page, label, icon in ((self.page_set, "随机设置", deco_image("tab_settings")),
+                                  (self.page_lib, "方案库", deco_image("tab_library"))):
+            if icon:
+                self._deco_tabs.append(icon)
+                self.nb.add(page, text=f"  {label}  ", image=icon, compound="left")
+            else:
+                self.nb.add(page, text=f"  {label}  ")
         self._build_settings(self._scrollable(self.page_set))
         self._build_library(self.page_lib)
         self.nb.bind("<<NotebookTabChanged>>", self._on_tab_changed)
@@ -654,9 +708,13 @@ class App:
         self.lib_tree.bind("<<TreeviewSelect>>", lambda _e: self._lib_on_select())
         self.lib_tree.bind("<Button-3>", self._lib_ctx)                  # 右键菜单
         self.lib_tree.bind("<Double-1>", lambda _e: self._lib_write())   # 双击=写入游戏
-        # 空状态：一个方案都没有时，告诉人下一步该干什么
+        # 空状态：一个方案都没有时，告诉人下一步该干什么（配一张古书插画）
         self.lib_empty = ttk.Frame(self.lib_box)
-        ttk.Label(self.lib_empty, text="还没有方案", style="Gold.TLabel").pack(anchor="w", pady=(20, 4))
+        book = deco_image("empty_plans")
+        if book:
+            self._deco_book = book
+            ttk.Label(self.lib_empty, image=book, style="Deco.TLabel").pack(anchor="w")
+        ttk.Label(self.lib_empty, text="还没有方案", style="Gold.TLabel").pack(anchor="w", pady=(0, 4))
         self.lib_empty_txt = ttk.Label(
             self.lib_empty, style="Hint.TLabel", justify="left", wraplength=px(380),
             text="先到「随机设置」生成一套（点 ① 生成随机方案），\n再点那里的「💾 保存到方案库」，方案就会出现在这里。")
@@ -1731,6 +1789,8 @@ CONTRAST_REQUIREMENTS = (
     ("金标题 / 窗口底", GOLD, BG, 6.0),
     ("危险色 / 面板底", DANGER, PANEL, 4.5),
     ("禁用文字 / 面板底", DISABLED, PANEL, 3.5),
+    ("金色主按钮文字 / 金底", BG, GOLD, 4.5),
+    ("金色主按钮（禁用）/ 输入框底", DISABLED, FIELD, 4.0),
     ("选中行文字 / 选中底", WHITE, SEL_BG, 8.0),
 )
 

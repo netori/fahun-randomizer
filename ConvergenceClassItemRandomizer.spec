@@ -23,6 +23,7 @@ exe = EXE(
     a.datas,
     [],
     name='ConvergenceClassItemRandomizer',
+    icon='_assets/deco/app.ico',      # exe / 任务栏图标（AI 生的金符文徽记）
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
