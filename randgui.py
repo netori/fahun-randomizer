@@ -589,13 +589,15 @@ class App:
         self.lbl_cohtxt = ttk.Label(s2, text="", style="Hint.TLabel")
         self.lbl_cohtxt.pack(anchor="w", pady=(2, 0))
 
-        # ── 单独设合理度：每个类别各一条（不勾 = 跟上面这条全局的走）──
-        #    第 1 步没勾的类别不摆出来；**整类进了混池的**（全部混合时的护甲/卢恩）也不摆 ——
-        #    那时它们由混池那条统管。这些规则见 _coh_applicable()。
+        # ── 单独设合理度：**勾了才展开**（2026-10-14 作者要求：折叠起来，勾选后按混合方式
+        #    展示需要的那几条表单）──
+        #    展开后摆哪几条见 _coh_applicable()：进了混池的类别没有自己那条，由「混池」统管。
         r4b = ttk.Frame(s2); r4b.pack(fill="x", pady=(6, 0))
-        ttk.Label(r4b, text="单独设合理度", style="Sub.TLabel").pack(side="left")
-        ttk.Label(r4b, text="· 只列当前真正起作用的那几条（进了混池的由「混池」统管）",
-                  style="Hint.TLabel").pack(side="left", padx=6)
+        self.coh_on = tk.BooleanVar(value=False)
+        ttk.Checkbutton(r4b, text="单独设合理度", variable=self.coh_on,
+                        command=self._refresh_cohs).pack(side="left")
+        self.coh_hint = ttk.Label(r4b, text="", style="Hint.TLabel")
+        self.coh_hint.pack(side="left", padx=6)
         cgrid = ttk.Frame(s2); cgrid.pack(fill="x")
         self.coh_rows = {}
         for i, (key, text) in enumerate((("mixed", "混池"), ("rune", "卢恩"),
@@ -662,15 +664,13 @@ class App:
                         variable=self.shops).pack(side="left")
         ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
                   style="Hint.TLabel").pack(side="left", padx=8)
-        # ── 改动比例：只留两条（2026-10-14 按作者要求收敛）──
-        #    · 法祷职业护甲 —— 整套与散件一起调（引擎里是 rate_sets + rate_caster 两个键）
-        #    · 商店物品     —— **有商店在卖的那批物品**里，多少参与互换（rate_shop，按物品抽）
-        #    其余（混池/卢恩/护甲/装备）不再摆出来：作者只关心这两条的随机率。
-        #    不勾 = 这一类全改（100%）。
+        # ── 改动比例：同样**勾了才展开**（与"单独设合理度"一个样式）──
         a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(6, 0))
-        ttk.Label(a2r, text="改动比例", style="Sub.TLabel").pack(side="left")
-        ttk.Label(a2r, text="· 不勾 = 这一类全改；商店那条按**物品**抽（货架与宝箱同一件一起变）",
-                  style="Hint.TLabel").pack(side="left", padx=6)
+        self.rate_on = tk.BooleanVar(value=False)
+        ttk.Checkbutton(a2r, text="改动比例", variable=self.rate_on,
+                        command=self._refresh_rates).pack(side="left")
+        self.rate_hint = ttk.Label(a2r, text="", style="Hint.TLabel")
+        self.rate_hint.pack(side="left", padx=6)
         # 用 grid（不用 pack）：隐藏/恢复的时候格子还在，**顺序不会乱**
         rgrid = ttk.Frame(self.adv); rgrid.pack(fill="x")
         self.rate_rows = {}
@@ -1329,11 +1329,15 @@ class App:
                 _rc2 = cfg.get("rate_sets")
             self._rate_set("caster", _rc2 is not None, _rc2)
             _rsh2 = cfg.get("rate_shop")
+            # 有单独设过的值 ⇒ 自动把这两组**展开**（不然用户看不到自己存过什么）
+            self.rate_on.set(bool(_rc2 is not None or _rsh2 is not None))
+            self._rate_set("caster", _rc2 is not None, _rc2)
             self._rate_set("shop", _rsh2 is not None, _rsh2)
             self._refresh_rates()
             _cm2 = cfg.get("coh_mixed")
-            self._coh_set("mixed", _cm2 is not None, _cm2)
             _cd3 = cfg.get("coh_domain") or {}
+            self.coh_on.set(bool(_cm2 is not None or _cd3))
+            self._coh_set("mixed", _cm2 is not None, _cm2)
             for _k2 in ("armor", "weapon", "rune"):
                 self._coh_set(_k2, _k2 in _cd3, _cd3.get(_k2))
             self._refresh_cohs()
@@ -1723,12 +1727,22 @@ class App:
         return self._ov_set(self.rate_rows, key, on, val)
 
     def _rate_applicable(self):
-        """哪几条"改动比例"现在有用（只有两条）：
+        """哪几条"改动比例"现在有用（**勾选总开关之后**才可能展开）：
         · 法祷职业护甲：勾了护甲才有意义（它属于护甲）
         · 商店物品：勾了「商店里的职业装备也一起换」才有意义 —— 没勾时商店根本不参与
         """
+        if not getattr(self, "rate_on", None) or not self.rate_on.get():
+            return {}
         doms = self._picked_doms()
         return {"caster": "armor" in doms, "shop": bool(self.shops.get())}
+
+    def _refresh_rates(self, *_a):
+        if getattr(self, "rate_hint", None):
+            self.rate_hint.config(
+                text=("· 不勾某条 = 这一类全改；商店那条按**物品**抽（货架与宝箱同一件一起变）"
+                      if self.rate_on.get() else
+                      "· 不勾 = 全部照常改（100%）"))
+        self._ov_refresh(getattr(self, "rate_rows", None), self._rate_applicable())
 
     def _refresh_rates(self, *_a):
         """按当前勾选动态增减这几条比例行（隐藏的行**一定**回到未勾选，
@@ -1784,24 +1798,30 @@ class App:
         return [set(doms)]                       # 全部混合：三类一起进混池
 
     def _coh_applicable(self):
-        """哪几条"单独设合理度"现在真的起作用：
+        """哪几条"单独设合理度"现在真的起作用（**勾选总开关之后**才可能展开）：
+
         · 混池：当前会建混池才有这条
-        · 卢恩 / 护甲：勾了、而且**没有整类进混池**（整类进了就由「混池」那条统管）
-        · 装备（武器）：勾了就有 —— 它只按比例掺进混池，总有一部分武器留在自己的池里，
-          而且「掺多少进混池」本身就按这条算
+        · 卢恩 / 护甲 / 装备（武器）：勾了、而且**没有进混池** —— 进了混池就由「混池」那条统管，
+          自己那条收起来（武器也按这条规则，2026-10-14 作者要求统一）
         · 法祷护甲没有这条：它不分级（规格 §3.4），合理度对它没有意义
         """
+        if not getattr(self, "coh_on", None) or not self.coh_on.get():
+            return {}
         doms = self._picked_doms()
         in_mix = set()
         for g in self._join_groups():
             in_mix |= set(g)
         out = {"mixed": bool(self._join_groups())}
-        for d in ("rune", "armor"):
+        for d in ("rune", "armor", "weapon"):
             out[d] = (d in doms) and (d not in in_mix)
-        out["weapon"] = "weapon" in doms
         return out
 
     def _refresh_cohs(self, *_a):
+        if getattr(self, "coh_hint", None):
+            self.coh_hint.config(
+                text=("· 只列当前真正起作用的那几条（进了混池的由「混池」统管）"
+                      if self.coh_on.get() else
+                      "· 不勾 = 所有池子都用上面这条全局合理度"))
         self._ov_refresh(getattr(self, "coh_rows", None), self._coh_applicable())
 
     def _coh_set(self, key, on, val=None):
@@ -2042,12 +2062,14 @@ class App:
             _rc = c.get("rate_sets")
         self._rate_set("caster", _rc is not None, _rc)
         _rsh = c.get("rate_shop")
+        self.rate_on.set(bool(_rc is not None or _rsh is not None))   # 存过就展开
         self._rate_set("shop", _rsh is not None, _rsh)
         self._refresh_rates()
         # 单独设的合理度（旧设置文件没有 → 回到跟全局走）
         _cm = c.get("coh_mixed")
-        self._coh_set("mixed", _cm is not None, _cm)
         _cd2 = c.get("coh_domain") or {}
+        self.coh_on.set(bool(_cm is not None or _cd2))                # 存过就展开
+        self._coh_set("mixed", _cm is not None, _cm)
         for _k in ("armor", "weapon", "rune"):
             self._coh_set(_k, _k in _cd2, _cd2.get(_k))
         self._refresh_cohs()
@@ -2459,6 +2481,28 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     import tkinter.filedialog as fd
 
     # ── 改动比例：只剩两条（法祷职业护甲 / 商店物品）2026-10-14 收敛 ──
+    # 默认收起：两组都不摆任何行，也不往 cfg 里塞键
+    ck("折叠：默认两组都收起（行全隐藏）",
+       not any(r["row"].winfo_manager() for r in app.rate_rows.values())
+       and not any(r["row"].winfo_manager() for r in app.coh_rows.values()),
+       f"比例={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}｜"
+       f"合理度={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
+    _c_fold = app._collect()
+    ck("折叠：收起时任何单独比例 / 单独合理度都不进 cfg",
+       not any(_c_fold.get(k) is not None for k in ("rate_sets", "rate_caster", "rate_shop",
+                                                    "coh_mixed", "coh_domain")),
+       f"{ {k: _c_fold.get(k) for k in ('rate_sets', 'rate_caster', 'rate_shop', 'coh_mixed', 'coh_domain')} }")
+    app.shops.set(True)                     # 商店那条要有意义，得先开着商店
+    app.rate_on.set(True); app.coh_on.set(True)
+    app._refresh_rates(); app._refresh_cohs()
+    root.update()
+    ck("折叠：勾上总开关 ⇒ 该模式的几条出现（全部混合：比例=法祷/商店，合理度=混池）",
+       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == ["caster", "shop"]
+       and [k for k, r in app.coh_rows.items() if r["row"].winfo_manager()] == ["mixed"],
+       f"比例={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}｜"
+       f"合理度={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
+
+    # ── 改动比例：两条（法祷职业护甲 / 商店物品）──
     _c0 = app._collect()
     ck("改动比例：默认不勾 ⇒ 三个键都不带（= 全改）",
        _c0.get("rate_sets") is None and _c0.get("rate_caster") is None
@@ -2495,7 +2539,9 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')} shop={_c2.get('rate_shop')}")
 
     # ── 动态：只跟着"勾了哪些类别 / 商店开没开"增减 ──
-    app.shops.set(True)                     # 方案库载入会把商店开关带回方案里的值，这里显式打开
+    #    （方案库载入会把这两组按"方案里存过没有"重新折叠，所以这里显式展开 + 开商店）
+    app.shops.set(True)
+    app.rate_on.set(True)
     app._rate_set("caster", True, 0.4)
     app._refresh_rates()
     root.update()
@@ -2539,18 +2585,25 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
         root.update()
 
     app.nb.select(app.page_set); root.update()
+    app.coh_on.set(True); app._refresh_cohs()      # 折叠开关：这里要展开才能看行
     _pick_mode(_i_all)
     ck("动态刷新：换混合方式会触发两组刷新（真实事件路径）",
        app._coh_applicable().get("mixed") is True, f"coh={app._coh_applicable()}")
     _ca = app._coh_applicable()
-    ck("单独合理度：全部混合时只有「混池」与「装备」（卢恩/护甲整类进了混池）",
-       _ca["mixed"] and _ca["weapon"] and not _ca["rune"] and not _ca["armor"], f"{_ca}")
-    ck("单独合理度：界面跟着变（卢恩那行收起来了）",
+    ck("单独合理度：全部混合时只剩「混池」（三个类别都进了混池，武器也一样）",
+       _ca["mixed"] and not _ca["weapon"] and not _ca["rune"] and not _ca["armor"], f"{_ca}")
+    ck("单独合理度：界面跟着变（卢恩/装备那两行都收起来了）",
        not app.coh_rows["rune"]["row"].winfo_manager()
+       and not app.coh_rows["weapon"]["row"].winfo_manager()
        and bool(app.coh_rows["mixed"]["row"].winfo_manager()),
        f"卢恩={app.coh_rows['rune']['row'].winfo_manager()!r} "
+       f"装备={app.coh_rows['weapon']['row'].winfo_manager()!r} "
        f"混池={app.coh_rows['mixed']['row'].winfo_manager()!r}")
-    _pick_mode([[i for i, v in enumerate(_modes) if "各自" in v][0]][0])
+    _pick_mode([i for i, v in enumerate(_modes) if "混 ·" in v][0])   # 两两混：谁独自谁那条在
+    _cw = app._coh_applicable()
+    ck("单独合理度：两两混时落单那类仍有自己的那条",
+       _cw["mixed"] and sum(bool(_cw[k]) for k in ("rune", "armor", "weapon")) == 1, f"{_cw}")
+    _pick_mode(_i_sep)
     _cb = app._coh_applicable()
     ck("单独合理度：切到「各自」后没有混池那条，三个类别各自回来",
        (not _cb["mixed"]) and _cb["rune"] and _cb["armor"] and _cb["weapon"], f"{_cb}")
