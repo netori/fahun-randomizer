@@ -85,10 +85,16 @@ def main():
     import randomizer as _R
 
     rows = []
+    known = []          # 已知空转/不适用项（不计入失败）
 
     def ck(name, ok, detail):
         rows.append((name, bool(ok), detail))
         print(f"  {'✓' if ok else '✗'} {name}　{detail}", flush=True)
+
+    def ck_known(name, detail):
+        """已知空转/不适用项：如实打印，但不计入失败（作者 2026-10-14 决定：界面已撤掉那个开关）"""
+        known.append((name, detail))
+        print(f"  ⚠ {name}　{detail}", flush=True)
 
     print("=== 逐旋钮体检（种子 %d）===" % SEED, flush=True)
     base_plan, base_items = run(dict(BASE))
@@ -197,10 +203,10 @@ def main():
     _bp2 = _R.build_pools(base_items, dict(BASE, cross_domain=False, merge_shadow=True))
     _k_off = {k for k in _bp if k.startswith("rune")}
     _k_on = {k for k in _bp2 if k.startswith("rune")}
-    ck("幽影卢恩与普通卢恩一起换", fingerprint(pl_on) != fingerprint(pl_off),
-       f"池键 {'变了' if _k_on != _k_off else '没变'}（{len(_k_off)}→{len(_k_on)} 个），"
-       f"但计划指纹 {fingerprint(pl_off)} / {fingerprint(pl_on)} —— "
-       + ("生效" if fingerprint(pl_on) != fingerprint(pl_off) else "**结果没变 = 这个开关空转**"))
+    ck_known("幽影卢恩与普通卢恩一起换（已知空转；界面 2026-10-14 已撤掉这个开关）",
+             f"池键 {'变了' if _k_on != _k_off else '没变'}（{len(_k_off)}→{len(_k_on)} 个），"
+             f"计划指纹 {'仍相同' if fingerprint(pl_on) == fingerprint(pl_off) else '不同'}："
+             "档位系统里 大师=幽影 都是 3 档（规格 §2/Q3），按档位分桶时必然并到一起 ⇒ 改不了结果")
 
     # ⑩ 种子
     pl_a, _ = run(dict(BASE))
@@ -210,9 +216,11 @@ def main():
 
     print("\n=== 汇总 ===")
     bad = [r for r in rows if not r[1]]
-    print(f"  通过 {len(rows) - len(bad)} ｜ 无效果/异常 {len(bad)}")
+    print(f"  通过 {len(rows) - len(bad)} ｜ 无效果/异常 {len(bad)} ｜ 已知空转 {len(known)}")
     for name, _ok, detail in bad:
         print(f"    ✗ {name}　{detail}")
+    for name, detail in known:
+        print(f"    ⚠ {name}　{detail}")
     return 0 if not bad else 2
 
 

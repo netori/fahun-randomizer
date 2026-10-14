@@ -646,11 +646,12 @@ class App:
         self.adv = ttk.LabelFrame(body, text=" 更多设置 ", padding=(px(12), px(8)))
         a1 = ttk.Frame(self.adv); a1.pack(fill="x")
         self.sets = tk.BooleanVar(value=True)
-        self.shadow = tk.BooleanVar(value=False)
         self.guide = tk.BooleanVar(value=True)
         ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets,
                         command=self._refresh_rates).pack(side="left")
-        ttk.Checkbutton(a1, text="幽影卢恩与普通卢恩一起换", variable=self.shadow).pack(side="left", padx=12)
+        # 「幽影卢恩与普通卢恩一起换」这个开关 2026-10-14 撤掉了：
+        # 实测它改不了任何结果 —— 档位系统里 大师=幽影 都是 3 档（规格 §2 / Q3 定下的），
+        # 按档位分桶时两者必然并到一起。留着只会让人以为"某个开关没生效"。
         ttk.Checkbutton(a1, text="说明书跟着一起改", variable=self.guide).pack(side="left", padx=12)
         a2b = ttk.Frame(self.adv); a2b.pack(fill="x", pady=(6, 0))
         self.shops = tk.BooleanVar(value=False)      # 默认关：老玩法完全不受影响
@@ -1312,7 +1313,7 @@ class App:
             cfg = pl.get_plan(pid).get("cfg") or {}
             self.seed.set(str(cfg.get("seed", self.seed.get())))
             self.sets.set(cfg.get("sets", True))
-            self.shadow.set(cfg.get("merge_shadow", False))
+            # （幽影卢恩那个开关已撤：大师=幽影同档，规格 §2 / Q3）
             self.density.set(float(cfg.get("density", 1.0)))
             self.coherence.set(float(cfg.get("coherence", 0.8)))
             self.lbl_coh.config(text=f"{float(cfg.get('coherence', 0.8)) * 100:.0f}%")
@@ -1814,7 +1815,8 @@ class App:
                 "basis": "guide", "shops": self._shops(),  # 说明书范围固定；商店是否参与看「更多设置」
                 "joins": joins,                      # 两两混：只给这一组建混池
                 "cross_domain": (not sep) and not joins,   # 全部混合=建混池；两两混/各自=不建
-                "merge_shadow": self.shadow.get(), "sets": self.sets.get(),
+                "merge_shadow": False, "sets": self.sets.get(),   # 恒定 False：界面不再暴露这个空转开关
+
                 "seed": int(self.seed.get()), "density": round(float(self.density.get()), 3),
                 # 单独设的比例（没勾就不带这两个键 ⇒ 跟全局比例走）
                 "rate_sets": _rates.get("sets"),
@@ -1998,7 +2000,6 @@ class App:
         c = json.load(open(p, encoding="utf-8"))
         self.seed.set(str(c.get("seed", self.seed.get())))
         self.sets.set(c.get("sets", True))
-        self.shadow.set(c.get("merge_shadow", False))
         self.density.set(float(c.get("density", 1.0)))
         self.coherence.set(float(c.get("coherence", 0.8)))
         self.lbl_coh.config(text=f"{float(c.get('coherence',0.8))*100:.0f}%")
@@ -2134,7 +2135,7 @@ def audit_light_widgets(root, limit=0.80):
 # 页 1 上必须存在的控件（拆页签时最容易漏掉几个）——「功能没少」的机械证据
 SETTINGS_WIDGETS = ("b_gen", "b_dep", "lbl_env", "cb_mode", "lbl_combo", "lbl_coh", "lbl_cohtxt",
                     "lbl_den", "checks", "tbl", "txt", "summary", "status", "adv", "detail",
-                    "doms", "mode", "seed", "coherence", "density", "sets", "shadow", "guide",
+                    "doms", "mode", "seed", "coherence", "density", "sets", "guide",
                     "shops")
 
 
@@ -2764,7 +2765,7 @@ def selftest(seed=20261010):
         print("SELFTEST FAIL: 找不到工作区"); return 1
     m = load_engine()
     cfg = {"domains": ["rune", "armor", "weapon"], "joins": [], "basis": "guide",
-           "shops": True, "merge_shadow": False, "sets": True, "seed": seed}
+           "shops": True, "sets": True, "seed": seed}
     sigs = []
     import hashlib
     for _ in range(2):
