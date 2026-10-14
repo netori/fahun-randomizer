@@ -316,6 +316,23 @@ def _pair_ok(tgt, sco, f2_on=True):
     return (ta in CASTER_ARCH) == (sa in CASTER_ARCH)
 
 
+def _dom_of_units(units, items):
+    """池的大类（armor / weapon / rune）—— 给"按大类单独设比例"用。
+
+    池本来是同质的（池键里就带大类），取第一个能判出来的即可。"""
+    for u in units:
+        d = u.get("_dom")
+        if d:
+            return d
+        try:
+            d, _p, _a, _t = _unit_info(u, items)
+        except Exception:
+            d = None
+        if d:
+            return d
+    return None
+
+
 def _unit_info(u, items):
     """把一个"单元"（单件或套装）解析成 (大类, 部位, 流派, 档次)"""
     if str(u.get("id", "")).startswith("set:"):
@@ -667,17 +684,38 @@ def run(items, cfg, seed=None):
             if len(_pks) > 1:
                 swaps = {}
                 break
+    # 单独比例（可选，2026-10-14 加）：
+    #   · rate_domain = {"armor": 0.3, "weapon": 1.0, "rune": 0.5} —— 按大类各给一个比例
+    #   · rate_sets  = 0.6 —— 法祷**整套**装备单独一个比例（套装池，优先级高于大类）
+    #   缺省（没给）就还是跟全局 density 走 ⇒ 老配置的行为一个字节都不变。
+    _rate_domain = dict(cfg.get("rate_domain") or {})
+    _rate_sets = cfg.get("rate_sets")
     for pool, meta in sorted(pools.items()):
         units = [u for u in meta["units"] if u["id"] not in swaps]
         if len(units) < 2:
             for u in units:                                         # 池内唯一 → 保持原样
                 plan.extend(emit(u, u, pool, keep=True))
             continue
+        # 本池的改动比例：套装池 > 按大类 > 全局
+        _rate = density
+        if "混池" not in pool:
+            _dm = _dom_of_units(units, items)
+            if _dm in _rate_domain:
+                try:
+                    _rate = float(_rate_domain[_dm])
+                except (TypeError, ValueError):
+                    _rate = density
+            if _rate_sets is not None and any(u.get("parts") for u in units):
+                try:
+                    _rate = float(_rate_sets)
+                except (TypeError, ValueError):
+                    pass
+        _rate = max(0.0, min(1.0, _rate))
         # 密度：只在抽中的子集里做置换（子集内部一一对应 → 物品总量仍然守恒）
-        if density >= 0.999:
+        if _rate >= 0.999:
             idx = list(range(len(units)))
         else:
-            k = int(round(len(units) * density))
+            k = int(round(len(units) * _rate))
             if k < 2:
                 for u in units:
                     plan.extend(emit(u, u, pool, keep=True))

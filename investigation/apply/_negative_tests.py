@@ -87,6 +87,32 @@ def test_engine():
     check("H13 同种子结果完全一致", not diff and len(d1) == len(d2),
           f"{len(d1)} 条对比；不一致 {len(diff)}")
 
+    # ── 单独比例（rate_sets / rate_domain）：2026-10-14 加 ──
+    w = r.load_world(True, "guide")
+    CA = set(r.CASTER_ARCH)
+    _is_caster = lambda k: ((w.get(tuple(str(k).split(":"))) or {}).get("domain") == "armor"
+                            and (w.get(tuple(str(k).split(":"))) or {}).get("arch") in CA)
+    _base = dict(base, shops=True)
+    _n_sets = lambda cfg: len({x["unit"] for x in r.run(w, cfg, 20261010)[0]
+                               if x["unit"].startswith("set:") and x["old"] != x["new"]})
+    _n_parts = lambda cfg: len({x["unit"] for x in r.run(w, cfg, 20261010)[0]
+                                if not x["unit"].startswith("set:") and x["old"] != x["new"]
+                                and _is_caster(x["old"])})
+    _all = _n_sets(dict(_base))
+    check("N10 整套法祷比例生效：40% 时换掉的套数明显少于全开",
+          _all > 0 and 0 < _n_sets(dict(_base, rate_sets=0.4)) < _all,
+          f"全开 {_all} 套 → 40% {_n_sets(dict(_base, rate_sets=0.4))} 套")
+    check("N10b 整套法祷比例=0：整套一件都不换，但**散件照换**（两条线互不干扰）",
+          _n_sets(dict(_base, rate_sets=0.0)) == 0 and _n_parts(dict(_base, rate_sets=0.0)) > 0,
+          f"整套 {_n_sets(dict(_base, rate_sets=0.0))} 套 / 散件 {_n_parts(dict(_base, rate_sets=0.0))} 件")
+    check("N10c 全局比例压到 50% 时，整套比例仍能单独拉满（覆盖顺序：整套 > 大类 > 全局）",
+          _n_sets(dict(_base, density=0.5, rate_sets=1.0)) == _all,
+          f"全开 {_all} 套 → 全局50%+整套100% {_n_sets(dict(_base, density=0.5, rate_sets=1.0))} 套")
+    check("N10d 不传这两个键 ⇒ 行为与加功能前一致（老配置不受影响）",
+          _n_sets(dict(_base, density=0.5)) == _n_sets(dict(_base, density=0.5, rate_sets=None))
+          and _n_sets(dict(_base, rate_domain=None)) == _all,
+          f"50%: {_n_sets(dict(_base, density=0.5))} 套；rate_domain=None: {_n_sets(dict(_base, rate_domain=None))} 套")
+
     # H5 冻结/排除项不参与
     excl = os.path.join(WS, "..", "randomization-dryrun", "_multicopy_excluded.json")
     if not os.path.exists(excl):
