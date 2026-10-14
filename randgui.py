@@ -676,13 +676,15 @@ class App:
         #    不勾 = 这一类全改（100%）
         a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(6, 0))
         ttk.Label(a2r, text="改动比例", style="Sub.TLabel").pack(side="left")
-        self.rate_hint = ttk.Label(a2r, text="· 不勾某条 = 这一类全改；商店那条按**物品**抽（货架与宝箱同一件一起变）",
+        self.rate_hint = ttk.Label(a2r, text="· 不勾 = 这一类全改；商店开了就是**在卖的职业装备全部参与**（不做二次抽）",
                                    style="Hint.TLabel")
         self.rate_hint.pack(side="left", padx=6)
         # 用 grid（不用 pack）：隐藏/恢复的时候格子还在，**顺序不会乱**
         rgrid = ttk.Frame(self.adv); rgrid.pack(fill="x")
         self.rate_rows = {}
-        for i, (key, text) in enumerate((("caster", "法祷职业护甲"), ("shop", "商店物品"))):
+        #    商店**没有**比例条（2026-10-14 作者决定）：勾了「商店里的职业装备也一起换」
+        #    就等于"在卖的职业装备全部参与"（引擎侧 rate_shop 仍认，只是界面不再暴露）
+        for i, (key, text) in enumerate((("caster", "法祷职业护甲"),)):
             self._mk_override_row(rgrid, self.rate_rows, key, text, 0.05, 1.0, i)
         self._refresh_rates()               # 一建出来就按当前勾选理顺一次
 
@@ -1336,9 +1338,7 @@ class App:
             if _rc2 is None:
                 _rc2 = cfg.get("rate_sets")
             self._rate_set("caster", _rc2 is not None, _rc2)
-            _rsh2 = cfg.get("rate_shop")
             self._rate_set("caster", _rc2 is not None, _rc2)
-            self._rate_set("shop", _rsh2 is not None, _rsh2)
             self._refresh_rates()
             # 单池合理度：老方案里的 coh_mixed 不再回填（那时混池由总合理度管）
             _cd3 = cfg.get("coh_domain") or {}
@@ -1708,10 +1708,7 @@ class App:
         if not r:
             return
         v = float(r["val"].get())
-        if key == "caster":
-            what = "整套 / 散件" if self.sets.get() else "散件"
-        else:
-            what = "有商店在卖的物品"
+        what = "整套 / 散件" if self.sets.get() else "散件"
         try:
             r["note"].config(text=("全改（100%）" if v >= 0.999
                                    else f"≈{int(round(v * 100))}% 的{what}参与互换"))
@@ -1791,7 +1788,7 @@ class App:
         · 商店物品：勾了「商店里的职业装备也一起换」才有意义 —— 没勾时商店根本不参与
         """
         doms = self._picked_doms()
-        return {"caster": "armor" in doms, "shop": bool(self.shops.get())}
+        return {"caster": "armor" in doms}
 
     def _refresh_rates(self, *_a):
         """跟着"勾了哪些类别 / 商店开没开 / 整套开没开"立刻增减（作者 2026-10-14 报过
@@ -1904,7 +1901,6 @@ class App:
                 #   商店物品     = 有商店在卖的那批物品里，多少参与互换（按物品抽，H9 一致）
                 "rate_sets": _rates.get("caster"),
                 "rate_caster": _rates.get("caster"),
-                "rate_shop": _rates.get("shop"),
                 # 单池合理度（没勾就不带这个键 ⇒ 该池跟总合理度走）
                 #   混池的合理度 = 上面那条**总合理度**（不再有独立键，见规格 §2.4.1）
                 "coh_domain": _cohs.get("coh_domain"),
@@ -2098,8 +2094,6 @@ class App:
         if _rc is None:
             _rc = c.get("rate_sets")
         self._rate_set("caster", _rc is not None, _rc)
-        _rsh = c.get("rate_shop")
-        self._rate_set("shop", _rsh is not None, _rsh)
         self._refresh_rates()
         # 单池合理度（旧设置文件里的 coh_mixed 不再回填：混池由总合理度管）
         _cd2 = c.get("coh_domain") or {}
@@ -2522,34 +2516,27 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        f"可见={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
     ck("表单：全部混合时总合理度**可用**（它管混池）",
        "disabled" not in app.scale_coh.state(), f"state={app.scale_coh.state()}")
-    ck("表单：改动比例只两条，且在该出现时就在（法祷/商店）",
-       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == ["caster", "shop"],
-       f"可见={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}")
+    ck("表单：改动比例只剩一条（法祷职业护甲）—— 商店不再有比例条",
+       list(app.rate_rows.keys()) == ["caster"], f"{list(app.rate_rows.keys())}")
 
-    # ── 改动比例：两条（法祷职业护甲 / 商店物品）──
+    # ── 改动比例：法祷职业护甲（商店固定"全参与"，不再有比例）──
     _c0 = app._collect()
-    ck("改动比例：默认不勾 ⇒ 三个键都不带（= 全改）",
-       _c0.get("rate_sets") is None and _c0.get("rate_caster") is None
-       and _c0.get("rate_shop") is None,
-       f"sets={_c0.get('rate_sets')} caster={_c0.get('rate_caster')} shop={_c0.get('rate_shop')}")
+    ck("改动比例：默认不勾 ⇒ 两个键都不带（= 这一类全改）",
+       _c0.get("rate_sets") is None and _c0.get("rate_caster") is None,
+       f"sets={_c0.get('rate_sets')} caster={_c0.get('rate_caster')}")
     app._rate_set("caster", True, 0.4)
-    app._rate_set("shop", True, 0.35)
     app._refresh_rates()
     root.update()
     _c1 = app._collect()
-    ck("改动比例：勾了就进 cfg（法祷护甲 40% → sets+caster 两个键；商店 35%）",
-       _c1.get("rate_sets") == 0.4 and _c1.get("rate_caster") == 0.4 and _c1.get("rate_shop") == 0.35,
-       f"sets={_c1.get('rate_sets')} caster={_c1.get('rate_caster')} shop={_c1.get('rate_shop')}")
-    # 没勾的那条：滑块收起（不勾 = 这一类全改）
-    app._rate_set("shop", False, None)
-    app._refresh_rates()
-    root.update()
+    ck("改动比例：勾了就进 cfg（法祷护甲 40% → sets + caster 两个键）",
+       _c1.get("rate_sets") == 0.4 and _c1.get("rate_caster") == 0.4,
+       f"sets={_c1.get('rate_sets')} caster={_c1.get('rate_caster')}")
+    ck("改动比例：商店那条删了 ⇒ 开着商店也不会产生 rate_shop（= 在卖的职业装备全参与）",
+       "rate_shop" not in app._collect(), f"keys={sorted(app._collect().keys())}")
     ck("改动比例：行出现时滑块就在（没有勾选框）",
        bool(app.rate_rows["caster"]["scale"].winfo_manager())
        and "on" not in app.rate_rows["caster"],
        f"滑块={app.rate_rows['caster']['scale'].winfo_manager()!r}")
-    ck("改动比例：没动过（还是 100%）的那条不进 cfg（= 这一类全改）",
-       app._collect().get("rate_shop") is None, f"shop={app._collect().get('rate_shop')}")
     ck("改动比例：量化提示跟着值走（40% ⇒ 写着 ≈40% 参与互换）",
        "≈40%" in app.rate_rows["caster"]["note"].cget("text"),
        f"提示={app.rate_rows['caster']['note'].cget('text')!r}")
@@ -2558,8 +2545,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     root.update()
     _c2 = app._collect()
     ck("改动比例：旧方案没有这几项 ⇒ 载入后回到全改",
-       _c2.get("rate_sets") is None and _c2.get("rate_caster") is None and _c2.get("rate_shop") is None,
-       f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')} shop={_c2.get('rate_shop')}")
+       _c2.get("rate_sets") is None and _c2.get("rate_caster") is None,
+       f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')}")
 
     # ── 动态：只跟着"勾了哪些类别 / 商店开没开"增减 ──
     app.shops.set(True)
@@ -2568,10 +2555,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     root.update()
     app.doms["armor"].set(False); app._toggle_dom("armor"); root.update()
     ck("改动比例：取消护甲 ⇒ 法祷职业护甲那条收起来（它属于护甲）",
-       not app.rate_rows["caster"]["row"].winfo_manager()
-       and bool(app.rate_rows["shop"]["row"].winfo_manager()),
-       f"法祷={app.rate_rows['caster']['row'].winfo_manager()!r} "
-       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+       not app.rate_rows["caster"]["row"].winfo_manager(),
+       f"法祷={app.rate_rows['caster']['row'].winfo_manager()!r}")
     _c3 = app._collect()
     ck("改动比例：收起来的那条不会偷偷带进 cfg",
        _c3.get("rate_sets") is None and _c3.get("rate_caster") is None,
@@ -2582,16 +2567,20 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and round(app.rate_rows["caster"]["val"].get(), 2) == 0.4,
        f"可见={bool(app.rate_rows['caster']['row'].winfo_manager())} "
        f"值={round(app.rate_rows['caster']['val'].get(), 2)}")
-    # 走**真实控件路径**：勾选框的 invoke() —— 上一版的 bug 正是"勾选框没接刷新"，
-    # 直接调 _refresh_rates() 会把它盖过去
+    # 走**真实控件路径**：勾选框的 invoke()（上一版的 bug 正是"勾选框没接刷新"）
+    # 商店现在没有比例条了 —— 点它只会改变"商店参不参与"，不会冒出/收起任何比例行
+    _before_vis = [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()]
     app.cb_shops.invoke(); root.update()
-    ck("改动比例：关掉商店（点勾选框）⇒ 商店物品那条立刻收起来",
-       not app.rate_rows["shop"]["row"].winfo_manager(),
-       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    ck("改动比例：点商店勾选框 ⇒ 比例组不受影响（商店已无比例条）",
+       not app.shops.get()
+       and [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == _before_vis,
+       f"商店={app.shops.get()}｜前后可见={_before_vis} → "
+       f"{[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}")
     app.cb_shops.invoke(); root.update()
-    ck("改动比例：打开商店（点勾选框）⇒ 商店物品那条立刻回来",
-       bool(app.rate_rows["shop"]["row"].winfo_manager()),
-       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    app.doms["armor"].set(True); app._toggle_dom("armor"); root.update()
+    ck("改动比例：商店开着时也只有法祷那一条",
+       app.shops.get() and [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == ["caster"],
+       f"可见={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}")
     ck("改动比例：法祷那条的标签跟着「整套一起换」变",
        "整套" not in app.rate_rows["caster"]["name"].cget("text"),
        f"整套开着时标签={app.rate_rows['caster']['name'].cget('text')!r}")
