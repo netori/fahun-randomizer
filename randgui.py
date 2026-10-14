@@ -584,7 +584,7 @@ class App:
         self.scale_coh = ttk.Scale(r3, from_=0.0, to=1.0, variable=self.coherence, orient="horizontal",
                                    length=px(420),
                                    command=lambda v: (self.lbl_coh.config(text=f"{float(v)*100:.0f}%"),
-                                                      self._coh_hint()))
+                                                      self._refresh_cohs()))
         self.scale_coh.pack(side="left", padx=(0, 10))
         self.lbl_coh.pack(side="left")
         r4 = ttk.Frame(s2); r4.pack(fill="x", pady=(2, 0))
@@ -1645,61 +1645,104 @@ class App:
             messagebox.showerror("失败", str(e))
         self.refresh_env()
 
-    def _mk_override_row(self, parent, store, key, text, frm, to, idx):
-        """建一条"不勾就跟全局走"的覆盖行（改动比例 / 单独设合理度 共用）。
+    def _mk_override_row(self, parent, store, key, text, frm, to, idx, width=12):
+        """建一条"单池设定"的行：**没有勾选框**（2026-10-14 作者要求）——
+        行出现即滑块即生效；没动过就跟全局一致（coh 那组）/ 全改（rate 那组）。
 
-        用 grid（不用 pack）：隐藏/恢复时格子还在，顺序不会乱。"""
+        用 grid（不用 pack）：隐藏/恢复时格子还在，顺序不会乱。
+        """
         row = ttk.Frame(parent)
         row.grid(row=idx, column=0, sticky="w", pady=1)
-        on = tk.BooleanVar(value=False)
         val = tk.DoubleVar(value=to)
         lbl = ttk.Label(row, text=f"{float(to)*100:.0f}%", width=6)
         scale = ttk.Scale(row, from_=frm, to=to, variable=val, orient="horizontal",
                           length=px(200),
                           command=lambda v, k=key, st=store: self._ov_moved(st, k, v))
-        ttk.Checkbutton(row, text=text, variable=on, width=14,
-                        command=lambda k=key, st=store: self._ov_toggle(st, k)).pack(side="left")
+        ttk.Label(row, text=text, width=width).pack(side="left")
         scale.pack(side="left", padx=6)
         lbl.pack(side="left")
-        store[key] = {"on": on, "val": val, "lbl": lbl, "scale": scale, "row": row}
+        note = ttk.Label(row, text="", style="Hint.TLabel")     # 量化提示（拖的时候实时更新）
+        note.pack(side="left", padx=(8, 0))
+        store[key] = {"val": val, "lbl": lbl, "scale": scale, "note": note, "row": row,
+                      "touched": False}
         return store[key]
 
     def _ov_moved(self, store, key, v):
         r = store.get(key)
-        if r:
-            r["lbl"].config(text=f"{float(v)*100:.0f}%")
+        if not r:
+            return
+        r["touched"] = True                    # 用户动过 ⇒ 这一条开始"自己说了算"
+        r["lbl"].config(text=f"{float(v)*100:.0f}%")
+        self._ov_note(store, key)
+
+    def _ov_note(self, store, key, *_a):
+        """每行自己那句"调节参考"（量化它现在会造成什么效果）"""
+        if store is getattr(self, "coh_rows", None):
+            return self._coh_note(key)
+        if store is getattr(self, "rate_rows", None):
+            return self._rate_note(key)
+
+    def _coh_note(self, key, *_a):
+        """单池合理度的量化提示：口径与引擎/全局那条完全一致（统一 4 档）"""
+        r = (getattr(self, "coh_rows", None) or {}).get(key)
+        if not r:
+            return
+        c = float(r["val"].get())
+        steps = max(0, min(3, int(round((1 - c) * 3))))
+        span = steps + 1
+        lvl = {1: "只能同档互换", 2: "相邻两档可互换",
+               3: "三档以内可互换", 4: "等级完全放开"}[span]
+        try:
+            r["note"].config(text=f"{lvl}　跨度 {span}/4　越档率 ≤{int(round((1 - c) * 100))}%"
+                                  + ("" if r["touched"] else "　（跟着总合理度）"))
+        except Exception:
+            pass
+
+    def _rate_note(self, key, *_a):
+        r = (getattr(self, "rate_rows", None) or {}).get(key)
+        if not r:
+            return
+        v = float(r["val"].get())
+        what = "整套 / 散件" if key == "caster" else "有商店在卖的物品"
+        try:
+            r["note"].config(text=("全改（100%）" if v >= 0.999
+                                   else f"≈{int(round(v * 100))}% 的{what}参与互换"))
+        except Exception:
+            pass
 
     def _ov_toggle(self, store, key, *_a):
-        """勾了才把滑块摆出来 —— 不勾就是"跟全局走"，看不见滑块最不容易误会
-        （clam 主题下 disabled 的 Scale 和正常的长得一样，只靠灰字分不清）"""
+        """行可见时滑块一律摆出来（没有勾选框了，见 _mk_override_row）"""
         r = store.get(key)
         if not r:
             return
         try:
-            if r["on"].get():
-                r["lbl"].config(style="Status.TLabel")
-                r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
+            r["lbl"].config(style="Status.TLabel")
+            r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
+            if not r["scale"].winfo_manager():
                 r["scale"].pack(side="left", padx=6)
+            if not r["lbl"].winfo_manager():
                 r["lbl"].pack(side="left")
-            else:
-                r["scale"].pack_forget()
-                r["lbl"].pack_forget()
         except Exception:
             pass
 
     def _ov_set(self, store, key, on, val=None):
-        """一次性设成指定状态（load_cfg / 方案库载入用）"""
+        """一次性设成指定状态（load_cfg / 方案库载入用）；on=True ⇒ 视为"用户设过"（touched）"""
         r = store.get(key)
         if not r:
             return
-        r["on"].set(bool(on))
+        r["touched"] = bool(on)
         if val is not None:
             r["val"].set(max(0.0, min(1.0, float(val))))
-            r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
+        r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
         self._ov_toggle(store, key)
+        self._ov_note(store, key)
 
-    def _ov_refresh(self, store, applicable):
-        """按当前配置动态增减这些行；隐藏的一定清掉勾选（别让看不见的值还在生效）"""
+    def _ov_refresh(self, store, applicable, default=None):
+        """按当前配置动态增减这些行。
+
+        · `default` 给了 ⇒ 没被用户动过（touched=False）的行**跟着它走**（合理度那组传全局值）
+        · 隐藏的行一定回到"没动过" ⇒ 它的值绝不会偷偷生效
+        """
         for key, r in (store or {}).items():
             row = r.get("row")
             if row is None:
@@ -1707,17 +1750,20 @@ class App:
             if applicable.get(key):
                 if not row.winfo_manager():
                     row.grid()
+                if default is not None and not r["touched"]:
+                    r["val"].set(float(default))
+                    r["lbl"].config(text=f"{float(default)*100:.0f}%")
             else:
                 if row.winfo_manager():
                     row.grid_remove()
-                if r["on"].get():
-                    r["on"].set(False)
+                r["touched"] = False
             self._ov_toggle(store, key)
+            self._ov_note(store, key)
 
     def _ov_collect(self, store, applicable):
         out = {}
         for key, r in (store or {}).items():
-            if applicable.get(key) and r["on"].get():
+            if applicable.get(key) and r.get("touched"):
                 out[key] = round(float(r["val"].get()), 3)
         return out
 
@@ -1777,6 +1823,7 @@ class App:
 
         · 有混池 → 总合理度可用（它管混池），下面只摆"自己还成池"的那几类
         · 没有混池（各自随机）→ 总合理度**置灰**（那时它不参与），下面每条各管自己那类
+        · 没被用户动过的那几条**跟着总合理度走**（所以不动它就等于"跟全局一致"）
         """
         has_mix = bool(self._join_groups())
         try:
@@ -1788,10 +1835,11 @@ class App:
             pass
         if getattr(self, "lbl_cohrows", None) is not None:
             self.lbl_cohrows.config(
-                text=("· 单独的池子：进了混池的类别由上面总合理度统管"
+                text=("· 单独的池子：进了混池的类别由上面总合理度统管；下面没动过的那几条也跟着它"
                       if has_mix else
                       "· 没有混池：上面那条总合理度不参与（已置灰），下面每条各管自己那一类"))
-        self._ov_refresh(getattr(self, "coh_rows", None), self._coh_applicable())
+        self._ov_refresh(getattr(self, "coh_rows", None), self._coh_applicable(),
+                         default=float(self.coherence.get()))
         self._coh_hint()
 
     def _coh_set(self, key, on, val=None):
@@ -2479,13 +2527,15 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     app._rate_set("shop", False, None)
     app._refresh_rates()
     root.update()
-    ck("改动比例：没勾的那条滑块收起来（不勾 = 这一类全改，一眼能看出）",
-       not app.rate_rows["shop"]["scale"].winfo_manager()
-       and bool(app.rate_rows["caster"]["scale"].winfo_manager()),
-       f"法祷路={app.rate_rows['caster']['scale'].winfo_manager()!r} "
-       f"商店路={app.rate_rows['shop']['scale'].winfo_manager()!r}")
-    ck("改动比例：没勾的那条不进 cfg",
+    ck("改动比例：行出现时滑块就在（没有勾选框）",
+       bool(app.rate_rows["caster"]["scale"].winfo_manager())
+       and "on" not in app.rate_rows["caster"],
+       f"滑块={app.rate_rows['caster']['scale'].winfo_manager()!r}")
+    ck("改动比例：没动过（还是 100%）的那条不进 cfg（= 这一类全改）",
        app._collect().get("rate_shop") is None, f"shop={app._collect().get('rate_shop')}")
+    ck("改动比例：量化提示跟着值走（40% ⇒ 写着 ≈40% 参与互换）",
+       "≈40%" in app.rate_rows["caster"]["note"].cget("text"),
+       f"提示={app.rate_rows['caster']['note'].cget('text')!r}")
     # 旧方案（cfg 里那几项都没有）载回来 → 必须回到"全改"，不能留着上一次的勾
     app._lib_apply_cfg()
     root.update()
@@ -2510,12 +2560,11 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        _c3.get("rate_sets") is None and _c3.get("rate_caster") is None,
        f"sets={_c3.get('rate_sets')} caster={_c3.get('rate_caster')}")
     app.doms["armor"].set(True); app._toggle_dom("armor"); root.update()
-    ck("改动比例：勾回来那条又出现（值记着，勾选框是干净的）",
+    ck("改动比例：收起来又出现时值记着（0.4）",
        bool(app.rate_rows["caster"]["row"].winfo_manager())
-       and round(app.rate_rows["caster"]["val"].get(), 2) == 0.4
-       and not app.rate_rows["caster"]["on"].get(),
+       and round(app.rate_rows["caster"]["val"].get(), 2) == 0.4,
        f"可见={bool(app.rate_rows['caster']['row'].winfo_manager())} "
-       f"值={round(app.rate_rows['caster']['val'].get(), 2)} 勾={app.rate_rows['caster']['on'].get()}")
+       f"值={round(app.rate_rows['caster']['val'].get(), 2)}")
     app.shops.set(False); app._refresh_rates(); root.update()
     ck("改动比例：关掉商店 ⇒ 商店物品那条收起来（那时商店根本不参与）",
        not app.rate_rows["shop"]["row"].winfo_manager(),
@@ -2559,8 +2608,29 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("单池合理度：界面跟着变（三条都在）",
        all(app.coh_rows[k]["row"].winfo_manager() for k in ("rune", "armor", "weapon")),
        f"可见={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
+    # 没动过 ⇒ 跟着总合理度走，且**不进 cfg**（不动它就等于"跟全局一致"）
+    app.coherence.set(0.55); app._refresh_cohs(); root.update()
+    ck("单池合理度：没动过的行**跟着总合理度**（80%→55%）",
+       round(app.coh_rows["armor"]["val"].get(), 2) == 0.55
+       and "跟着总合理度" in app.coh_rows["armor"]["note"].cget("text"),
+       f"护甲条={round(app.coh_rows['armor']['val'].get(), 2)}｜提示={app.coh_rows['armor']['note'].cget('text')!r}")
+    ck("单池合理度：没动过 ⇒ 不进 cfg",
+       not app._collect().get("coh_domain"), f"coh_domain={app._collect().get('coh_domain')}")
+    app._coh_set("armor", True, 0.2)          # 模拟用户拖动
+    app.coherence.set(0.9); app._refresh_cohs(); root.update()
+    ck("单池合理度：动过之后不再跟随（总 90% 也保持 20%），且进 cfg",
+       round(app.coh_rows["armor"]["val"].get(), 2) == 0.2
+       and (app._collect().get("coh_domain") or {}).get("armor") == 0.2,
+       f"护甲条={round(app.coh_rows['armor']['val'].get(), 2)}｜"
+       f"cfg={app._collect().get('coh_domain')}")
+    ck("单池合理度：量化提示写清跨度 / 越档率",
+       "跨度" in app.coh_rows["armor"]["note"].cget("text")
+       and "越档率" in app.coh_rows["armor"]["note"].cget("text"),
+       f"提示={app.coh_rows['armor']['note'].cget('text')!r}")
+    app.coherence.set(0.8); app._refresh_cohs(); root.update()
+
     app._coh_set("rune", True, 0.35); root.update()
-    ck("单池合理度：勾了就进 cfg（卢恩 35%）",
+    ck("单池合理度：设了就进 cfg（卢恩 35%）",
        (app._collect().get("coh_domain") or {}).get("rune") == 0.35,
        f"coh_domain={app._collect().get('coh_domain')}")
     ck("单池合理度：cfg 里**没有** coh_mixed 这个键（混池用总合理度）",
