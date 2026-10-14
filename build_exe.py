@@ -76,6 +76,13 @@ def sync_assets():
     return n
 
 
+def _dec(b):
+    """子进程输出可能是 bytes（capture_output 的默认），解码再打印 —— 不解码就在这里炸"""
+    if isinstance(b, bytes):
+        return b.decode("utf-8", "replace")
+    return b or ""
+
+
 def main():
     if "--no-test" not in sys.argv:
         print("  ① 同步 _assets（把当前源码复制进去）…")
@@ -91,7 +98,8 @@ def main():
                        cwd=WS, capture_output=True)
     if r.returncode != 0:
         print("     ✗ 打包失败：")
-        print("\n".join(r.stdout.splitlines()[-12:]))
+        print("\n".join(_dec(r.stdout).splitlines()[-12:]))
+        print("\n".join(_dec(r.stderr).splitlines()[-6:]))
         return 1
     exe = os.path.join(WS, "dist_out", "ConvergenceClassItemRandomizer.exe")
     print(f"     ✓ {os.path.getsize(exe)/1048576:.2f} MB")
@@ -114,7 +122,6 @@ def main():
                 print(f"     ✗ {flag} 超时（300 秒没结束）")
                 n_bad += 1
                 continue
-            _dec = lambda b: (b or b"").decode("utf-8", "replace") if isinstance(b, bytes) else (b or "")
             out = _dec(r.stdout) + _dec(r.stderr)
             ok = want in out
             print(f"     {'✓' if ok else '✗'} {flag}")
