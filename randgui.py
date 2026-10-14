@@ -439,6 +439,8 @@ class App:
         self.items = None
         self.cfg = None
         self.q = queue.Queue()
+        self._deploying = False          # 写入串行化：上次没跑完不许再点
+        self._lib_writing = False        # 从方案库写入中（进度要回显到方案库窗口）
         self._adv_open = False
         self._detail_open = False
         ic = deco_image("icon", scale=1)      # 窗口/任务栏图标（256px 那张够用）
@@ -1271,6 +1273,8 @@ class App:
         pl = self._lib_mod()
         if not pid or not pl:
             return
+        if self._deploy_busy():
+            return
         name = (self._lib_metas.get(pid) or {}).get("name", pid)
         try:
             out = os.path.join(WORKSPACE or HERE, "investigation", "apply", "out")
@@ -1289,9 +1293,11 @@ class App:
             return
         self.log(f"从方案库写入：{name}")
         self.status.set(f"写入中…（方案库：{name}）")
-        self._lib_toast(f"正在写入「{name}」…")
+        self._lib_writing = True
+        self._deploying = True
+        self._lib_toast(f"正在写入「{name}」…（进度会显示在这里，别重复点）")
         threading.Thread(target=self._deploy_worker,
-                         args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True))),
+                         args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True)), True),
                          daemon=True).start()
 
     def _lib_save_current(self):
@@ -1389,13 +1395,30 @@ class App:
             while True:
                 kind, payload = self.q.get_nowait()
                 if kind == "log":
-                    self.txt.insert("end", str(payload) + "\n"); self.txt.see("end")
+                    _line = str(payload)
+                    self.txt.insert("end", _line + "\n"); self.txt.see("end")
+                    # 写入过程中把进度同时回显到两个"看得见的地方"：
+                    #   · 状态条（在「随机设置」页上）
+                    #   · 方案库底部那行（在「方案库」页上）
+                    # 少了这一步，站在方案库页点写入就只看到一句"正在写入…"，
+                    # 写入早就跑完了界面也不动 —— 2026-10-14 实测的"卡死"就是这么来的。
+                    if self._deploying and _line.strip():
+                        _short = _line.strip()[:44]
+                        self.status.set("写入中… " + _short)
+                        if self._lib_writing:
+                            self._lib_toast("写入中… " + _short)
                 elif kind == "status":
                     _s = str(payload)
                     self.status.set(_s)
                     # 失败一律用危险色，成功/进行中用亮金（暗底上的可读性靠这个）
                     self.lbl_status.config(style="Bad.TLabel" if _s.startswith(("失败", "出错", "写入失败", "还原出错"))
                                            else "Status.TLabel")
+                elif kind == "lib":
+                    _text, _bad = payload
+                    self._lib_writing = False
+                    self._lib_toast(str(_text), bad=bool(_bad))
+                elif kind == "deploying":
+                    self._deploying = False
                 elif kind == "done":
                     self.b_gen.config(state="normal")
                     # 生成过了才有东西可存进方案库
@@ -1610,9 +1633,19 @@ class App:
             os.startfile(p)  # noqa
 
 
+    def _deploy_busy(self):
+        """写入是串行的：上一次没跑完就再点，会两个线程同时改 regulation.bin"""
+        if getattr(self, "_deploying", False):
+            messagebox.showinfo("正在写入", "上一次写入还没结束 —— 等它跑完再点。\n"
+                                            "进度看主界面日志，方案库那边底部也会跟着走。")
+            return True
+        return False
+
     def deploy(self):
         if not self.plan:
             messagebox.showinfo("还没生成", "先点「① 生成随机方案」。")
+            return
+        if self._deploy_busy():
             return
         if not messagebox.askyesno("确认写入游戏",
                                    "会把这次的随机结果写进游戏文件：\n"
@@ -1621,21 +1654,34 @@ class App:
             return
         plan = self.export()
         sync = bool(self.cfg.get("sync_guide", True))
+        self._deploying = True
         self.log(f"写入中…{'（含说明书）' if sync else '（不改说明书）'}")
         self.q.put(("status", "写入中…"))
         threading.Thread(target=self._deploy_worker, args=(plan, sync), daemon=True).start()
 
-    def _deploy_worker(self, plan, sync_guide):
+    def _deploy_worker(self, plan, sync_guide, lib=False):
+        """lib=True 时（从方案库写入）额外把进度/结果送回方案库那扇窗口。
+
+        为什么要有这个参数：方案库窗口盖在主界面上，而进度本来只写主界面的
+        状态栏和日志 —— 玩家在方案库这边只看到一句"正在写入…"，写入其实早就
+        成功了也看不出来（2026-10-14 实测：收据都落盘了，界面还停在"写入中"）。
+        """
         try:
             sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
             import native_deploy
             rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log)
             self.log("写入完成 [OK] " + str(rec.get("verify")))
             self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
+            if lib:
+                self.q.put(("lib", ("写入完成 ✓ 可以进游戏了", False)))
         except Exception as e:
             import traceback
             self.log("写入出错：" + traceback.format_exc(limit=4))
             self.q.put(("status", f"写入失败：{e}"))
+            if lib:
+                self.q.put(("lib", (f"写入失败：{e}", True)))
+        finally:
+            self.q.put(("deploying", False))
 
     def save_cfg(self):
         from tkinter import filedialog
@@ -2147,21 +2193,58 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("删完的提示说了回收站", "回收站" in app.lib_toast.cget("text"),
        repr(app.lib_toast.cget("text")))
 
-    # 写入游戏：真跑会动游戏文件，这里把"写入工人"换成记录器，验证走的是同一条流程
+    # 写入游戏：真跑会动游戏文件，这里把"写入工人"换成**假的工人**：它不改文件，
+    # 但把真工人会投的那几条消息照投一遍（进度行 / 完成 / 收尾）。
+    # 这样验证的是"站在方案库页点写入，能不能看见进度与结果"——2026-10-14 实测
+    # 写入明明成功、界面却一直停在"正在写入…"（状态条与日志都在另一页上，看不见）。
     called = {}
     real_worker = App._deploy_worker
-    App._deploy_worker = lambda self, plan, sync: called.update(plan=plan, sync=sync)
+
+    def _fake_worker(self, plan, sync, lib=False):
+        called.update(plan=plan, sync=sync, lib=lib)
+        self.q.put(("log", "[③a] 假进度：说明书地点重写 12 处"))
+
+    App._deploy_worker = _fake_worker
     try:
         app._lib_refresh(keep=b["id"])
         app.lib_tree.selection_set(b["id"])
         app._lib_on_select()
         app._lib_write()
+        for _ in range(8):                     # 让 _pump 把队列走几遍
+            root.update()
+            time.sleep(0.02)
+            root.update()
+        ck("写入游戏：方案库这页看得到进度", "假进度" in app.lib_toast.cget("text"),
+           repr(app.lib_toast.cget("text")))
+        ck("写入游戏：进度期间状态是'写入中'（不是没反应）",
+           "写入中" in app.status.get(), repr(app.status.get()))
+        # 跑完：真工人这时会投这两条
+        app.q.put(("lib", ("写入完成 ✓ 可以进游戏了", False)))
+        app.q.put(("deploying", False))
+        for _ in range(8):
+            root.update()
+            time.sleep(0.02)
+            root.update()
     finally:
         App._deploy_worker = real_worker
-    root.update()
     ck("写入游戏：确认后交给了写入流程", bool(called.get("plan")), f"csv={called.get('plan')!r}")
     ck("写入游戏：用的是方案导出的 CSV",
        bool(called.get("plan")) and called["plan"].endswith(".csv"), f"{called.get('plan')!r}")
+    ck("写入游戏：告诉工人'这是从方案库发的'（进度要回显到这一页）",
+       bool(called.get("lib")), f"lib={called.get('lib')!r}")
+    ck("写入游戏：跑完必须给结果（不能停在'正在写入'）",
+       "写入完成" in app.lib_toast.cget("text"), repr(app.lib_toast.cget("text")))
+    ck("写入游戏：收尾后解锁下一次写入", not app._deploying and not app._lib_writing,
+       f"_deploying={app._deploying} _lib_writing={app._lib_writing}")
+    # 上一次没跑完就再点 → 必须被挡回去（两个线程同时改 regulation.bin 会留下半成品）
+    app._deploying = True
+    called.clear()
+    try:
+        app._lib_write()
+    finally:
+        app._deploying = False
+    ck("写入游戏：上一次没跑完时挡住重复点击", not called.get("plan"),
+       f"又被交出去={bool(called.get('plan'))}")
 
     # 右键菜单：条目齐不齐（改名/收藏/复制/删除/导出/导入 都要在）
     # 注意：不能真 tk_popup —— 它会抓住事件循环，等用户点一下才回来（自动化会卡死）
@@ -2216,7 +2299,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     # 注意：Tk 不让 event_generate 造 Double-1（双击由系统认），所以这里查"绑没绑" +
     # 直接跑它所绑的那一个动作 —— 两件事合起来才是"双击一行 = 写入游戏"
     called.clear()
-    App._deploy_worker = lambda self, plan, sync: called.update(plan=plan, sync=sync)
+    App._deploy_worker = lambda self, plan, sync, lib=False: called.update(plan=plan, sync=sync, lib=lib)
     try:
         kids = app.lib_tree.get_children()
         app.lib_tree.selection_set(kids[0])

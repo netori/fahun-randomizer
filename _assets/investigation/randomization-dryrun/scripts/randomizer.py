@@ -45,7 +45,9 @@ def part_of(iid):
     c, _ = part_code_of(iid)
     return SUF4.get(c) or SUF3.get(c) or ""
 
-CASTER_ARCH = ("法师", "祷告", "法师/祷告混合", "祷告/感应")     # F2：这些倾向的护甲独立成池
+# F2：这些倾向的护甲独立成池（规格 §3.1 的流派键：护甲分 caster / melee 两种）。
+# 「感应」（奥术流）与「祷告/感应」同属法系玩法，2026-10-14 作者确认算法祷侧。
+CASTER_ARCH = ("法师", "祷告", "法师/祷告混合", "祷告/感应", "感应")
 
 ENGINE_VERSION = "1.1"          # 计划里会记录，用于跨版本对照
 
@@ -92,6 +94,18 @@ def load_world(with_shops=False, basis="guide"):
     # 固定行：剧情给与/返还等，永不随机（见 catalog-review/evidence/fixed_cells.json）
     _fc = os.path.join(REV, "evidence", "fixed_cells.json")
     FIXED = set(json.load(open(_fc, encoding="utf-8"))["fixed"]) if os.path.exists(_fc) else set()
+    # 陈旧格子：索引里有、但 regulation.bin 里其实是空槽/对不上（见 stale_cells.json 里的 why）
+    # —— 必须剔掉：它们一旦进入计划，写前复核（H12）会中止整次写入。
+    # 这份清单放在 apply/ 下（**随代码入库**，不像 evidence/ 那样是本地生成物）：
+    # 丢它就等于"写入永远失败"，所以不能只靠本地文件。
+    STALE = set()
+    for _p in (os.path.join(os.path.dirname(ROOT), "apply", "stale_cells.json"),
+               os.path.join(REV, "evidence", "stale_cells.json")):
+        try:
+            if os.path.exists(_p):
+                STALE |= set(json.load(open(_p, encoding="utf-8"))["stale"])
+        except Exception:
+            pass
     for L in idx["lots"]:
         if f"{L['table']}:{L['lot_id']}" in FIXED:
             continue
@@ -99,6 +113,8 @@ def load_world(with_shops=False, basis="guide"):
             for cat, code in CATCODE.items():
                 k = (cat, str(s["item_id"]))
                 if str(s["category"]) == code and k in items:
+                    if f"{L['table']}:{L['lot_id']}:{s['slot']}" in STALE:
+                        continue                     # 陈旧格子：跳过，别让它进池子
                     items[k]["cells"].append({"source_table": L["table"], "row_id": str(L["lot_id"]),
                                               "slot": str(s["slot"]), "category": code,
                                               "row_name": L.get("row_name", "")})
@@ -281,27 +297,23 @@ def _cross_domain_ok(cfg):
 
 
 def _pair_ok(tgt, sco, f2_on=True):
-    """硬规则：部位必须一致（套装按部位一一对应）；套装不与单件互配。
-       法师/祷告 ↔ 近战 的隔离只有高合理度时才要求（用户：流派不用管）"""
+    """硬规则：部位必须一致（套装按部位一一对应）；套装不与单件互配；
+       法祷护甲 ↔ 近战护甲 永不互配（规格 §3.4：唯一需要隔离的轴）。
+
+       注意：法祷**内部**是同一个池，可以自由互换 —— 规格 §3.1 的流派键只有
+       caster / melee / any 三个值，法师套 ↔ 祷告套属于池内正常置换。
+       （旧版这里要求"法祷必须同流派"，与规格冲突，也是法祷整块冻死的原因之一。）"""
     tp, sp = tgt.get("parts") or {}, sco.get("parts") or {}
     if bool(tp) != bool(sp):
         return False
-    if tp:
-        # 套装：部位必须一一对应；且法祷套装只能与**同流派**套装互换
-        if set(tp) != set(sp):
-            return False
-        ta, sa = tgt.get("arch"), sco.get("arch")
-        if f2_on and (ta in CASTER_ARCH or sa in CASTER_ARCH):
-            return ta == sa
-        return True
+    if tp and set(tp) != set(sp):
+        return False
     if not f2_on:
         return True
-    if not (tgt.get("_dom") == "armor" and sco.get("_dom") == "armor"):
-        return True                       # 法师/近战隔离只针对护甲，卢恩/武器不受影响
+    if tgt.get("_dom") != "armor" or sco.get("_dom") != "armor":
+        return True                       # 隔离只针对护甲，卢恩 / 武器不受影响
     ta, sa = tgt.get("arch"), sco.get("arch")
-    if ta in CASTER_ARCH or sa in CASTER_ARCH:
-        return ta == sa
-    return True
+    return (ta in CASTER_ARCH) == (sa in CASTER_ARCH)
 
 
 def _unit_info(u, items):
@@ -313,6 +325,13 @@ def _unit_info(u, items):
     k = u.get("base") or (u.get("items") or [None])[0]
     v = items.get(k) or {}
     part = (v.get("subpool") or "").split("@")[0]
+    # 护甲的部位以**物品 ID 后缀**为准（part_of），不用 subpool 那个字段：
+    # 候选表里有个别条目的 subpool 把部位写错了（xlsx 基础下有 2 件），
+    # 照错的部位分池 → 头↔身/腿互串（矩阵测试的法祷违规就是这么来的）。
+    if v.get("domain") == "armor":
+        _pt = part_of(k[1]) if k else ""
+        if _pt:
+            part = f"armor:{_pt}"
     return (v.get("domain"), part, u.get("arch") or v.get("arch"), _tier_of_unit(v))
 
 
@@ -603,6 +622,12 @@ def run(items, cfg, seed=None):
             if _wdone:
                 continue
         # 合并键里保留"法师/祷告 vs 近战"这一轴（否则法祷与近战混池 → 错排失败 → 等于没随机）
+        #
+        # 还要保留**部位 / 套装**这一轴（2026-10-14 修）：
+        #   护甲的部位是硬约束（臂 / 腿 / 身 / 头各自独立，规格 §3.3），套装更是只能跟套装互换。
+        #   丢了这一轴 → 「52 个法祷套装 + 13 个法祷散件」会落进同一个池，
+        #   而 _pair_ok 不允许套装与单件配对 → 整池找不到合法错排 → 回退成原样 →
+        #   法祷护甲整块冻死（实测 0/350 行改动，五档配置都一样）。
         _us_all = meta.get("units") or []
         _archs = {(u.get("arch") or "") for u in _us_all
                   if (u.get("_dom") or u.get("domain")) == "armor"}
@@ -612,18 +637,21 @@ def run(items, cfg, seed=None):
             _fk = "melee"
         else:
             _fk = "any"
+        # 池键前缀就是部位（armor:set@caster / armor:head@caster / armor:body@caster …）
+        _part = pk.split("@")[0] if dom == "armor" else ""
         try:
             _rr = int(rank)
         except Exception:
             _rr = 2
-        key = (dom, (bucket_of(_rr) if rng.random() < _cross_rate else _rr), _fk)
+        key = (dom, (bucket_of(_rr) if rng.random() < _cross_rate else _rr), _fk, _part)
         if key not in merged:
             merged[key] = dict(meta, units=[])
         _have = {u["id"] for u in merged[key]["units"]}
         merged[key]["units"].extend([u for u in (meta.get("units") or []) if u["id"] not in _have])
     # 池名必须包含全部键分量（否则不同流派的池会同名互相覆盖，法祷与近战又混到一起）
     pools = collections.OrderedDict(
-        (f"{k[0]}·档组{k[1]}" + (f"·{k[2]}" if len(k) > 2 and k[2] != "any" else ""), v)
+        (f"{k[0]}·档组{k[1]}" + (f"·{k[2]}" if len(k) > 2 and k[2] != "any" else "")
+         + (f"·{k[3].split(':')[-1]}" if len(k) > 3 and k[3] else ""), v)
         for k, v in merged.items())
     density = float(cfg.get("density", 1.0))
     _allow_gap = 5
@@ -771,7 +799,8 @@ def _plan_meta(keep, tkey):
 # ---------------------------------------------------------------- 校验
 def verify(items, cfg, plan, pools):
     """配置感知校验 → (checks: {布尔项}, info: {信息计数})
-       硬约束：法师/祷告护甲 = 同部位·同倾向·护甲↔护甲·永不入联合池；套装 = 同部位·整组不拆散；
+       硬约束：法师/祷告护甲 = 同部位·护甲↔护甲·永不入联合池（法祷**内部**可自由互换，规格 §3.1）；
+               套装 = 同部位·整组不拆散；
                同一物品多处来源整组一致；未使用冻结项；按池多重集合守恒
        配置放宽：非法师护甲若被显式并入联合池，则该池内允许跨类别/跨部位（记为 info，不判失败）"""
     def cat_of(k): return k.split(":")[0]
@@ -796,8 +825,8 @@ def verify(items, cfg, plan, pools):
         if caster:                                               # 法师/祷告护甲：硬约束
             if joined or p["old_cat"] != "protector" or p["new_cat"] != "protector":
                 caster_ok = False
-            elif old_part != new_part or a_old != a_new:
-                caster_ok = False
+            elif old_part != new_part or ((a_old in CASTER_ARCH) != (a_new in CASTER_ARCH)):
+                caster_ok = False       # 只隔"法祷 ↔ 近战"；法祷内部自由（规格 §3.1）
         elif p["old_cat"] == "protector" and p["new_cat"] == "protector":
             if joined:
                 info["联合池内跨类别/放宽格数"] += 1
