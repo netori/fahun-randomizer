@@ -634,7 +634,8 @@ class App:
         self.sets = tk.BooleanVar(value=True)
         self.shadow = tk.BooleanVar(value=False)
         self.guide = tk.BooleanVar(value=True)
-        ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets).pack(side="left")
+        ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets,
+                        command=self._refresh_rates).pack(side="left")
         ttk.Checkbutton(a1, text="幽影卢恩与普通卢恩一起换", variable=self.shadow).pack(side="left", padx=12)
         ttk.Checkbutton(a1, text="说明书跟着一起改", variable=self.guide).pack(side="left", padx=12)
         a2b = ttk.Frame(self.adv); a2b.pack(fill="x", pady=(6, 0))
@@ -654,14 +655,19 @@ class App:
         # ── 单独设比例：不勾 = 跟上面的全局比例走 ──
         #    整套法祷装备自成一个池，可以单独给比例（例如"卢恩全换、法祷整套只换四成"）。
         #    优先级：整套法祷装备 > 它的所属大类（护甲）。
+        #    这里跟着第 1 步勾了哪些随机项目**动态增减**：没勾的类别不摆出来（摆着也没用），
+        #    免得让人以为"勾了护甲的比例却没生效"。
         a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(8, 0))
         ttk.Label(a2r, text="单独设比例", style="Sub.TLabel").pack(side="left")
-        ttk.Label(a2r, text="· 不勾就跟上面的全局比例走；整套法祷装备优先于护甲",
+        ttk.Label(a2r, text="· 只列上面勾过的项目；不勾就跟全局比例走；整套法祷装备优先于护甲",
                   style="Hint.TLabel").pack(side="left", padx=6)
+        # 用 grid（不用 pack）：隐藏/恢复的时候格子还在，**顺序不会乱**
+        rgrid = ttk.Frame(self.adv); rgrid.pack(fill="x")
         self.rate_rows = {}
-        for key, text in (("sets", "整套法祷装备"), ("armor", "护甲"),
-                          ("weapon", "装备（武器）"), ("rune", "卢恩")):
-            row = ttk.Frame(self.adv); row.pack(fill="x", pady=1)
+        for i, (key, text) in enumerate((("sets", "整套法祷装备"), ("armor", "护甲"),
+                                         ("weapon", "装备（武器）"), ("rune", "卢恩"))):
+            row = ttk.Frame(rgrid)
+            row.grid(row=i, column=0, sticky="w", pady=1)
             on = tk.BooleanVar(value=False)
             val = tk.DoubleVar(value=1.0)
             lbl = ttk.Label(row, text="100%", width=6)
@@ -672,8 +678,8 @@ class App:
                             command=lambda k=key: self._rate_toggle(k)).pack(side="left")
             scale.pack(side="left", padx=6)
             lbl.pack(side="left")
-            self.rate_rows[key] = {"on": on, "val": val, "lbl": lbl, "scale": scale}
-            self._rate_toggle(key)          # 初始：未勾选 → 滑块先禁用
+            self.rate_rows[key] = {"on": on, "val": val, "lbl": lbl, "scale": scale, "row": row}
+        self._refresh_rates()               # 一建出来就按当前勾选理顺一次
 
         a3 = ttk.Frame(self.adv); a3.pack(fill="x", pady=(6, 0))
         for t, cmd in (("保存这套设置", self.save_cfg), ("读取设置", self.load_cfg),
@@ -1299,15 +1305,17 @@ class App:
             self.lbl_den.config(text=f"{float(cfg.get('density', 1.0)) * 100:.0f}%")
             self.guide.set(cfg.get("sync_guide", True))
             self.shops.set(bool(cfg.get("shops", False)))
+            # 先定类别与"整套"开关，再填单独比例（顺序反了会被当成"用不上"而丢掉）
+            for k, v in self.doms.items():
+                v.set(k in (cfg.get("domains") or ["rune", "armor", "weapon"]))
+            self._refresh_modes()
             # 单独设的比例也要填回来（旧方案里没有这两项 → 回到"跟全局比例走"）
             _rs2 = cfg.get("rate_sets")
             self._rate_set("sets", _rs2 is not None, _rs2)
             _rd2 = cfg.get("rate_domain") or {}
             for _k2 in ("armor", "weapon", "rune"):
                 self._rate_set(_k2, _k2 in _rd2, _rd2.get(_k2))
-            for k, v in self.doms.items():
-                v.set(k in (cfg.get("domains") or ["rune", "armor", "weapon"]))
-            self._refresh_modes()
+            self._refresh_rates()
         except Exception as e:
             self._lib_toast(f"载入没成功：{e}", bad=True)
             return
@@ -1386,11 +1394,12 @@ class App:
         return [d for d in ("rune", "armor", "weapon") if self.doms[d].get()]
 
     def _toggle_dom(self, key):
-        """至少保留一项；勾选变化后智能刷新混合方式"""
+        """至少保留一项；勾选变化后智能刷新混合方式（顺带把"单独设比例"那几条也理顺）"""
         if not self._picked_doms():
             self.doms[key].set(True)                      # 不允许全不勾
             messagebox.showinfo("至少勾一项", "至少要保留一个随机项目。")
         self._refresh_modes()
+        self._refresh_rates()
 
     def _refresh_modes(self, *_a):
         """混合方式随勾选项目智能变更（下拉里的文字直接写出项目名）"""
@@ -1578,6 +1587,35 @@ class App:
             messagebox.showerror("失败", str(e))
         self.refresh_env()
 
+    def _rate_applicable(self):
+        """哪几条"单独设比例"现在真的有用 —— 跟着第 1 步的勾选与"整套"开关走：
+        · 类别没勾 → 那一条没用（不摆出来）
+        · 没勾护甲 → 整套法祷装备也没用（它属于护甲）
+        · 关了"整套一起换" → 没有"整套"这条线了（护甲改成按部位单件换）"""
+        doms = self._picked_doms()
+        return {"armor": "armor" in doms,
+                "weapon": "weapon" in doms,
+                "rune": "rune" in doms,
+                "sets": ("armor" in doms) and bool(self.sets.get())}
+
+    def _refresh_rates(self, *_a):
+        """按当前勾选动态增减这几条比例行（隐藏的行**一定**回到未勾选，
+        否则会用着一个看不见的值去生成 —— 那是最难查的一类"没生效"）。"""
+        app = self._rate_applicable()
+        for key, r in (getattr(self, "rate_rows", None) or {}).items():
+            row = r.get("row")
+            if row is None:
+                continue
+            if app.get(key):
+                if not row.winfo_manager():
+                    row.grid()                     # grid_remove 过的格子记得位置 ✓
+            else:
+                if row.winfo_manager():
+                    row.grid_remove()
+                if r["on"].get():
+                    r["on"].set(False)
+            self._rate_toggle(key)
+
     def _rate_toggle(self, key, *_a):
         """勾了才把滑块摆出来 —— 不勾就是"跟全局比例走"，看不见滑块最不容易误会
         （clam 主题下 disabled 的 Scale 和正常的长得一样，只靠灰字分不清）"""
@@ -1613,10 +1651,11 @@ class App:
         self._rate_toggle(key)
 
     def _rates(self):
-        """收集"单独设比例"：没勾的不进 cfg（等于跟全局比例走）"""
+        """收集"单独设比例"：没勾的、以及当前**用不上**的都不进 cfg（等于跟全局比例走）"""
         out = {}
+        app = self._rate_applicable()
         for key, r in (self.rate_rows or {}).items():
-            if r["on"].get():
+            if app.get(key) and r["on"].get():
                 out[key] = round(float(r["val"].get()), 3)
         return out
 
@@ -1825,16 +1864,18 @@ class App:
         self.lbl_coh.config(text=f"{float(c.get('coherence',0.8))*100:.0f}%")
         self.lbl_den.config(text=f"{float(c.get('density',1.0))*100:.0f}%")
         self.guide.set(c.get("sync_guide", True))
+        # 先定类别（勾了哪些随机项目）与"整套"开关，再填单独比例 —— 顺序反了会被当成"用不上"而丢掉
+        _d = c.get("domains") or ["rune", "armor", "weapon"]
+        for k, v in self.doms.items():
+            v.set(k in _d)
+        self._refresh_modes()
         # 单独设的比例：rate_sets + rate_domain（旧设置文件里没有这两项 → 全部回到"跟全局比例走"）
         _rs = c.get("rate_sets")
         self._rate_set("sets", _rs is not None, _rs)
         _rd = c.get("rate_domain") or {}
         for _k in ("armor", "weapon", "rune"):
             self._rate_set(_k, _k in _rd, _rd.get(_k))
-        _d = c.get("domains") or ["rune", "armor", "weapon"]
-        for k, v in self.doms.items():
-            v.set(k in _d)
-        self._refresh_modes()
+        self._refresh_rates()
         _vals = list(self.cb_mode.cget("values"))
         if len(_vals) > 1:
             self.mode.set(_vals[1] if c.get("cross_domain") is False else _vals[0])
@@ -2266,6 +2307,39 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("单独比例：旧方案没有这两项 ⇒ 载入后回到跟全局走",
        _c2.get("rate_sets") is None and _c2.get("rate_domain") is None,
        f"rate_sets={_c2.get('rate_sets')} rate_domain={_c2.get('rate_domain')}")
+
+    # ── 动态：这几条跟着第 1 步的勾选（与"整套"开关）增减 ──
+    app._rate_set("rune", True, 0.6)
+    app.doms["rune"].set(False); app._toggle_dom("rune"); root.update()
+    ck("单独比例：类别没勾就不摆出来（取消卢恩 ⇒ 卢恩那条收起来）",
+       not app.rate_rows["rune"]["row"].winfo_manager()
+       and bool(app.rate_rows["armor"]["row"].winfo_manager()),
+       f"卢恩={app.rate_rows['rune']['row'].winfo_manager()!r} "
+       f"护甲={app.rate_rows['armor']['row'].winfo_manager()!r}")
+    ck("单独比例：收起来的那条不会偷偷带进 cfg",
+       not (app._collect().get("rate_domain") or {}).get("rune"),
+       f"rate_domain={app._collect().get('rate_domain')}")
+    app.doms["rune"].set(True); app._toggle_dom("rune"); root.update()
+    ck("单独比例：勾回来那条又出现（值记着，勾选框是干净的）",
+       bool(app.rate_rows["rune"]["row"].winfo_manager())
+       and round(app.rate_rows["rune"]["val"].get(), 2) == 0.6
+       and not app.rate_rows["rune"]["on"].get(),
+       f"可见={bool(app.rate_rows['rune']['row'].winfo_manager())} "
+       f"值={round(app.rate_rows['rune']['val'].get(), 2)} 勾={app.rate_rows['rune']['on'].get()}")
+    app.doms["armor"].set(False); app._toggle_dom("armor"); root.update()
+    ck("单独比例：取消护甲 ⇒ 整套那条也收起来（整套属于护甲）",
+       not app.rate_rows["sets"]["row"].winfo_manager()
+       and not app.rate_rows["armor"]["row"].winfo_manager(),
+       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
+    app.doms["armor"].set(True); app._toggle_dom("armor"); root.update()
+    app.sets.set(False); app._refresh_rates(); root.update()
+    ck("单独比例：关掉「整套一起换」⇒ 整套那条收起来（那时没有'整套'这条线）",
+       not app.rate_rows["sets"]["row"].winfo_manager(),
+       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
+    app.sets.set(True); app._refresh_rates(); root.update()
+    ck("单独比例：打开「整套一起换」⇒ 整套那条回来",
+       bool(app.rate_rows["sets"]["row"].winfo_manager()),
+       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
     app.nb.select(app.page_lib)
 
     n0 = len(planlib.list_plans())
