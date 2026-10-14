@@ -233,10 +233,36 @@ LIBSORT = ("时间（新→旧）", "名字", "改动量（多→少）")
 
 # ── 把计划翻译成人话 ──
 def plain_summary(plan, items, engine):
+    """给「这次会改什么」算人话数字。
+
+    · 商店：货架一共几个、换了几个（货架跟着它卖的东西走 —— 东西没被换，货架就不动）
+    · 法祷护甲：整套换了几套、散件换了几件（按**单元**数，不是按格子数：一套四件算一套）
+    """
     CASTER = set(getattr(engine, "CASTER_ARCH", ()))
     moved = [p for p in plan if p.get("old") != p.get("new")]
     stat = {"total": len(moved), "armor_rune": 0, "armor_weapon": 0, "rune_weapon": 0,
-            "weapon_any": 0, "caster_leak": 0}
+            "weapon_any": 0, "caster_leak": 0,
+            "shop_total": 0, "shop_moved": 0,
+            "caster_sets": 0, "caster_parts": 0, "caster_rows": 0}
+
+    def _is_caster_armor(k):
+        v = items.get(tuple(str(k).split(":")))
+        return bool(v) and v.get("domain") == "armor" and v.get("arch") in CASTER
+
+    _caster_units = set()
+    for p in plan:
+        if p.get("source_table") == "ShopLineupParam":
+            stat["shop_total"] += 1
+            if p.get("old") != p.get("new"):
+                stat["shop_moved"] += 1
+        if p.get("old") == p.get("new"):
+            continue
+        if _is_caster_armor(p.get("old")):
+            stat["caster_rows"] += 1
+            _caster_units.add(str(p.get("unit") or p.get("old")))
+    stat["caster_sets"] = sum(1 for u in _caster_units if u.startswith("set:"))
+    stat["caster_parts"] = len(_caster_units) - stat["caster_sets"]
+
     for p in moved:
         a = items.get(tuple(str(p["old"]).split(":")))
         b = items.get(tuple(str(p["new"]).split(":")))
@@ -1562,11 +1588,14 @@ class App:
             t.delete(*t.get_children())
         if not self._detail_open:
             self._toggle_detail()
-        threading.Thread(target=self._gen_worker, daemon=True).start()
+        # ⚠️ 配置必须在**主线程**里读：_collect() 全是 Tk 变量（勾选项、滑块、种子…），
+        #    放到后台线程里读会变成跨线程访问 Tcl —— 主循环一忙就抛
+        #    "main thread is not in main loop"，表现是"生成失败：main thread is not in main loop"。
+        cfg = self._collect()
+        threading.Thread(target=self._gen_worker, args=(cfg,), daemon=True).start()
 
-    def _gen_worker(self):
+    def _gen_worker(self, cfg):
         try:
-            cfg = self._collect()
             self.log(f"生成中…（种子 {cfg['seed']}）")
             if self.engine is None:
                 self.engine = load_engine()
@@ -1584,6 +1613,18 @@ class App:
             _lv = {1: "只能同档位互换", 2: "相邻两档可互换", 3: "三档以内可互换", 4: "等级完全放开"}[_span]
             lines = [f"一共改动 {st['total']} 处东西。",
                      f"· 档位：{_lv}（合理度 {int(_c*100)}%，跨度 {_span}/4）。"]
+            if st["shop_total"]:
+                lines.append(f"· 商店货架：换了 {st['shop_moved']} / {st['shop_total']} 个"
+                             "（价格 / 限量 / 解锁条件一律不动）。")
+            else:
+                lines.append("· 商店这次没参与（要一起换就在「更多设置」里勾上商店）。")
+            if st["caster_sets"] or st["caster_parts"]:
+                _ct = f"· 法祷护甲：换了 {st['caster_sets']} 整套"
+                if st["caster_parts"]:
+                    _ct += f" + {st['caster_parts']} 件散件"
+                lines.append(_ct + "（法祷内部互换 —— 法师/祷告/混合/感应之间换，绝不跟近战混）。")
+            else:
+                lines.append("· 法祷护甲这次没换（没勾护甲，或者它所在的那一池只剩它一个）。")
             if st["armor_rune"]:
                 lines.append(f"· 有 {st['armor_rune']} 件护甲和卢恩互换了。")
             if st["weapon_any"]:
@@ -2245,6 +2286,34 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
         app._deploying = False
     ck("写入游戏：上一次没跑完时挡住重复点击", not called.get("plan"),
        f"又被交出去={bool(called.get('plan'))}")
+
+    # 「这次会改什么」的计数：商店换了几个货架、法祷护甲换了几套几件
+    #   要点：按**单元**去重（同一个物品在宝箱和商店各有一格 → 只算一件）
+    _items = {("protector", "100"): {"domain": "armor", "arch": "法师", "name": "法师套头盔"},
+              ("protector", "200"): {"domain": "armor", "arch": "祷告", "name": "祷告套头盔"},
+              ("protector", "210"): {"domain": "armor", "arch": "祷告", "name": "祷告散件"},
+              ("protector", "220"): {"domain": "armor", "arch": "法师", "name": "法师散件"},
+              ("protector", "300"): {"domain": "armor", "arch": "近战", "name": "近战甲"},
+              ("goods", "1"): {"domain": "goods", "arch": "", "name": "卢恩"}}
+    _plan = [
+        {"unit": "set:protector:100", "old": "protector:100", "new": "protector:200",
+         "source_table": "ItemLotParam_map"},                    # 一整套法祷护甲换掉
+        {"unit": "item:protector:220", "old": "protector:220", "new": "protector:210",
+         "source_table": "ItemLotParam_map"},                    # 一件法祷散件换掉
+        {"unit": "item:protector:300", "old": "protector:300", "new": "protector:300",
+         "source_table": "ItemLotParam_map"},                    # 近战护甲没换
+        {"unit": "item:protector:220", "old": "protector:220", "new": "protector:210",
+         "source_table": "ShopLineupParam"},                     # 商店货架：换了
+        {"unit": "item:protector:300", "old": "protector:300", "new": "protector:300",
+         "source_table": "ShopLineupParam"},                     # 商店货架：没换
+    ]
+    _st = plain_summary(_plan, _items, type("E", (), {"CASTER_ARCH": ("法师", "祷告")})())
+    ck("会改什么：商店计数（换了几个 / 共几个）",
+       _st["shop_moved"] == 1 and _st["shop_total"] == 2,
+       f"换 {_st['shop_moved']} / 共 {_st['shop_total']}")
+    ck("会改什么：法祷护甲计数（整套与散件分开，同一件多处只算一次）",
+       _st["caster_sets"] == 1 and _st["caster_parts"] == 1,
+       f"整套 {_st['caster_sets']} 套 + 散件 {_st['caster_parts']} 件")
 
     # 右键菜单：条目齐不齐（改名/收藏/复制/删除/导出/导入 都要在）
     # 注意：不能真 tk_popup —— 它会抓住事件循环，等用户点一下才回来（自动化会卡死）
