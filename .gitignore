@@ -73,3 +73,6 @@ investigation/**/evidence/
 
 # 例外：打包用的 spec 必须入库 —— 否则别人克隆下来无法按 BUILD 步骤复现 exe
 !ConvergenceClassItemRandomizer.spec
+
+# 运行时缓存（程序自动找 Oodle 压缩库的位置，写完才知道）
+oodle_dir.txt

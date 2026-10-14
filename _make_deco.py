@@ -7,8 +7,9 @@
 * 插画（空状态）：转透明会脏 —— 改成"黑点抬到窗口底色 + 椭圆羽化"，让它融进背景，不出方块边。
 * 每件出 1× 与 2× 两档（程序按屏幕缩放挑），图标另出 .ico 给 exe 用。
 """
+import io
 import os
-from PIL import Image, ImageChops, ImageDraw, ImageFilter
+from PIL import Image, ImageChops, ImageDraw, ImageEnhance, ImageFilter
 
 SRC = "dsh-image-gen"
 OUT = os.path.join("_assets", "deco")
@@ -77,9 +78,57 @@ pad = Image.new("RGB", (side, side), (8, 7, 6))
 pad.paste(sig, ((side - sig.size[0]) // 2, (side - sig.size[1]) // 2))
 icon = pad.resize((256, 256), Image.LANCZOS)
 icon.save(os.path.join(OUT, "icon.png"))
-icon.save(os.path.join(OUT, "app.ico"),
-          sizes=[(16, 16), (24, 24), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
-print("  icon.png / app.ico  256x256（含 7 档）")
+
+
+def _core(size, zoom, mask_r, boost=1.15, contrast=1.10):
+    """小尺寸专用：把**中心徽记**放大 + 圆形遮罩 + 提亮。
+
+    为什么不能只把 256 那张缩小：华丽外圈在 16/24/32 px 会糊成一团暗金，
+    而 Explorer 列表 / 桌面快捷方式最常用的正是这几档（2026-10-14 作者反馈）。
+    圆形遮罩是为了让"被裁断的外圈"不在四角留下碎片。
+    """
+    box = int(256 * (1 - zoom) / 2)
+    im = icon.crop((box, box, 256 - box, 256 - box)).resize((256, 256), Image.LANCZOS)
+    m = Image.new("L", (256, 256), 0)
+    r = int(256 * mask_r)
+    ImageDraw.Draw(m).ellipse((128 - r, 128 - r, 128 + r, 128 + r), fill=255)
+    m = m.filter(ImageFilter.GaussianBlur(2.0))
+    im = Image.composite(im, Image.new("RGB", (256, 256), (8, 7, 6)), m)
+    im = ImageEnhance.Brightness(im).enhance(boost)
+    im = ImageEnhance.Contrast(im).enhance(contrast)
+    return im.resize((size, size), Image.LANCZOS)
+
+
+def save_ico(entries, path):
+    """自己写 ICO：PIL 只能把**同一张图**缩成多档，而我们要给小尺寸换一套画。
+
+    每档用 PNG 载荷（现代 Windows 全认），256 在目录里记作 0。
+    """
+    import struct
+    blobs = []
+    for size, im in entries:
+        buf = io.BytesIO()
+        im.save(buf, format="PNG")
+        blobs.append((size, buf.getvalue()))
+    n = len(blobs)
+    out = bytearray(struct.pack("<HHH", 0, 1, n))
+    offset = 6 + 16 * n
+    tail = b""
+    for size, data in blobs:
+        d = 0 if size >= 256 else size
+        out += struct.pack("<BBBBHHII", d, d, 0, 0, 1, 32, len(data), offset + len(tail))
+        tail += data
+    out += tail
+    with open(path, "wb") as f:
+        f.write(bytes(out))
+
+
+# 大尺寸用原徽记（好看），小尺寸换成中心徽记的放大版（看得清）
+save_ico([(256, icon), (128, icon), (64, icon),
+          (48, _core(48, 0.62, 0.47)), (32, _core(32, 0.62, 0.47)),
+          (24, _core(24, 0.56, 0.46)), (16, _core(16, 0.56, 0.46))],
+         os.path.join(OUT, "app.ico"))
+print("  icon.png / app.ico  256x256（7 档；16~48 用中心徽记放大版）")
 
 # ── 2) 标题栏装饰条 ──
 orn = load("image-e03a8ba9.png")
