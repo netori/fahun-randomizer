@@ -567,7 +567,10 @@ class App:
         self.cb_mode = ttk.Combobox(r3, textvariable=self.mode, values=[t for _m, t in MODES],
                                     state="readonly", width=34)
         self.cb_mode.pack(side="left", padx=(4, 0))
-        self.cb_mode.bind("<<ComboboxSelected>>", lambda _e: self._combo_hint())
+        # 换混合方式必须把"改动比例 / 单独设合理度"两组一起理顺 ——
+        # 之前这里只调了 _combo_hint()，所以用户在下拉里换完方式，那两组纹丝不动（真 bug，2026-10-14 修）
+        self.cb_mode.bind("<<ComboboxSelected>>",
+                          lambda _e: (self._combo_hint(), self._refresh_rates(), self._refresh_cohs()))
         self.lbl_combo = ttk.Label(s1, text="", style="Hint.TLabel")
         self.lbl_combo.pack(anchor="w", pady=(4, 0))
 
@@ -659,41 +662,23 @@ class App:
                         variable=self.shops).pack(side="left")
         ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
                   style="Hint.TLabel").pack(side="left", padx=8)
-        a2 = ttk.Frame(self.adv); a2.pack(fill="x", pady=(6, 0))
-        ttk.Label(a2, text="改动比例").pack(side="left")
-        self.density = tk.DoubleVar(value=1.0)
-        self.lbl_den = ttk.Label(a2, text="100%", width=6)
-        ttk.Scale(a2, from_=0.05, to=1.0, variable=self.density, orient="horizontal", length=px(200),
-                  command=lambda v: self.lbl_den.config(text=f"{float(v)*100:.0f}%")).pack(side="left", padx=6)
-        self.lbl_den.pack(side="left")
-
-        # ── 单独设比例：不勾 = 跟上面的全局比例走 ──
-        #    整套法祷装备自成一个池，可以单独给比例（例如"卢恩全换、法祷整套只换四成"）。
-        #    优先级：整套法祷装备 > 它的所属大类（护甲）。
-        #    这里跟着第 1 步勾了哪些随机项目**动态增减**：没勾的类别不摆出来（摆着也没用），
-        #    免得让人以为"勾了护甲的比例却没生效"。
-        a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(8, 0))
-        ttk.Label(a2r, text="单独设比例", style="Sub.TLabel").pack(side="left")
-        ttk.Label(a2r, text="· 只列上面勾过的项目；不勾就跟全局比例走；整套法祷装备优先于护甲",
+        # ── 改动比例：按类别各一条（2026-10-14 撤掉了全局滑块）──
+        #    为什么撤：全局那条已经用不上了 —— 每条池子都由自己那一类说了算，
+        #    "少改一点"直接在对应类别上拖就行。不勾 = 这一类全改（100%）。
+        #    跟着第 1 步的勾选与"混合方式"**动态增减**：没勾的类别不摆出来；
+        #    **整类进了混池的**（全部混合时的护甲/卢恩）也收起来，由「混池」那条统管 ——
+        #    否则会让人以为"我调了护甲的比例，怎么没生效"。
+        a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(6, 0))
+        ttk.Label(a2r, text="改动比例", style="Sub.TLabel").pack(side="left")
+        ttk.Label(a2r, text="· 只列当前真正起作用的那几条；不勾 = 这一类全改；整套法祷装备优先于护甲",
                   style="Hint.TLabel").pack(side="left", padx=6)
         # 用 grid（不用 pack）：隐藏/恢复的时候格子还在，**顺序不会乱**
         rgrid = ttk.Frame(self.adv); rgrid.pack(fill="x")
         self.rate_rows = {}
-        for i, (key, text) in enumerate((("sets", "整套法祷装备"), ("armor", "护甲"),
-                                         ("weapon", "装备（武器）"), ("rune", "卢恩"))):
-            row = ttk.Frame(rgrid)
-            row.grid(row=i, column=0, sticky="w", pady=1)
-            on = tk.BooleanVar(value=False)
-            val = tk.DoubleVar(value=1.0)
-            lbl = ttk.Label(row, text="100%", width=6)
-            scale = ttk.Scale(row, from_=0.05, to=1.0, variable=val, orient="horizontal",
-                              length=px(200),
-                              command=lambda v, k=key: self._rate_moved(k, v))
-            ttk.Checkbutton(row, text=text, variable=on, width=14,
-                            command=lambda k=key: self._rate_toggle(k)).pack(side="left")
-            scale.pack(side="left", padx=6)
-            lbl.pack(side="left")
-            self.rate_rows[key] = {"on": on, "val": val, "lbl": lbl, "scale": scale, "row": row}
+        for i, (key, text) in enumerate((("sets", "整套法祷装备"), ("mixed", "混池"),
+                                         ("rune", "卢恩"), ("armor", "护甲"),
+                                         ("weapon", "装备（武器）"))):
+            self._mk_override_row(rgrid, self.rate_rows, key, text, 0.05, 1.0, i)
         self._refresh_rates()               # 一建出来就按当前勾选理顺一次
 
         a3 = ttk.Frame(self.adv); a3.pack(fill="x", pady=(6, 0))
@@ -825,7 +810,7 @@ class App:
 
         ttk.Separator(right, orient="horizontal").pack(fill="x", pady=(8, 6))
         self.lib_vals = {}
-        for key, label in (("seed", "种子"), ("coh", "合理度"), ("density", "改动比例"),
+        for key, label in (("seed", "种子"), ("coh", "合理度"), ("rates", "改动比例"),
                            ("shops", "商店参与"), ("rows", "改动行"), ("engine", "引擎版本"),
                            ("fp", "指纹"), ("time", "保存时间")):
             row = ttk.Frame(right)
@@ -1046,8 +1031,26 @@ class App:
         self._lib_set_field(self.lib_note_e, d.get("note") or "")
         self._lib_tags_render(d.get("tags") or [])
         self.lib_vals["seed"].config(text=str(d.get("seed", "—")))
-        self.lib_vals["coh"].config(text=f"{float(cfg.get('coherence', 0)) * 100:.0f}%")
-        self.lib_vals["density"].config(text=f"{float(cfg.get('density', 1)) * 100:.0f}%")
+        # 合理度 / 改动比例：全局那条 + 单独设过的（全局改动比例滑块已撤，所以这里只列"有单独设的"）
+        _cx = []
+        if cfg.get("coh_mixed") is not None:
+            _cx.append(f"混池 {float(cfg['coh_mixed']) * 100:.0f}%")
+        for _k, _zh in (("armor", "护甲"), ("weapon", "装备"), ("rune", "卢恩")):
+            _v = (cfg.get("coh_domain") or {}).get(_k)
+            if _v is not None:
+                _cx.append(f"{_zh} {float(_v) * 100:.0f}%")
+        self.lib_vals["coh"].config(text=f"{float(cfg.get('coherence', 0)) * 100:.0f}%"
+                                         + ("（" + "、".join(_cx) + "）" if _cx else ""))
+        _rx = []
+        if cfg.get("rate_sets") is not None:
+            _rx.append(f"整套 {float(cfg['rate_sets']) * 100:.0f}%")
+        if cfg.get("rate_mixed") is not None:
+            _rx.append(f"混池 {float(cfg['rate_mixed']) * 100:.0f}%")
+        for _k, _zh in (("armor", "护甲"), ("weapon", "装备"), ("rune", "卢恩")):
+            _v = (cfg.get("rate_domain") or {}).get(_k)
+            if _v is not None:
+                _rx.append(f"{_zh} {float(_v) * 100:.0f}%")
+        self.lib_vals["rates"].config(text="、".join(_rx) if _rx else "全改（默认）")
         self.lib_vals["shops"].config(text="是" if cfg.get("shops") else "否")
         self.lib_vals["rows"].config(text=f"{changed} / {len(rows)}")
         self.lib_vals["engine"].config(text=str(d.get("engine_version") or "—"))
@@ -1314,10 +1317,8 @@ class App:
             self.seed.set(str(cfg.get("seed", self.seed.get())))
             self.sets.set(cfg.get("sets", True))
             # （幽影卢恩那个开关已撤：大师=幽影同档，规格 §2 / Q3）
-            self.density.set(float(cfg.get("density", 1.0)))
             self.coherence.set(float(cfg.get("coherence", 0.8)))
             self.lbl_coh.config(text=f"{float(cfg.get('coherence', 0.8)) * 100:.0f}%")
-            self.lbl_den.config(text=f"{float(cfg.get('density', 1.0)) * 100:.0f}%")
             self.guide.set(cfg.get("sync_guide", True))
             self.shops.set(bool(cfg.get("shops", False)))
             # 先定类别与"整套"开关，再填单独比例（顺序反了会被当成"用不上"而丢掉）
@@ -1423,6 +1424,27 @@ class App:
         self._refresh_rates()
         self._refresh_cohs()
 
+    def _mode_pair(self, text):
+        """下拉文字里"哪两类混 · 谁独自" → {"rune","armor"} 这样的集合（认不出就 None）"""
+        if "混 ·" not in text:
+            return None
+        left = text.split("混 ·")[0]
+        got = {d for d, zh in names_for_join.items() if zh in left}
+        return got or None
+
+    def _mode_kind(self, text):
+        """把混合方式归类：all / pair:<两类> / sep —— **按意图**记，不按整串文字记。
+        为什么：下拉文字里嵌着类别名（"各自随机（卢恩、护甲、装备 各随各的）"），
+        一取消类别，整串就对不上，于是被静默回落到"全部混合"（真 bug，2026-10-14 修）。"""
+        if "全部混合" in text:
+            return "all"
+        if "各自" in text:
+            return "sep"
+        pair = self._mode_pair(text)
+        if pair:
+            return "pair:" + "+".join(sorted(pair))
+        return "all"
+
     def _refresh_modes(self, *_a):
         """混合方式随勾选项目智能变更（下拉里的文字直接写出项目名）"""
         doms = self._picked_doms()
@@ -1439,9 +1461,15 @@ class App:
                          f"{names[a]}+{names[c]} 混 · {names[b]} 独自",
                          f"{names[b]}+{names[c]} 混 · {names[a]} 独自"]
             vals.append(f"各自随机（{dun} 各随各的）")
-        old = self.mode.get()
+        kind = self._mode_kind(self.mode.get())
         self.cb_mode.config(values=vals)
-        self.mode.set(old if old in vals else vals[0])
+        pick = None
+        if kind == "sep":
+            pick = next((v for v in vals if "各自" in v), None)
+        elif kind.startswith("pair:"):
+            want = set(kind[5:].split("+"))
+            pick = next((v for v in vals if self._mode_pair(v) == want), None)
+        self.mode.set(pick or vals[0])
         self._combo_hint()
         self._coh_hint()
 
@@ -1696,15 +1724,24 @@ class App:
         return self._ov_set(self.rate_rows, key, on, val)
 
     def _rate_applicable(self):
-        """哪几条"单独设比例"现在真的有用 —— 跟着第 1 步的勾选与"整套"开关走：
+        """哪几条"改动比例"现在真的有用 —— 判据与「单独设合理度」同源：
         · 类别没勾 → 那一条没用（不摆出来）
         · 没勾护甲 → 整套法祷装备也没用（它属于护甲）
-        · 关了"整套一起换" → 没有"整套"这条线了（护甲改成按部位单件换）"""
+        · 关了"整套一起换" → 没有"整套"这条线了（护甲改成按部位单件换）
+        · **整类进了混池的**（全部混合时的护甲/卢恩）也没有自己那条，由「混池」统管
+        · 混池：当前会建混池才有这条
+        · 装备（武器）：勾了就有 —— 它只按比例掺入混池，总有一部分留在自己的池里
+        """
         doms = self._picked_doms()
-        return {"armor": "armor" in doms,
-                "weapon": "weapon" in doms,
-                "rune": "rune" in doms,
-                "sets": ("armor" in doms) and bool(self.sets.get())}
+        in_mix = set()
+        for g in self._join_groups():
+            in_mix |= set(g)
+        out = {"mixed": bool(self._join_groups()),
+               "sets": ("armor" in doms) and bool(self.sets.get())}
+        for d in ("rune", "armor"):
+            out[d] = (d in doms) and (d not in in_mix)
+        out["weapon"] = "weapon" in doms
+        return out
 
     def _refresh_rates(self, *_a):
         """按当前勾选动态增减这几条比例行（隐藏的行**一定**回到未勾选，
@@ -1816,10 +1853,11 @@ class App:
                 "joins": joins,                      # 两两混：只给这一组建混池
                 "cross_domain": (not sep) and not joins,   # 全部混合=建混池；两两混/各自=不建
                 "merge_shadow": False, "sets": self.sets.get(),   # 恒定 False：界面不再暴露这个空转开关
-
-                "seed": int(self.seed.get()), "density": round(float(self.density.get()), 3),
-                # 单独设的比例（没勾就不带这两个键 ⇒ 跟全局比例走）
+                # density 不再由界面给：全局滑块已撤，缺省（无此键）= 每类全改 100%
+                "seed": int(self.seed.get()),
+                # 单独设的比例（没勾就不带这几个键 ⇒ 这一类全改）
                 "rate_sets": _rates.get("sets"),
+                "rate_mixed": _rates.get("mixed"),
                 "rate_domain": {k: v for k, v in _rates.items() if k in ("armor", "weapon", "rune")} or None,
                 # 单独设的合理度（没勾就不带这两个键 ⇒ 跟全局合理度走）
                 "coh_mixed": _cohs.get("coh_mixed"),
@@ -2000,10 +2038,8 @@ class App:
         c = json.load(open(p, encoding="utf-8"))
         self.seed.set(str(c.get("seed", self.seed.get())))
         self.sets.set(c.get("sets", True))
-        self.density.set(float(c.get("density", 1.0)))
         self.coherence.set(float(c.get("coherence", 0.8)))
         self.lbl_coh.config(text=f"{float(c.get('coherence',0.8))*100:.0f}%")
-        self.lbl_den.config(text=f"{float(c.get('density',1.0))*100:.0f}%")
         self.guide.set(c.get("sync_guide", True))
         # 先定类别（勾了哪些随机项目）与"整套"开关，再填单独比例 —— 顺序反了会被当成"用不上"而丢掉
         _d = c.get("domains") or ["rune", "armor", "weapon"]
@@ -2134,8 +2170,8 @@ def audit_light_widgets(root, limit=0.80):
 
 # 页 1 上必须存在的控件（拆页签时最容易漏掉几个）——「功能没少」的机械证据
 SETTINGS_WIDGETS = ("b_gen", "b_dep", "lbl_env", "cb_mode", "lbl_combo", "lbl_coh", "lbl_cohtxt",
-                    "lbl_den", "checks", "tbl", "txt", "summary", "status", "adv", "detail",
-                    "doms", "mode", "seed", "coherence", "density", "sets", "guide",
+                    "checks", "tbl", "txt", "summary", "status", "adv", "detail",
+                    "doms", "mode", "seed", "coherence", "sets", "guide",
                     "shops")
 
 
@@ -2436,13 +2472,14 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("单独比例：默认不勾 ⇒ 不带进 cfg（等于跟全局比例走）",
        _c0.get("rate_sets") is None and _c0.get("rate_domain") is None,
        f"rate_sets={_c0.get('rate_sets')} rate_domain={_c0.get('rate_domain')}")
+    # 默认是"全部混合"：这时只有「整套 / 混池 / 装备」三条在（护甲/卢恩整类进了混池）
     app._rate_set("sets", True, 0.4)
-    app._rate_set("armor", True, 0.3)
+    app._rate_set("mixed", True, 0.35)
     root.update()
     _c1 = app._collect()
-    ck("单独比例：勾了就进 cfg（整套 40% + 护甲 30%）",
-       _c1.get("rate_sets") == 0.4 and (_c1.get("rate_domain") or {}).get("armor") == 0.3,
-       f"rate_sets={_c1.get('rate_sets')} rate_domain={_c1.get('rate_domain')}")
+    ck("单独比例：勾了就进 cfg（整套 40% + 混池 35%）",
+       _c1.get("rate_sets") == 0.4 and _c1.get("rate_mixed") == 0.35,
+       f"rate_sets={_c1.get('rate_sets')} rate_mixed={_c1.get('rate_mixed')}")
     ck("单独比例：没勾的那条滑块收起来了（不勾=跟全局走，一眼能看出）",
        not app.rate_rows["weapon"]["scale"].winfo_manager()
        and bool(app.rate_rows["sets"]["scale"].winfo_manager()),
@@ -2456,7 +2493,36 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        _c2.get("rate_sets") is None and _c2.get("rate_domain") is None,
        f"rate_sets={_c2.get('rate_sets')} rate_domain={_c2.get('rate_domain')}")
 
-    # ── 动态：这几条跟着第 1 步的勾选（与"整套"开关）增减 ──
+    # ── 动态：这几条跟着第 1 步的勾选、混合方式、『整套』开关增减 ──
+    #    换混合方式走**真实事件路径**（event_generate 触发下拉框绑定）——
+    #    2026-10-14 的真 bug 正是"下拉换方式后那两组不动"，直接调刷新函数会把它盖过去。
+    _modes = list(app.cb_mode.cget("values"))
+    _i_all = 0
+    _i_sep = [i for i, v in enumerate(_modes) if "各自" in v][0]
+
+    def _pick_mode(i):
+        app.cb_mode.current(i)
+        app.cb_mode.event_generate("<<ComboboxSelected>>")
+        root.update()
+
+    _pick_mode(_i_all)
+    ck("动态刷新：换混合方式会触发那两组刷新（真实事件路径）",
+       app._rate_applicable().get("mixed") is True and app._coh_applicable().get("mixed") is True,
+       f"rate={app._rate_applicable()}")
+    ck("改动比例：全部混合时只留「整套 / 混池 / 装备」",
+       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == ["sets", "mixed", "weapon"],
+       f"可见={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}")
+    ck("单独合理度：全部混合时只留「混池 / 装备」",
+       [k for k, r in app.coh_rows.items() if r["row"].winfo_manager()] == ["mixed", "weapon"],
+       f"可见={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
+    _pick_mode(_i_sep)
+    ck("换到各自随机：混池那两条消失、类别那几条回来（两组都跟着变）",
+       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()]
+       == ["sets", "mixed", "rune", "armor", "weapon"][0:1] + ["rune", "armor", "weapon"]
+       and [k for k, r in app.coh_rows.items() if r["row"].winfo_manager()] == ["rune", "armor", "weapon"],
+       f"比例={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}｜"
+       f"合理度={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
+
     app._rate_set("rune", True, 0.6)
     app.doms["rune"].set(False); app._toggle_dom("rune"); root.update()
     ck("单独比例：类别没勾就不摆出来（取消卢恩 ⇒ 卢恩那条收起来）",
@@ -2489,10 +2555,9 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        bool(app.rate_rows["sets"]["row"].winfo_manager()),
        f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
 
-    # ── 单独设合理度：只有"真正起作用"的类别才出现 ──
+    # ── 单独设合理度：只有"真正起作用"的类别才出现（同样走真实事件路径）──
     app.nb.select(app.page_set); root.update()
-    _all_mix = list(app.cb_mode.cget("values"))[0]
-    app.mode.set(_all_mix); app._refresh_modes(); app._refresh_cohs(); root.update()
+    _pick_mode(_i_all)
     _ca = app._coh_applicable()
     ck("单独合理度：全部混合时只有「混池」与「装备」（卢恩/护甲整类进了混池）",
        _ca["mixed"] and _ca["weapon"] and not _ca["rune"] and not _ca["armor"], f"{_ca}")
@@ -2501,8 +2566,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and bool(app.coh_rows["mixed"]["row"].winfo_manager()),
        f"卢恩={app.coh_rows['rune']['row'].winfo_manager()!r} "
        f"混池={app.coh_rows['mixed']['row'].winfo_manager()!r}")
-    _sep_mode = [v for v in app.cb_mode.cget("values") if "各自" in v][0]
-    app.mode.set(_sep_mode); app._refresh_modes(); app._refresh_cohs(); root.update()
+    _pick_mode([[i for i, v in enumerate(_modes) if "各自" in v][0]][0])
     _cb = app._coh_applicable()
     ck("单独合理度：切到「各自」后没有混池那条，三个类别各自回来",
        (not _cb["mixed"]) and _cb["rune"] and _cb["armor"] and _cb["weapon"], f"{_cb}")
@@ -2510,7 +2574,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("单独合理度：勾了就进 cfg（卢恩 35%）",
        (app._collect().get("coh_domain") or {}).get("rune") == 0.35,
        f"coh_domain={app._collect().get('coh_domain')}")
-    app.mode.set(_all_mix); app._refresh_modes(); app._refresh_cohs()
+    _pick_mode(_i_all)
     app._coh_set("mixed", True, 1.0); root.update()
     ck("单独合理度：混池那条进 cfg（coh_mixed）",
        app._collect().get("coh_mixed") == 1.0, f"{app._collect().get('coh_mixed')}")

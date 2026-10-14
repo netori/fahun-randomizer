@@ -678,19 +678,27 @@ def run(items, cfg, seed=None):
                 break
     # 单独比例（可选，2026-10-14 加）：
     #   · rate_domain = {"armor": 0.3, "weapon": 1.0, "rune": 0.5} —— 按大类各给一个比例
-    #   · rate_sets  = 0.6 —— 法祷**整套**装备单独一个比例（套装池，优先级高于大类）
-    #   缺省（没给）就还是跟全局 density 走 ⇒ 老配置的行为一个字节都不变。
+    #   · rate_sets   = 0.6 —— 法祷**整套**装备单独一个比例（套装池，优先级高于大类）
+    #   · rate_mixed  = 0.5 —— 混池自己的比例（整类进了混池的那些，就由它统管）
+    #   缺省（没给）就跟全局 density 走（界面已不再暴露全局滑块 ⇒ 等价于 100%）⇒ 老配置不变。
     _rate_domain = dict(cfg.get("rate_domain") or {})
     _rate_sets = cfg.get("rate_sets")
+    _rate_mixed = cfg.get("rate_mixed")
     for pool, meta in sorted(pools.items()):
         units = [u for u in meta["units"] if u["id"] not in swaps]
         if len(units) < 2:
             for u in units:                                         # 池内唯一 → 保持原样
                 plan.extend(emit(u, u, pool, keep=True))
             continue
-        # 本池的改动比例：套装池 > 按大类 > 全局
+        # 本池的改动比例：套装池 > 混池 > 按大类 > 全局
         _rate = density
-        if "混池" not in pool:
+        if "混池" in pool:
+            if _rate_mixed is not None:
+                try:
+                    _rate = float(_rate_mixed)
+                except (TypeError, ValueError):
+                    _rate = density
+        else:
             _dm = _dom_of_units(units, items)
             if _dm in _rate_domain:
                 try:
