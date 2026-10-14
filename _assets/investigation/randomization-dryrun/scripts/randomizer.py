@@ -677,15 +677,40 @@ def run(items, cfg, seed=None):
                 swaps = {}
                 break
     # 单独比例（可选，2026-10-14 加）：
-    #   · rate_domain = {"armor": 0.3, "weapon": 1.0, "rune": 0.5} —— 按大类各给一个比例
-    #   · rate_sets   = 0.6 —— 法祷**整套**装备单独一个比例（套装池，优先级高于大类）
-    #   · rate_mixed  = 0.5 —— 混池自己的比例（整类进了混池的那些，就由它统管）
-    #   缺省（没给）就跟全局 density 走（界面已不再暴露全局滑块 ⇒ 等价于 100%）⇒ 老配置不变。
+    #   · rate_sets   = 0.6 —— 法祷**整套**装备的比例（套装池）
+    #   · rate_caster = 0.6 —— 法祷**散件**（按部位）的比例；界面上这两条合成一条"法祷职业护甲"
+    #   · rate_shop   = 0.5 —— **有商店在卖的**那些物品的比例（见下面的 _shop_frozen）
+    #   · rate_mixed / rate_domain —— 混池 / 按大类（界面已不再暴露，保留键以便老方案照旧）
+    #   缺省（没给）就跟全局 density 走 ⇒ 老配置的行为一个字节都不变。
     _rate_domain = dict(cfg.get("rate_domain") or {})
     _rate_sets = cfg.get("rate_sets")
+    _rate_caster = cfg.get("rate_caster")
     _rate_mixed = cfg.get("rate_mixed")
+    # 商店物品的随机率：**按物品**抽"这次不参与互换"的那批（不是按行抽！）。
+    # 理由（硬约束 H9）：同一件物品在货架与宝箱/掉落里是同一条记录，
+    # 只抽货架那一行会出现"货架换了、宝箱还是原来那件"。
+    # 用独立随机源：不动主随机序列 ⇒ 不设这个键时计划逐字节不变。
+    _shop_frozen = set()
+    _rate_shop = cfg.get("rate_shop")
+    if _rate_shop is not None:
+        try:
+            _rs = max(0.0, min(1.0, float(_rate_shop)))
+        except (TypeError, ValueError):
+            _rs = 1.0
+        if _rs < 0.999:
+            _sold = set()
+            for _meta in pools.values():
+                for _u in _meta.get("units") or []:
+                    if any(any(c.get("source_table") == "ShopLineupParam"
+                               for c in (items.get(k) or {}).get("cells", []))
+                           for k in (_u.get("items") or [])):
+                        _sold.add(_u["id"])
+            _n_stay = len(_sold) - int(round(len(_sold) * _rs))
+            if _n_stay > 0:
+                _rng_shop = random.Random(f"{seed}|shop")
+                _shop_frozen = set(_rng_shop.sample(sorted(_sold), _n_stay))
     for pool, meta in sorted(pools.items()):
-        units = [u for u in meta["units"] if u["id"] not in swaps]
+        units = [u for u in meta["units"] if u["id"] not in swaps and u["id"] not in _shop_frozen]
         if len(units) < 2:
             for u in units:                                         # 池内唯一 → 保持原样
                 plan.extend(emit(u, u, pool, keep=True))
@@ -708,6 +733,12 @@ def run(items, cfg, seed=None):
             if _rate_sets is not None and any(u.get("parts") for u in units):
                 try:
                     _rate = float(_rate_sets)
+                except (TypeError, ValueError):
+                    pass
+            elif _rate_caster is not None and "caster" in pool and not any(u.get("parts") for u in units):
+                # 法祷**散件**（按部位）：界面上与"整套"合成一条"法祷职业护甲"
+                try:
+                    _rate = float(_rate_caster)
                 except (TypeError, ValueError):
                     pass
         _rate = max(0.0, min(1.0, _rate))

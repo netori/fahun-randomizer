@@ -4,7 +4,7 @@
 #   · 同一种子 = 完全一样的结果
 #   · 命令行：--selftest 自检 ｜ --uicheck 只建界面不显示（供自动化测试）
 #              --uitest 方案库交互自检 ｜ --planlib 方案库模块自检 ｜ --deploy plan.csv 部署
-import importlib.util, json, os, queue, random, re, shutil, sys, threading, time
+import collections, importlib.util, json, os, queue, random, re, shutil, sys, threading, time
 import tkinter as tk
 from tkinter import messagebox, ttk
 from tkinter import font as tkfont
@@ -816,16 +816,23 @@ class App:
         self.lib_tag_entry.bind("<Escape>", lambda _e: self.lib_tag_entry.pack_forget())
 
         ttk.Separator(right, orient="horizontal").pack(fill="x", pady=(8, 6))
+        # 详情面板：分组 + 尽量把方案文件里有的都摊出来（2026-10-14 作者要求"更详细"）
         self.lib_vals = {}
-        for key, label in (("seed", "种子"), ("coh", "合理度"), ("rates", "改动比例"),
-                           ("shops", "商店参与"), ("rows", "改动行"), ("engine", "引擎版本"),
-                           ("fp", "指纹"), ("time", "保存时间")):
-            row = ttk.Frame(right)
-            row.pack(fill="x", pady=1)
-            ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
-            v = ttk.Label(row, text="—", wraplength=px(280), justify="left")
-            v.pack(side="left", fill="x", expand=True)
-            self.lib_vals[key] = v
+        for _title, _fields in (
+                ("随机设置", (("doms", "随机项目"), ("mode", "混合方式"), ("seed", "种子"),
+                              ("coh", "合理度"), ("rates", "改动比例"), ("switches", "开关"))),
+                ("这次改了什么", (("rows", "改动行"), ("detail", "分类明细"), ("shops", "商店"),
+                                  ("pools", "池子"))),
+                ("记录", (("engine", "引擎版本"), ("fp", "指纹"), ("time", "保存时间"),
+                          ("mtime", "修改时间"), ("wrote", "写入记录")))):
+            ttk.Label(right, text=_title, style="Sub.TLabel").pack(anchor="w", pady=(6, 0))
+            for key, label in _fields:
+                row = ttk.Frame(right)
+                row.pack(fill="x", pady=1)
+                ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
+                v = ttk.Label(row, text="—", wraplength=px(280), justify="left")
+                v.pack(side="left", fill="x", expand=True)
+                self.lib_vals[key] = v
         # 底部一行：说清刚刚发生了什么（删除后可以从这里进回收站）
         trow2 = ttk.Frame(right)
         trow2.pack(side="bottom", fill="x", pady=(8, 0))
@@ -1058,11 +1065,68 @@ class App:
             if _v is not None:
                 _rx.append(f"{_zh} {float(_v) * 100:.0f}%")
         self.lib_vals["rates"].config(text="、".join(_rx) if _rx else "全改（默认）")
-        self.lib_vals["shops"].config(text="是" if cfg.get("shops") else "否")
-        self.lib_vals["rows"].config(text=f"{changed} / {len(rows)}")
+        # ── 新增的几行：能算的都算出来（都用方案文件里已有的东西，不重新生成）──
+        _doms = cfg.get("domains") or ["rune", "armor", "weapon"]
+        _ZN = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
+        self.lib_vals["doms"].config(text=" · ".join(_ZN.get(x, x) for x in _doms))
+        _joins = cfg.get("joins") or []
+        if _joins:
+            _m = "两两混：" + " / ".join("+".join(_ZN.get(x, x) for x in g) for g in _joins)
+            _m += "（其余各自）"
+        elif cfg.get("cross_domain") is False or len(_doms) <= 1:
+            _m = "各自随机（各随各的）"
+        else:
+            _m = "全部混合（" + " + ".join(_ZN.get(x, x) for x in _doms) + " 一起混）"
+        self.lib_vals["mode"].config(text=_m)
+        self.lib_vals["switches"].config(
+            text=("整套法祷一起换：" + ("是" if cfg.get("sets", True) else "否")
+                  + "｜说明书跟着改：" + ("是" if cfg.get("sync_guide", True) else "否")
+                  + "｜商店参与：" + ("是" if cfg.get("shops") else "否")))
+
+        _ch = [r for r in rows if str(r.get("old")) != str(r.get("new"))]
+        _cross = sum(1 for r in _ch if str(r.get("old_cat")) != str(r.get("new_cat")))
+        _cnt = collections.Counter(str(r.get("old_cat")) for r in _ch)
+        _zhc = {"protector": "护甲", "weapon": "装备", "goods": "卢恩"}
+        _sets_u = {r.get("unit") for r in _ch if r.get("role") == "set"}
+        _piece_u = {r.get("unit") for r in _ch
+                    if r.get("role") != "set" and "caster" in str(r.get("pool"))}
+        _parts = []
+        for _k, _zh in (("protector", "护甲"), ("goods", "卢恩"), ("weapon", "装备")):
+            if _cnt.get(_k):
+                _s = f"{_zh} {_cnt[_k]}"
+                if _k == "protector":
+                    _s += f"（法祷整套 {len(_sets_u)} 套 · 散件 {len(_piece_u)} 件）"
+                _parts.append(_s)
+        self.lib_vals["rows"].config(
+            text=f"{len(_ch)} / {len(rows)} 行" + (f"（其中跨大类 {_cross} 行）" if _cross else ""))
+        self.lib_vals["detail"].config(text="｜".join(_parts) if _parts else "—")
+        _shop = {str(r.get("row_id")) for r in _ch if r.get("source_table") == "ShopLineupParam"}
+        self.lib_vals["shops"].config(
+            text=(f"换了 {len(_shop)} 个货架" if cfg.get("shops") else "不参与")
+            + (f"（{len(_shop)} 行）" if _shop else ""))
+        _pools = collections.Counter(str(r.get("pool")) for r in rows)
+        _pm = collections.Counter()
+        for _p in _pools:
+            _pm["混池" if _p.startswith("mixed") else
+                ("护甲" if _p.startswith("armor") else
+                 ("武器" if _p.startswith("weapon") else
+                  ("卢恩" if _p.startswith("rune") else "其它")))] += 1
+        self.lib_vals["pools"].config(
+            text=f"{len(_pools)} 个（" + " · ".join(f"{k} {v}" for k, v in _pm.most_common()) + "）")
         self.lib_vals["engine"].config(text=str(d.get("engine_version") or "—"))
         self.lib_vals["fp"].config(text=(d.get("fingerprint") or "")[:16] + "…")
         self.lib_vals["time"].config(text=time.strftime("%Y-%m-%d %H:%M", time.localtime(t)))
+        _mod = d.get("modified") or 0
+        self.lib_vals["mtime"].config(
+            text=time.strftime("%Y-%m-%d %H:%M", time.localtime(_mod)) if _mod else "—")
+        # 写入记录：按指纹去 logs/deploy_*.json 里找（2026-10-14 起收据里会记 fingerprint）
+        try:
+            _w = pl.deploys_for(d.get("fingerprint")) if hasattr(pl, "deploys_for") else []
+        except Exception:
+            _w = []
+        self.lib_vals["wrote"].config(
+            text=(f"写入过 {len(_w)} 次，最近 " + time.strftime("%m-%d %H:%M", time.localtime(_w[0])))
+            if _w else "还没写入过")
 
     def _lib_set_field(self, entry, text):
         """程序填字段：期间把提交闸门关上，免得 FocusOut 把界面刷新当成"用户改完了" """
@@ -1391,7 +1455,8 @@ class App:
         self._deploying = True
         self._lib_toast(f"正在写入「{name}」…（进度会显示在这里，别重复点）")
         threading.Thread(target=self._deploy_worker,
-                         args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True)), True),
+                         args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True)), True,
+                               d.get("fingerprint")),
                          daemon=True).start()
 
     def _lib_save_current(self):
@@ -2036,9 +2101,20 @@ class App:
         self._deploying = True
         self.log(f"写入中…{'（含说明书）' if sync else '（不改说明书）'}")
         self.q.put(("status", "写入中…"))
-        threading.Thread(target=self._deploy_worker, args=(plan, sync), daemon=True).start()
+        _fp = self._plan_fp()
+        threading.Thread(target=self._deploy_worker, args=(plan, sync, False, _fp),
+                         daemon=True).start()
 
-    def _deploy_worker(self, plan, sync_guide, lib=False):
+    def _plan_fp(self):
+        """当前主界面这套方案的指纹（写入收据里会记上它，方案库就能显示"写入过几次"）"""
+        try:
+            sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+            import planlib
+            return planlib.fingerprint(self.plan) if self.plan else None
+        except Exception:
+            return None
+
+    def _deploy_worker(self, plan, sync_guide, lib=False, fingerprint=None):
         """lib=True 时（从方案库写入）额外把进度/结果送回方案库那扇窗口。
 
         为什么要有这个参数：方案库窗口盖在主界面上，而进度本来只写主界面的
@@ -2048,7 +2124,8 @@ class App:
         try:
             sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
             import native_deploy
-            rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log)
+            rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log,
+                                       fingerprint=fingerprint)
             self.log("写入完成 [OK] " + str(rec.get("verify")))
             self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
             if lib:
@@ -2399,10 +2476,23 @@ def uitest():
            f"标题={app.lib_title.cget('text')!r}")
         ck("单击换详情：种子", app.lib_vals["seed"].cget("text") == "20261011",
            f"种子={app.lib_vals['seed'].cget('text')!r}")
-        ck("单击换详情：商店参与", app.lib_vals["shops"].cget("text") == "是",
+        ck("单击换详情：商店那一行说清换了几个货架",
+           "货架" in app.lib_vals["shops"].cget("text"),
            f"商店={app.lib_vals['shops'].cget('text')!r}")
         ck("单击换详情：合理度", app.lib_vals["coh"].cget("text") == "0%",
            f"合理度={app.lib_vals['coh'].cget('text')!r}")
+        # ── 详情面板"更详细"（2026-10-14 作者要求）：都要有内容 ──
+        _lk = {k: app.lib_vals[k].cget("text") for k in
+               ("doms", "mode", "switches", "rows", "detail", "pools", "wrote")}
+        ck("详细信息：随机项目 / 混合方式 / 开关 都写出来了",
+           "卢恩" in _lk["doms"] and ("混" in _lk["mode"] or "各自" in _lk["mode"])
+           and "整套法祷一起换" in _lk["switches"],
+           f"{_lk['doms']}｜{_lk['mode']}｜{_lk['switches']}")
+        ck("详细信息：改动行带跨类计数 + 分类明细 + 池子分布",
+           "行" in _lk["rows"] and _lk["detail"] != "—" and "个（" in _lk["pools"],
+           f"{_lk['rows']}｜{_lk['detail']}｜{_lk['pools']}")
+        ck("详细信息：写入记录一行在（没写过会写「还没写入过」）",
+           "写入" in _lk["wrote"], f"写入记录={_lk['wrote']!r}")
         ck("详情是常驻面板（不是弹窗）", not getattr(app, "_libwin", None),
            "没有额外的 Toplevel")
 
@@ -2742,7 +2832,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     called = {}
     real_worker = App._deploy_worker
 
-    def _fake_worker(self, plan, sync, lib=False):
+    def _fake_worker(self, plan, sync, lib=False, fingerprint=None):
         called.update(plan=plan, sync=sync, lib=lib)
         self.q.put(("log", "[③a] 假进度：说明书地点重写 12 处"))
 
@@ -2869,7 +2959,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     # 注意：Tk 不让 event_generate 造 Double-1（双击由系统认），所以这里查"绑没绑" +
     # 直接跑它所绑的那一个动作 —— 两件事合起来才是"双击一行 = 写入游戏"
     called.clear()
-    App._deploy_worker = lambda self, plan, sync, lib=False: called.update(plan=plan, sync=sync, lib=lib)
+    App._deploy_worker = (lambda self, plan, sync, lib=False, fingerprint=None:
+                          called.update(plan=plan, sync=sync, lib=lib, fp=fingerprint))
     try:
         kids = app.lib_tree.get_children()
         app.lib_tree.selection_set(kids[0])

@@ -77,7 +77,7 @@ def find_original(pattern):
     return hits[0] if hits else None
 
 
-def deploy(plan_csv, sync_guide=True, log=print):
+def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None):
     relocate()
     # ── 打包版：把「所有会写文件的路径」重定位到 exe 旁边那份工作区 ──
     # 这些目录原本按"代码所在位置"拼，打包后那指向临时解包目录，
@@ -120,7 +120,8 @@ def deploy(plan_csv, sync_guide=True, log=print):
     ts = time.strftime("%Y%m%d_%H%M%S")
     reg = os.path.join(MOD, "mod", "regulation.bin")
     msg = os.path.join(MOD, "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx")
-    rec = {"ts": ts, "plan": os.path.basename(plan_csv), "steps": []}
+    rec = {"ts": ts, "plan": os.path.basename(plan_csv), "steps": [],
+           "ts_epoch": time.time(), "fingerprint": fingerprint}
 
     # ① 备份当前
     bdir = os.path.join(APPLY, "backup", f"deploy_{ts}")

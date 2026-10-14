@@ -11,6 +11,7 @@
 * **名字归名字、id 归 id**：id 是文件名（安全字符），重命名只改 JSON 里的 name，不动文件 —— 
   这样"重命名"永远不会因为文件名冲突而失败或丢方案。
 """
+import glob
 import hashlib
 import json
 import os
@@ -256,3 +257,24 @@ def verify_plan_rows(pid, rows, ws=None):
     a = fingerprint(doc.get("rows") or [])
     b = fingerprint(rows)
     return a == b, a, b
+
+
+def deploys_for(fingerprint, ws=None):
+    """这个指纹的方案写入过几次（按 logs/deploy_*.json 里的 fingerprint 找），返回时间戳列表（新到旧）。
+
+    收据里记 fingerprint 是 2026-10-14 加的 —— 更老的收据没有这个字段，自然匹配不上。
+    """
+    if not fingerprint:
+        return []
+    root = ws or workspace_of()
+    if not root:
+        return []
+    out = []
+    for f in sorted(glob.glob(os.path.join(root, "logs", "deploy_*.json")), reverse=True):
+        try:
+            d = json.load(open(f, encoding="utf-8"))
+        except Exception:
+            continue
+        if d.get("fingerprint") == fingerprint:
+            out.append(d.get("ts_epoch") or 0)
+    return [x for x in out if x]
