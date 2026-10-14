@@ -198,9 +198,16 @@ def build_pools(items, cfg):
             if g:
                 pool = "joint:" + "+".join(sorted(g))
             elif v["cat"] == "weapon" and v["subpool"].startswith("weapon:cat"):
-                pool = v["subpool"] if cfg.get("merge_shadow") or True else v["subpool"]
+                # 武器池键就是它自己的 subpool（原本写的是
+                # `v["subpool"] if cfg.get("merge_shadow") or True else v["subpool"]`
+                # —— 条件恒真、两分支还一样，纯属误导，2026-10-14 清掉）
+                pool = v["subpool"]
             elif v["cat"] == "goods" and v["subpool"].startswith("rune:"):
                 tier = v["subpool"].split("@")[0].split(":", 1)[1]
+                # ⚠️ 实测（2026-10-14）：这一条**改不了结果** —— 档位系统里"幽影"与"大师"都是 3 档
+                #    （见 _pool_rank），后面按档位分桶时它们无论如何都会并到一起。
+                #    所以"幽影卢恩与普通卢恩一起换"这个开关目前是空转的，见
+                #    investigation/apply/check_config_effects.py 的第 ⑨ 项。
                 if cfg.get("merge_shadow") and tier.startswith("大师级"):
                     tier = "大师级"
                 pool = f"rune:{tier}@{v['arch']}"
