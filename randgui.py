@@ -1822,6 +1822,20 @@ def contrast_ratio(fg, bg):
     return (hi + 0.05) / (lo + 0.05)
 
 
+def deco_status():
+    """装饰件的到位情况：哪些找得到、哪些载入成功（打包版最容易在这里掉图）"""
+    out = []
+    for name in ("icon", "divider", "tab_settings", "tab_library", "empty_plans"):
+        fname = f"{name}@2x.png" if S >= 1.5 else f"{name}.png"
+        p = deco_path(fname)
+        if not p:
+            out.append((name, None, f"缺文件 {fname}"))
+            continue
+        img = deco_image(name)
+        out.append((name, img, os.path.basename(p) if img else f"读不出来：{p}"))
+    return out
+
+
 def uicheck():
     """只建界面不进入事件循环（自动化测试用）。
 
@@ -1866,6 +1880,14 @@ def uicheck():
         if not ok_here:
             problems.append(f"对比度不足：{name} = {r:.2f} < {need}")
         worst = r if worst is None else min(worst, r)
+
+    # 装饰件：**缺了不算失败**（设计上可缺省），但要能看见 —— 打包版最容易在这里掉图
+    deco = deco_status()
+    n_ok = sum(1 for _n, img, _d in deco if img)
+    print(f"   装饰件 {n_ok}/{len(deco)} 已载入")
+    for name, img, detail in deco:
+        if not img:
+            print(f"     · 少一件：{name}（{detail}）")
 
     if theme != "clam":
         problems.append(f"主题不是 clam：{theme}")
