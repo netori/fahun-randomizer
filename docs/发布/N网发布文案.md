@@ -1,7 +1,7 @@
 # N网（Nexus Mods）发布页文案 —— 直接复制粘贴用
 
 > 上传入口：<https://www.nexusmods.com/> → 右上头像 → **Upload a mod** → 游戏选 **Elden Ring** →
-> 类型选 **Modding Tools / Utilities**（不是 "Gameplay"）→ 上传 `发布包/ConvergenceClassItemRandomizer_v1.0.0.zip`。
+> 类型选 **Modding Tools / Utilities**（不是 "Gameplay"）→ 上传 `发布包/ConvergenceClassItemRandomizer_v1.2.0.zip`。
 
 ---
 
@@ -24,7 +24,7 @@ with a "reasonableness" slider. Chinese version only.
 ## 正文（Description）—— 中文
 
 ```markdown
-# 法魂职业道具和装备随机器 v1.0.0
+# 法魂职业道具和装备随机器 v1.2.0
 
 给「法魂」（The Convergence）用的**物品随机化工具**：把职业说明书里那些道具，
 在**合理**的范围内互相对调 —— 让每一周目都得重新找东西、重新搭流派。
@@ -63,7 +63,7 @@ with a "reasonableness" slider. Chinese version only.
 
 （法师 / 祷告倾向的护甲**永远**单独成池 —— 只与同倾向、同部位的护甲互换。）
 
-## 现在换得动了吗？（v1.0.0 修的重点）
+## 现在换得动了吗？（v1.2.0 修的重点）
 
 修掉了"**法祷护甲与商店货架一件都不换**"的老问题：池键里补回了「部位 / 套装」轴，
 实测 835 行里法祷护甲 355/355 全部参与、商店货架 69/69 都会变。
@@ -118,7 +118,7 @@ with a "reasonableness" slider. Chinese version only.
 ## 正文（Description）—— English（简版，放同一页或备用）
 
 ```markdown
-# Convergence Class Item Randomizer v1.0.0
+# Convergence Class Item Randomizer v1.2.0
 
 A companion tool for **The Convergence** (Elden Ring): it swaps the class-specific items inside
 chests / drops / shops **in place** — same containers, same enemies, different loot — so every
@@ -159,7 +159,7 @@ Unofficial fan tool; not affiliated with FromSoftware, Bandai Namco or The Conve
 | 字段 | 建议 |
 |---|---|
 | Category | **Modding Tools / Utilities**（别选 Gameplay） |
-| Version | `1.0.0`（引擎版本 1.1） |
+| Version | `1.2.0`（引擎版本 1.1；上一个发布标签是 v1.1.0·10-13） |
 | Requirements | 无硬依赖；正文里写出"要装 The Convergence + 中文版" |
 | Permissions | 建议：**允许转载/整合**（Mod packs: Yes / Other authors: Yes，看你自己意愿；不允许上传到别站收费） |
 | Credits | The Convergence 团队、法魂汉化组（写进正文了） |

@@ -1,7 +1,7 @@
 # 法魂职业道具和装备随机器
 
 > **Convergence Class Item Randomizer** ｜ 给「法魂」（The Convergence）MOD 用的物品随机化小工具
-> 发布包：`ConvergenceClassItemRandomizer.exe`
+> 发布包：`ConvergenceClassItemRandomizer.exe` ｜ 当前发布版本 **v1.2.0**（引擎 1.1）
 
 > ⚠️ **目前仅支持中文版（法魂汉化本体）** —— 界面、说明书改地点、文件自检都按中文版做的；
 > **英文版（及其它语言）暂不支持**：英文玩家玩的是原版 The Convergence，物品池与文件结构都不同，
