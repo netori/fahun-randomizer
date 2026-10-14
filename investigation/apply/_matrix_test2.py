@@ -39,14 +39,15 @@ def held(plan):
 
 
 def caster_violation(items, plan):
-    """法祷护甲只能与"同流派法祷护甲"互换；换到别处即违规"""
+    """法祷护甲只能与「法祷护甲」互换 —— 法祷**内部**自由（规格 §3.1：流派键只有
+    caster / melee / any）；换到近战护甲 / 非护甲即违规。部位必须一致。"""
     def kind(k):
         v = items.get(tuple(str(k).split(":")))
         if not v:
             return None
         if v.get("domain") == "armor" and v.get("arch") in CASTER:
-            return ("caster", v.get("arch"))
-        return ("other", None)
+            return "caster"
+        return "other"
     n = 0
     for p in plan:
         if p["old"] == p["new"]:
@@ -54,9 +55,12 @@ def caster_violation(items, plan):
         ko, kn = kind(p["old"]), kind(p["new"])
         if ko is None or kn is None:
             continue
-        if ko[0] == "caster" or kn[0] == "caster":
+        if ko == "caster" or kn == "caster":
             if ko != kn:
-                n += 1
+                n += 1                                   # 法祷 ↔ 近战/非护甲：违规
+            elif ko == "caster" and r.part_of(str(p["old"]).split(":")[1]) != \
+                    r.part_of(str(p["new"]).split(":")[1]):
+                n += 1                                   # 跨部位：违规
     return n
 
 

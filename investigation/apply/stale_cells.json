@@ -1,0 +1,9 @@
+{
+ "note": "索引（lot_reward_index.json）里有、但原始 regulation.bin 里其实是空槽/对不上的格子 —— 永不随机。这类格子一旦进入计划，写前复核（H12）会中止整次写入（表现是「点了写入什么也没发生」）。用 investigation/apply/audit_cells_vs_file.py 对账；--fix 会把新发现登记到这里。",
+ "why": {
+  "ItemLotParam_enemy:340051304:1": "索引里同一条 lot 出现了两条记录：一条手工整理的『[Grave Warden Duelist] Rotten Duelist Greaves』说槽 1 有 protector:2000300，另一条 [AutoGen] 说槽 2 有 goods:190。文件里槽 1 实际是 0（空），整行也找不到 2000300 —— 属于陈旧/错位数据。"
+ },
+ "stale": [
+  "ItemLotParam_enemy:340051304:1"
+ ]
+}

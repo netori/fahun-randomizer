@@ -52,10 +52,14 @@ def test_engine():
     check("N4 单一项目也能正常跑（不报错）", isinstance(plan, list) and len(plan) > 0,
           f"改动 {len(changed)} 格")
 
-    # N9 商店永不参与
+    # N9 商店只在勾选时参与（2026-10-14 按现状改写：商店是可开关的正常功能）
     tabs = {x["source_table"] for x in plan if x["old"] != x["new"]}
-    check("N9 商店永不参与（source_table 无 ShopLineupParam）",
+    check("N9 没勾商店就不碰商店（source_table 无 ShopLineupParam）",
           not any("Shop" in t for t in tabs), f"涉及表: {sorted(tabs)[:3]}")
+    plan_sh, _pools_sh, _ = r.run(r.load_world(True, "guide"), dict(base, shops=True), 20261010)
+    tabs_sh = {x["source_table"] for x in plan_sh if x["old"] != x["new"]}
+    check("N9b 勾了商店就真的会改货架（ShopLineupParam 有改动行）",
+          any("Shop" in t for t in tabs_sh), f"涉及表: {sorted(tabs_sh)[:4]}")
 
     # N8 一个「格子+槽位」只能被一个源占用（同一格子可有多个 slot，那是合法的）
     tgt = [(x.get("source_table", ""), str(x.get("row_id", "")), str(x.get("slot", ""))) for x in plan]
@@ -68,8 +72,11 @@ def test_engine():
     bad = [k for k, v in ck.items() if not v]
     check("H2 守恒与 6 项引擎校验", not bad, f"{dict(info)}"[:70])
 
-    # H6 法祷护甲隔离
-    check("H6 法祷护甲零违规", ck.get("caster", True) or not bad, f"caster_leak={info.get('caster_leak')}")
+    # H6 法祷护甲隔离（用引擎真实的 F2 项，别再用不存在的 "caster" 键兜底成 True）
+    _f2 = [k for k in ck if k.startswith("F2")]
+    check("H6 法祷护甲零违规（法祷内部互换是允许的，只隔法祷↔近战）",
+          bool(_f2) and all(ck[k] for k in _f2),
+          f"F2={[ck.get(k) for k in _f2]}")
 
     # H13 确定性：同一配置下，结果必须逐条一致（与行序无关）
     p2, _, _ = r.run(items, dict(base, domains=["rune"]), 20261010)
