@@ -108,6 +108,33 @@ def test_engine():
     check("N10c 全局比例压到 50% 时，整套比例仍能单独拉满（覆盖顺序：整套 > 大类 > 全局）",
           _n_sets(dict(_base, density=0.5, rate_sets=1.0)) == _all,
           f"全开 {_all} 套 → 全局50%+整套100% {_n_sets(dict(_base, density=0.5, rate_sets=1.0))} 套")
+    # ── 单独设合理度（coh_mixed / coh_domain）：2026-10-14 加 ──
+    #   判据用"桶名数量"而不去算档位：合理度=100% 时每个档各自一个桶；=0% 时并成一个桶
+    _buckets = lambda cfg, tag: len({x["pool"] for x in r.run(w, cfg, 20261010)[0]
+                                     if tag in x["pool"] and x["old"] != x["new"]})
+    check("N11 混池合理度独立生效：100% ⇒ 混池分 4 桶（只同档）；0% ⇒ 并成 1 桶（等级完全放开）",
+          _buckets(dict(_base, coh_mixed=1.0), "mixed") > _buckets(dict(_base, coh_mixed=0.0), "mixed")
+          and _buckets(dict(_base, coh_mixed=0.0), "mixed") == 1,
+          f"100% {_buckets(dict(_base, coh_mixed=1.0), 'mixed')} 桶 → 0% {_buckets(dict(_base, coh_mixed=0.0), 'mixed')} 桶")
+    _sep = dict(_base, cross_domain=False)            # 各自随机：卢恩有自己的池
+    _rb = lambda c: _buckets(dict(_sep, coh_domain={"rune": c}), "rune")
+    check("N11b 卢恩合理度独立生效（各自随机时）：100% ⇒ 4 桶；0% ⇒ 1 桶",
+          _rb(1.0) > _rb(0.0) and _rb(0.0) == 1, f"100% {_rb(1.0)} 桶 → 0% {_rb(0.0)} 桶")
+    _w_in_mix = lambda c: sum(1 for x in r.run(w, dict(_base, coh_domain={"weapon": c}), 20261010)[0]
+                              if x["old"] != x["new"] and "mixed" in x["pool"]
+                              and (w.get(tuple(str(x["old"]).split(":"))) or {}).get("domain") == "weapon")
+    check("N11c 「装备」那条同时决定掺进混池的比例：100% ⇒ 不掺；0% ⇒ 掺最多",
+          _w_in_mix(1.0) == 0 and _w_in_mix(0.0) > _w_in_mix(1.0),
+          f"100% {_w_in_mix(1.0)} 件 → 50% {_w_in_mix(0.5)} 件 → 0% {_w_in_mix(0.0)} 件")
+    _fp = lambda cfg: __import__("hashlib").sha256(
+        json.dumps(sorted((x["unit"], x["old"], x["new"], x["pool"]) for x in r.run(w, cfg, 20261010)[0]),
+                   ensure_ascii=False).encode()).hexdigest()
+    _g = float(_base.get("coherence", 1.0))          # 用**基配自己的**全局合理度，别硬编码
+    _exp = dict(_base, coh_mixed=_g, coh_domain={d: _g for d in ("rune", "armor", "weapon")})
+    check("N11d 不传单独合理度 ⇒ 与「全部显式填成全局值」逐字节一致",
+          _fp(dict(_base)) == _fp(_exp),
+          f"全局 {_g:.0%}：" + ("指纹一致" if _fp(dict(_base)) == _fp(_exp) else "指纹不一致"))
+
     check("N10d 不传这两个键 ⇒ 行为与加功能前一致（老配置不受影响）",
           _n_sets(dict(_base, density=0.5)) == _n_sets(dict(_base, density=0.5, rate_sets=None))
           and _n_sets(dict(_base, rate_domain=None)) == _all,

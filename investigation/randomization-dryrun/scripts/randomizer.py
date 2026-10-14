@@ -354,8 +354,7 @@ def _unit_info(u, items):
 
 def _coherence_apply(pools, cfg, items=None):
     """按合理度合并池：100% 严格同档同流派；越低越放开（大类与部位始终一致）"""
-    c = min(1.0, max(0.0, float(cfg.get("coherence", 1.0))))
-    span = int(round((1 - c) * 4)) + (1 if c < 0.5 else 0)   # 档位合并跨度
+    c = min(1.0, max(0.0, float(cfg.get("coherence", 1.0))))   # noqa: F841（按合理度分组的事在 run() 里做）
     merge_arch = False                                        # 流派不再作为分组轴
     f2_on = True                                              # 用户规则：法祷护甲任何时候都不与近战混（硬规则）
     caster_tier_any = True
@@ -388,47 +387,6 @@ def _coherence_apply(pools, cfg, items=None):
             else:
                 out[nk] = dict(mm, units=list(us))
     return out
-
-
-def _cross_tier_pair(pools, rng, cross_frac, f2_on, items):
-    """显式把 cross_frac 比例的单元与**不同档位**的单元成对互换（2-循环 → 守恒天然成立）"""
-    swaps = {}
-    if cross_frac <= 0.001:
-        return swaps
-    _CASTER = set(CASTER_ARCH)
-    def _legal(u):
-        """法祷护甲（单件与套装）一律不得参与跨档配对"""
-        k = u.get("base") or (u.get("items") or [None])[0]
-        v = items.get(k) or {}
-        if v.get("domain") == "armor" and (v.get("arch") in _CASTER):
-            return False
-        return True
-    all_units = [u for m in pools.values() for u in (m.get("units") or [])
-                 if not u.get("parts") and _legal(u)]
-    rng.shuffle(all_units)
-    target = int(round(len(all_units) * min(1.0, cross_frac)))
-    done = 0
-    used = set()
-    for i, u in enumerate(all_units):
-        if done >= target:
-            break
-        if u["id"] in used:
-            continue
-        tu = _unit_tier(u, items)
-        # 找一个"档位不同、且不违反硬规则"的伙伴
-        for v in all_units[i + 1:]:
-            if v["id"] in used:
-                continue
-            if _unit_tier(v, items) == tu:
-                continue
-            if not _pair_ok(u, v, f2_on) or not _pair_ok(v, u, f2_on):
-                continue
-            swaps[u["id"]] = v
-            swaps[v["id"]] = u
-            used.add(u["id"]); used.add(v["id"])
-            done += 2
-            break
-    return swaps
 
 
 def _spec_tier(u, items):
@@ -537,16 +495,41 @@ def run(items, cfg, seed=None):
     # 允许的档次步数：1.0→0（只同档）；0.75→1；0.5→2；0.25→3；0→4（全放开）
     # 规格 §2.4：统一 4 档，跨度均匀
     #   跨度 = 1 + round((1-合理度)*3)  → 100%:1 ／ 67%:2 ／ 33%:3 ／ 0%:4
-    steps = max(0, min(3, int(round((1.0 - _coh) * 3.0))))
-    bucket_of = lambda r: r // (steps + 1)
-    # 跨档率：合理度越低，越多单元被“放行”到跨度桶（可在幅度内跨档）；未被放行的严格同档
-    _cross_rate = max(0.0, min(1.0, 1.0 - _coh))
+    #
+    # ── 单独设合理度（2026-10-14）：按类别各一个 ──────────────────────────
+    #   cfg["coh_domain"] = {"armor":0.5, "weapon":1.0, "rune":0.3}
+    #   cfg["coh_mixed"]  = 0.6            # 混池自己那一条
+    #   缺省（不传）→ 跟全局 coherence 走 ⇒ 老配置与老计划逐字节不变。
+    #   注意：护甲/卢恩在"全部混合"时整类进混池，这时它们**没有**自己那一条
+    #   （界面会把它那条收起来），由混池这条统管；武器只按比例掺入，所以它那条一直有效。
+    _coh_dom = dict(cfg.get("coh_domain") or {})
+
+    def _coh_of(_kind):
+        _v = cfg.get("coh_mixed") if _kind == "mixed" else _coh_dom.get(_kind)
+        try:
+            return min(1.0, max(0.0, float(_v))) if _v is not None else _coh
+        except (TypeError, ValueError):
+            return _coh
+
+    def _steps_of(_c):
+        return max(0, min(3, int(round((1.0 - _c) * 3.0))))
+
+    def _bucket_of(_r, _c):
+        return _r // (_steps_of(_c) + 1)
+
+    def _cross_of(_c):
+        return max(0.0, min(1.0, 1.0 - _c))
+
+    steps = _steps_of(_coh)                       # 全局值：留作默认与报告
+    bucket_of = lambda r: _bucket_of(r, _coh)     # noqa: E731
+    _cross_rate = _cross_of(_coh)
     base_pools = collections.OrderedDict(pools)
     _xd = False
     # ── 跨类混池（池合并实现 → 池内完整置换 → 守恒天然成立）──
     #    成员：近战护甲单件 + 卢恩 + 一部分武器（比例 = (1-合理度) × 66%，上限 66%）
     # 武器混入比例：合理度 100% → 0（武器自己玩）；越低越多，上限 66%
-    _mixed_ratio = max(0.0, min(0.66, (1.0 - _coh) * 0.66))
+    # （用**武器**那条合理度：它本来就是"武器怎么掺"的旋钮）
+    _mixed_ratio = max(0.0, min(0.66, (1.0 - _coh_of("weapon")) * 0.66))
     # 混池（近战护甲 + 卢恩）**永远存在**：护甲↔卢恩从一开始就是完全随机的（用户规则）
     # ── 混池分组（joins）──
     _groups = [set(g) for g in (cfg.get("joins") or []) if len(set(g)) >= 2]
@@ -607,13 +590,14 @@ def run(items, cfg, seed=None):
         if "混池" in pk:
             # 混池必须原样保留（不能被按大类重排），但**必须按档位拆开**，
             # 否则所有档位并成一个池 → 连 100% 合理度都会跨档
+            _cm = _coh_of("mixed")                 # 混池自己那条合理度
             for _u in (meta.get("units") or []):
                 try:
                     _st = _spec_tier(_u, items)
                     _st = 2 if _st is None else _st
                 except Exception:
                     _st = 2
-                _t = bucket_of(_st) if rng.random() < _cross_rate else _st
+                _t = _bucket_of(_st, _cm) if rng.random() < _cross_of(_cm) else _st
                 _slot = merged.setdefault(("mixed", _t),
                                           {"kind": meta.get("kind", "item"), "units": []})
                 _slot["units"].append(_u)
@@ -624,6 +608,7 @@ def run(items, cfg, seed=None):
             # 这里逐单元按档位分桶（档位 = 格子所在地区），否则 100% 也会跨档
             _wunits = meta.get("units") or []
             _wdone = False
+            _cw = _coh_of("weapon")                # 武器自己那条合理度
             for _u in _wunits:
                 try:
                     _st = _spec_tier(_u, items)
@@ -631,7 +616,7 @@ def run(items, cfg, seed=None):
                 except Exception:
                     _st = 2
                 # 放行 → 跨度桶；未放行 → 严格同档桶
-                _t = bucket_of(_st) if rng.random() < _cross_rate else _st
+                _t = _bucket_of(_st, _cw) if rng.random() < _cross_of(_cw) else _st
                 _wkey = ("weapon", _t, "any")
                 _slot = merged.setdefault(_wkey, {"kind": meta.get("kind", "item"), "units": []})
                 _slot["units"].append(_u)
@@ -660,7 +645,8 @@ def run(items, cfg, seed=None):
             _rr = int(rank)
         except Exception:
             _rr = 2
-        key = (dom, (bucket_of(_rr) if rng.random() < _cross_rate else _rr), _fk, _part)
+        _cd = _coh_of(dom if dom in ("armor", "weapon", "rune") else "any")
+        key = (dom, (_bucket_of(_rr, _cd) if rng.random() < _cross_of(_cd) else _rr), _fk, _part)
         if key not in merged:
             merged[key] = dict(meta, units=[])
         _have = {u["id"] for u in merged[key]["units"]}
@@ -673,7 +659,6 @@ def run(items, cfg, seed=None):
     density = float(cfg.get("density", 1.0))
     _allow_gap = 5
     # 显式跨档配对：合理度越低，跨档比例越高（0% → 尽量全跨；100% → 不跨）
-    _cross_frac = max(0.0, min(1.0, 1.0 - _coh))
         # 断言：跨档配对涉及的单元不能同时被池内置换处理（两边都改就会丢物品）
     if swaps:
         _pool_of = {}

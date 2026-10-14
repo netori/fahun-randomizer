@@ -586,6 +586,20 @@ class App:
         self.lbl_cohtxt = ttk.Label(s2, text="", style="Hint.TLabel")
         self.lbl_cohtxt.pack(anchor="w", pady=(2, 0))
 
+        # ── 单独设合理度：每个类别各一条（不勾 = 跟上面这条全局的走）──
+        #    第 1 步没勾的类别不摆出来；**整类进了混池的**（全部混合时的护甲/卢恩）也不摆 ——
+        #    那时它们由混池那条统管。这些规则见 _coh_applicable()。
+        r4b = ttk.Frame(s2); r4b.pack(fill="x", pady=(6, 0))
+        ttk.Label(r4b, text="单独设合理度", style="Sub.TLabel").pack(side="left")
+        ttk.Label(r4b, text="· 只列当前真正起作用的那几条（进了混池的由「混池」统管）",
+                  style="Hint.TLabel").pack(side="left", padx=6)
+        cgrid = ttk.Frame(s2); cgrid.pack(fill="x")
+        self.coh_rows = {}
+        for i, (key, text) in enumerate((("mixed", "混池"), ("rune", "卢恩"),
+                                         ("armor", "护甲"), ("weapon", "装备（武器）"))):
+            self._mk_override_row(cgrid, self.coh_rows, key, text, 0.0, 1.0, i)
+        self._refresh_cohs()
+
         # ── 第 3 步 ──
         s3 = ttk.LabelFrame(body, text=" 第 3 步 · 随机种子 ", padding=(px(12), px(8)))
         s3.pack(fill="x", pady=(0, 8))
@@ -1316,6 +1330,12 @@ class App:
             for _k2 in ("armor", "weapon", "rune"):
                 self._rate_set(_k2, _k2 in _rd2, _rd2.get(_k2))
             self._refresh_rates()
+            _cm2 = cfg.get("coh_mixed")
+            self._coh_set("mixed", _cm2 is not None, _cm2)
+            _cd3 = cfg.get("coh_domain") or {}
+            for _k2 in ("armor", "weapon", "rune"):
+                self._coh_set(_k2, _k2 in _cd3, _cd3.get(_k2))
+            self._refresh_cohs()
         except Exception as e:
             self._lib_toast(f"载入没成功：{e}", bad=True)
             return
@@ -1400,6 +1420,7 @@ class App:
             messagebox.showinfo("至少勾一项", "至少要保留一个随机项目。")
         self._refresh_modes()
         self._refresh_rates()
+        self._refresh_cohs()
 
     def _refresh_modes(self, *_a):
         """混合方式随勾选项目智能变更（下拉里的文字直接写出项目名）"""
@@ -1587,6 +1608,92 @@ class App:
             messagebox.showerror("失败", str(e))
         self.refresh_env()
 
+    def _mk_override_row(self, parent, store, key, text, frm, to, idx):
+        """建一条"不勾就跟全局走"的覆盖行（改动比例 / 单独设合理度 共用）。
+
+        用 grid（不用 pack）：隐藏/恢复时格子还在，顺序不会乱。"""
+        row = ttk.Frame(parent)
+        row.grid(row=idx, column=0, sticky="w", pady=1)
+        on = tk.BooleanVar(value=False)
+        val = tk.DoubleVar(value=to)
+        lbl = ttk.Label(row, text=f"{float(to)*100:.0f}%", width=6)
+        scale = ttk.Scale(row, from_=frm, to=to, variable=val, orient="horizontal",
+                          length=px(200),
+                          command=lambda v, k=key, st=store: self._ov_moved(st, k, v))
+        ttk.Checkbutton(row, text=text, variable=on, width=14,
+                        command=lambda k=key, st=store: self._ov_toggle(st, k)).pack(side="left")
+        scale.pack(side="left", padx=6)
+        lbl.pack(side="left")
+        store[key] = {"on": on, "val": val, "lbl": lbl, "scale": scale, "row": row}
+        return store[key]
+
+    def _ov_moved(self, store, key, v):
+        r = store.get(key)
+        if r:
+            r["lbl"].config(text=f"{float(v)*100:.0f}%")
+
+    def _ov_toggle(self, store, key, *_a):
+        """勾了才把滑块摆出来 —— 不勾就是"跟全局走"，看不见滑块最不容易误会
+        （clam 主题下 disabled 的 Scale 和正常的长得一样，只靠灰字分不清）"""
+        r = store.get(key)
+        if not r:
+            return
+        try:
+            if r["on"].get():
+                r["lbl"].config(style="Status.TLabel")
+                r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
+                r["scale"].pack(side="left", padx=6)
+                r["lbl"].pack(side="left")
+            else:
+                r["scale"].pack_forget()
+                r["lbl"].pack_forget()
+        except Exception:
+            pass
+
+    def _ov_set(self, store, key, on, val=None):
+        """一次性设成指定状态（load_cfg / 方案库载入用）"""
+        r = store.get(key)
+        if not r:
+            return
+        r["on"].set(bool(on))
+        if val is not None:
+            r["val"].set(max(0.0, min(1.0, float(val))))
+            r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
+        self._ov_toggle(store, key)
+
+    def _ov_refresh(self, store, applicable):
+        """按当前配置动态增减这些行；隐藏的一定清掉勾选（别让看不见的值还在生效）"""
+        for key, r in (store or {}).items():
+            row = r.get("row")
+            if row is None:
+                continue
+            if applicable.get(key):
+                if not row.winfo_manager():
+                    row.grid()
+            else:
+                if row.winfo_manager():
+                    row.grid_remove()
+                if r["on"].get():
+                    r["on"].set(False)
+            self._ov_toggle(store, key)
+
+    def _ov_collect(self, store, applicable):
+        out = {}
+        for key, r in (store or {}).items():
+            if applicable.get(key) and r["on"].get():
+                out[key] = round(float(r["val"].get()), 3)
+        return out
+
+    # ── 改动比例：上面那一组 ──
+    def _rate_toggle(self, key, *_a):
+        return self._ov_toggle(self.rate_rows, key)
+
+    def _rate_moved(self, key, v):
+        return self._ov_moved(self.rate_rows, key, v)
+
+    def _rate_set(self, key, on, val=None):
+        return self._ov_set(self.rate_rows, key, on, val)
+
     def _rate_applicable(self):
         """哪几条"单独设比例"现在真的有用 —— 跟着第 1 步的勾选与"整套"开关走：
         · 类别没勾 → 那一条没用（不摆出来）
@@ -1634,30 +1741,52 @@ class App:
         except Exception:
             pass
 
-    def _rate_moved(self, key, v):
-        r = self.rate_rows.get(key)
-        if r:
-            r["lbl"].config(text=f"{float(v)*100:.0f}%")
-
-    def _rate_set(self, key, on, val=None):
-        """给 load_cfg 用：一次性把某个单独比例设成指定状态"""
-        r = self.rate_rows.get(key)
-        if not r:
-            return
-        r["on"].set(bool(on))
-        if val is not None:
-            r["val"].set(max(0.05, min(1.0, float(val))))
-            r["lbl"].config(text=f"{float(r['val'].get())*100:.0f}%")
-        self._rate_toggle(key)
-
     def _rates(self):
         """收集"单独设比例"：没勾的、以及当前**用不上**的都不进 cfg（等于跟全局比例走）"""
-        out = {}
-        app = self._rate_applicable()
-        for key, r in (self.rate_rows or {}).items():
-            if app.get(key) and r["on"].get():
-                out[key] = round(float(r["val"].get()), 3)
+        return self._ov_collect(self.rate_rows, self._rate_applicable())
+
+    # ── 单独设合理度：第 2 步那一组 ──
+    def _join_groups(self):
+        """当前配置会建哪几组混池（与 _collect 里的 join 规则同源）"""
+        doms = self._picked_doms()
+        sep = ("各自" in self.mode.get()) or len(doms) <= 1
+        if sep:
+            return []
+        if len(doms) == 3 and "·" in self.mode.get():
+            left = self.mode.get().split("混 ·")[0]
+            pair = [d for d in doms if names_for_join[d] in left]
+            return [set(pair)] if len(pair) == 2 else []
+        return [set(doms)]                       # 全部混合：三类一起进混池
+
+    def _coh_applicable(self):
+        """哪几条"单独设合理度"现在真的起作用：
+        · 混池：当前会建混池才有这条
+        · 卢恩 / 护甲：勾了、而且**没有整类进混池**（整类进了就由「混池」那条统管）
+        · 装备（武器）：勾了就有 —— 它只按比例掺进混池，总有一部分武器留在自己的池里，
+          而且「掺多少进混池」本身就按这条算
+        · 法祷护甲没有这条：它不分级（规格 §3.4），合理度对它没有意义
+        """
+        doms = self._picked_doms()
+        in_mix = set()
+        for g in self._join_groups():
+            in_mix |= set(g)
+        out = {"mixed": bool(self._join_groups())}
+        for d in ("rune", "armor"):
+            out[d] = (d in doms) and (d not in in_mix)
+        out["weapon"] = "weapon" in doms
         return out
+
+    def _refresh_cohs(self, *_a):
+        self._ov_refresh(getattr(self, "coh_rows", None), self._coh_applicable())
+
+    def _coh_set(self, key, on, val=None):
+        return self._ov_set(self.coh_rows, key, on, val)
+
+    def _cohs(self):
+        """收集"单独设合理度"：只带当前真正起作用、且勾了的那几条"""
+        raw = self._ov_collect(self.coh_rows, self._coh_applicable())
+        dom = {k: v for k, v in raw.items() if k in ("armor", "weapon", "rune")}
+        return {"coh_mixed": raw.get("mixed"), "coh_domain": dom or None}
 
     def _dice(self):
         self.seed.set(str(random.randrange(1, 2 ** 31 - 1)))
@@ -1680,6 +1809,7 @@ class App:
             if len(pair) == 2:
                 joins = [pair]
         _rates = self._rates()
+        _cohs = self._cohs()
         return {"domains": doms or ["rune", "armor", "weapon"],
                 "basis": "guide", "shops": self._shops(),  # 说明书范围固定；商店是否参与看「更多设置」
                 "joins": joins,                      # 两两混：只给这一组建混池
@@ -1689,6 +1819,9 @@ class App:
                 # 单独设的比例（没勾就不带这两个键 ⇒ 跟全局比例走）
                 "rate_sets": _rates.get("sets"),
                 "rate_domain": {k: v for k, v in _rates.items() if k in ("armor", "weapon", "rune")} or None,
+                # 单独设的合理度（没勾就不带这两个键 ⇒ 跟全局合理度走）
+                "coh_mixed": _cohs.get("coh_mixed"),
+                "coh_domain": _cohs.get("coh_domain"),
                 "coherence": round(float(self.coherence.get()), 3),
                 "sync_guide": bool(self.guide.get())}
 
@@ -1727,8 +1860,15 @@ class App:
             _c = float(cfg.get("coherence", 0.8))
             _span = max(0, min(3, int(round((1 - _c) * 3)))) + 1
             _lv = {1: "只能同档位互换", 2: "相邻两档可互换", 3: "三档以内可互换", 4: "等级完全放开"}[_span]
+            _coh_dev = []
+            for _kk, _ll in (("mixed", "混池"), ("rune", "卢恩"), ("armor", "护甲"), ("weapon", "装备")):
+                _vv = cfg.get("coh_mixed") if _kk == "mixed" else (cfg.get("coh_domain") or {}).get(_kk)
+                if _vv is not None:
+                    _ss = max(0, min(3, int(round((1.0 - float(_vv)) * 3)))) + 1
+                    _coh_dev.append(f"{_ll} {int(float(_vv)*100)}%（跨度 {_ss}/4）")
             lines = [f"一共改动 {st['total']} 处东西。",
-                     f"· 档位：{_lv}（合理度 {int(_c*100)}%，跨度 {_span}/4）。"]
+                     f"· 档位：{_lv}（合理度 {int(_c*100)}%，跨度 {_span}/4）"
+                     + ("；单独设的：" + "、".join(_coh_dev) if _coh_dev else "") + "。"]
             if st["shop_total"]:
                 lines.append(f"· 商店货架：换了 {st['shop_moved']} / {st['shop_total']} 个"
                              "（价格 / 限量 / 解锁条件一律不动）。")
@@ -1876,6 +2016,13 @@ class App:
         for _k in ("armor", "weapon", "rune"):
             self._rate_set(_k, _k in _rd, _rd.get(_k))
         self._refresh_rates()
+        # 单独设的合理度（旧设置文件没有 → 回到跟全局走）
+        _cm = c.get("coh_mixed")
+        self._coh_set("mixed", _cm is not None, _cm)
+        _cd2 = c.get("coh_domain") or {}
+        for _k in ("armor", "weapon", "rune"):
+            self._coh_set(_k, _k in _cd2, _cd2.get(_k))
+        self._refresh_cohs()
         _vals = list(self.cb_mode.cget("values"))
         if len(_vals) > 1:
             self.mode.set(_vals[1] if c.get("cross_domain") is False else _vals[0])
@@ -2340,6 +2487,36 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("单独比例：打开「整套一起换」⇒ 整套那条回来",
        bool(app.rate_rows["sets"]["row"].winfo_manager()),
        f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
+
+    # ── 单独设合理度：只有"真正起作用"的类别才出现 ──
+    app.nb.select(app.page_set); root.update()
+    _all_mix = list(app.cb_mode.cget("values"))[0]
+    app.mode.set(_all_mix); app._refresh_modes(); app._refresh_cohs(); root.update()
+    _ca = app._coh_applicable()
+    ck("单独合理度：全部混合时只有「混池」与「装备」（卢恩/护甲整类进了混池）",
+       _ca["mixed"] and _ca["weapon"] and not _ca["rune"] and not _ca["armor"], f"{_ca}")
+    ck("单独合理度：界面跟着变（卢恩那行收起来了）",
+       not app.coh_rows["rune"]["row"].winfo_manager()
+       and bool(app.coh_rows["mixed"]["row"].winfo_manager()),
+       f"卢恩={app.coh_rows['rune']['row'].winfo_manager()!r} "
+       f"混池={app.coh_rows['mixed']['row'].winfo_manager()!r}")
+    _sep_mode = [v for v in app.cb_mode.cget("values") if "各自" in v][0]
+    app.mode.set(_sep_mode); app._refresh_modes(); app._refresh_cohs(); root.update()
+    _cb = app._coh_applicable()
+    ck("单独合理度：切到「各自」后没有混池那条，三个类别各自回来",
+       (not _cb["mixed"]) and _cb["rune"] and _cb["armor"] and _cb["weapon"], f"{_cb}")
+    app._coh_set("rune", True, 0.35); root.update()
+    ck("单独合理度：勾了就进 cfg（卢恩 35%）",
+       (app._collect().get("coh_domain") or {}).get("rune") == 0.35,
+       f"coh_domain={app._collect().get('coh_domain')}")
+    app.mode.set(_all_mix); app._refresh_modes(); app._refresh_cohs()
+    app._coh_set("mixed", True, 1.0); root.update()
+    ck("单独合理度：混池那条进 cfg（coh_mixed）",
+       app._collect().get("coh_mixed") == 1.0, f"{app._collect().get('coh_mixed')}")
+    ck("单独合理度：切回全部混合后，卢恩那条不再进 cfg（被混池接管）",
+       not (app._collect().get("coh_domain") or {}).get("rune"),
+       f"coh_domain={app._collect().get('coh_domain')}")
+    app._coh_set("mixed", False); app._coh_set("rune", False); root.update()
     app.nb.select(app.page_lib)
 
     n0 = len(planlib.list_plans())
