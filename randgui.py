@@ -650,20 +650,24 @@ class App:
         ttk.Label(s4, textvariable=self.summary, justify="left").pack(anchor="w")
 
         # ── 更多设置（默认折叠）──
+        #    注意：这两个开关都要**立刻**带动下面「改动比例」那一组（2026-10-14 作者报过
+        #    "开了/关了下面的比例不跟着变" —— 商店那个当时根本没接刷新）。
         self.adv = ttk.LabelFrame(body, text=" 更多设置 ", padding=(px(12), px(8)))
         a1 = ttk.Frame(self.adv); a1.pack(fill="x")
         self.sets = tk.BooleanVar(value=True)
         self.guide = tk.BooleanVar(value=True)
-        ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets,
-                        command=self._refresh_rates).pack(side="left")
+        self.cb_sets = ttk.Checkbutton(a1, text="法祷护甲整套一起换", variable=self.sets,
+                                       command=self._refresh_rates)
+        self.cb_sets.pack(side="left")
         # 「幽影卢恩与普通卢恩一起换」这个开关 2026-10-14 撤掉了：
         # 实测它改不了任何结果 —— 档位系统里 大师=幽影 都是 3 档（规格 §2 / Q3 定下的），
         # 按档位分桶时两者必然并到一起。留着只会让人以为"某个开关没生效"。
         ttk.Checkbutton(a1, text="说明书跟着一起改", variable=self.guide).pack(side="left", padx=12)
         a2b = ttk.Frame(self.adv); a2b.pack(fill="x", pady=(6, 0))
         self.shops = tk.BooleanVar(value=False)      # 默认关：老玩法完全不受影响
-        ttk.Checkbutton(a2b, text="商店里的职业装备也一起换",
-                        variable=self.shops).pack(side="left")
+        self.cb_shops = ttk.Checkbutton(a2b, text="商店里的职业装备也一起换", variable=self.shops,
+                                        command=self._refresh_rates)
+        self.cb_shops.pack(side="left")
         ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
                   style="Hint.TLabel").pack(side="left", padx=8)
         # ── 改动比例：两条，**在该出现时才出现**（没有总开关，与合理度那组一个风格）──
@@ -1658,13 +1662,14 @@ class App:
         scale = ttk.Scale(row, from_=frm, to=to, variable=val, orient="horizontal",
                           length=px(200),
                           command=lambda v, k=key, st=store: self._ov_moved(st, k, v))
-        ttk.Label(row, text=text, width=width).pack(side="left")
+        name = ttk.Label(row, text=text, width=width)
+        name.pack(side="left")
         scale.pack(side="left", padx=6)
         lbl.pack(side="left")
         note = ttk.Label(row, text="", style="Hint.TLabel")     # 量化提示（拖的时候实时更新）
         note.pack(side="left", padx=(8, 0))
         store[key] = {"val": val, "lbl": lbl, "scale": scale, "note": note, "row": row,
-                      "touched": False}
+                      "name": name, "touched": False}
         return store[key]
 
     def _ov_moved(self, store, key, v):
@@ -1703,7 +1708,10 @@ class App:
         if not r:
             return
         v = float(r["val"].get())
-        what = "整套 / 散件" if key == "caster" else "有商店在卖的物品"
+        if key == "caster":
+            what = "整套 / 散件" if self.sets.get() else "散件"
+        else:
+            what = "有商店在卖的物品"
         try:
             r["note"].config(text=("全改（100%）" if v >= 0.999
                                    else f"≈{int(round(v * 100))}% 的{what}参与互换"))
@@ -1786,6 +1794,15 @@ class App:
         return {"caster": "armor" in doms, "shop": bool(self.shops.get())}
 
     def _refresh_rates(self, *_a):
+        """跟着"勾了哪些类别 / 商店开没开 / 整套开没开"立刻增减（作者 2026-10-14 报过
+        商店开关不带动下面比例 —— 那是勾选框没接刷新，现在接上了）"""
+        _cr = (getattr(self, "rate_rows", None) or {}).get("caster")
+        if _cr is not None:
+            # 关掉"整套一起换"之后，法祷只剩散件在池子里 ⇒ 标签也如实说
+            try:
+                _cr["name"].config(text="法祷职业护甲" if self.sets.get() else "法祷职业护甲（散件）")
+            except Exception:
+                pass
         self._ov_refresh(getattr(self, "rate_rows", None), self._rate_applicable())
 
     def _rates(self):
@@ -2565,14 +2582,26 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and round(app.rate_rows["caster"]["val"].get(), 2) == 0.4,
        f"可见={bool(app.rate_rows['caster']['row'].winfo_manager())} "
        f"值={round(app.rate_rows['caster']['val'].get(), 2)}")
-    app.shops.set(False); app._refresh_rates(); root.update()
-    ck("改动比例：关掉商店 ⇒ 商店物品那条收起来（那时商店根本不参与）",
+    # 走**真实控件路径**：勾选框的 invoke() —— 上一版的 bug 正是"勾选框没接刷新"，
+    # 直接调 _refresh_rates() 会把它盖过去
+    app.cb_shops.invoke(); root.update()
+    ck("改动比例：关掉商店（点勾选框）⇒ 商店物品那条立刻收起来",
        not app.rate_rows["shop"]["row"].winfo_manager(),
        f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
-    app.shops.set(True); app._refresh_rates(); root.update()
-    ck("改动比例：打开商店 ⇒ 商店物品那条回来",
+    app.cb_shops.invoke(); root.update()
+    ck("改动比例：打开商店（点勾选框）⇒ 商店物品那条立刻回来",
        bool(app.rate_rows["shop"]["row"].winfo_manager()),
        f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    ck("改动比例：法祷那条的标签跟着「整套一起换」变",
+       "整套" not in app.rate_rows["caster"]["name"].cget("text"),
+       f"整套开着时标签={app.rate_rows['caster']['name'].cget('text')!r}")
+    app.cb_sets.invoke(); root.update()
+    ck("改动比例：关掉「整套一起换」⇒ 标签变成（散件）且量化提示同步",
+       app.rate_rows["caster"]["name"].cget("text").endswith("（散件）")
+       and "散件" in app.rate_rows["caster"]["note"].cget("text"),
+       f"标签={app.rate_rows['caster']['name'].cget('text')!r} "
+       f"提示={app.rate_rows['caster']['note'].cget('text')!r}")
+    app.cb_sets.invoke(); root.update()
     app._rate_set("caster", False); app._rate_set("shop", False); root.update()
 
     # ── 表单规则：单池合理度按混合方式动态出现（走**真实事件路径**：
