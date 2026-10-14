@@ -238,20 +238,66 @@ def plain_summary(plan, items, engine):
 BG        = "#1a1714"   # 窗口底
 PANEL     = "#232019"   # 面板底
 FIELD     = "#15130f"   # 输入框底
-EDGE      = "#3a342a"   # 边框 / 分隔
+EDGE      = "#453e32"   # 边框 / 分隔（比第一版亮一档：暗底上太细的线会"看不出来"）
 FG        = "#e8e2d4"   # 主文字
-SUB       = "#a09884"   # 次文字（说明 / 时间）
+SUB       = "#c3baa8"   # 次文字（说明 / 时间 / 字段名）—— 原来 #a09884 只有 6.2:1，偏灰
 GOLD      = "#c9a227"   # 金：标题 / 强调 / 选中
 GOLD_LT   = "#e8c860"   # 亮金
-DANGER    = "#b6433c"   # 危险（删除 / 还原）
+DANGER    = "#e0705e"   # 危险文字（删除 / 还原）—— 原来的 #b6433c 在暗底上只有 3:1
+DANGER_FILL = "#8b352f" # 危险按钮按下/悬停时的底色（配白字，7.9:1）
 SEL_BG    = "#3d3527"   # 选中行底
-DISABLED  = "#6b665c"   # 禁用文字
+DISABLED  = "#8b8578"   # 禁用文字（原来 #6b665c 只有 2.8:1，基本看不清）
 BTN_HOVER = "#302a20"   # 按钮悬停
 BTN_PRESS = "#3d3527"   # 按钮按下
 HEAD_BG   = "#2b261d"   # 表头
 WHITE     = "#ffffff"   # 选中时的文字
 
-FONT_UI = ("Microsoft YaHei UI", 10)
+FONT_NAME = "Microsoft YaHei UI"
+FONT_UI = (FONT_NAME, 11)          # 11pt：中文 10pt 在暗底上偏小
+FONT_SMALL = (FONT_NAME, 10)
+FONT_TITLE = (FONT_NAME, 15, "bold")
+
+
+def _enable_dpi_awareness():
+    """让 Windows 别再拉伸我们的窗口 —— 这一步不做，150% 缩放的字就是糊的。
+
+    必须在**第一个 tk.Tk() 之前**调用，所以放在模块导入时执行。
+    （实测对照：不做的话字被系统放大 1.5 倍再插值，笔画发虚；做了之后按物理像素绘制。）
+    """
+    try:
+        import ctypes
+        try:
+            ctypes.windll.shcore.SetProcessDpiAwareness(1)      # 系统级 DPI 感知
+        except Exception:
+            ctypes.windll.user32.SetProcessDPIAware()           # 老系统退路
+    except Exception:
+        pass
+
+
+_enable_dpi_awareness()
+
+# 屏幕缩放倍数：100% = 1.0，150% = 1.5。窗口尺寸与各处像素间距都要乘它，
+# 字号不用动 —— Tk 按"磅"渲染，会自己跟着系统 DPI 放大。
+S = 1.0
+
+
+def px(v):
+    """把设计稿上的像素值换成当前屏幕的像素值（1.5 倍屏就 ×1.5）"""
+    return int(round(v * S))
+
+
+def setup_display(root):
+    """量出屏幕缩放并告诉 Tk 磅→像素怎么换算。
+
+    **必须在建窗口和控件之前调用**（几何尺寸和每一处间距都要乘 S；字号是"磅"，Tk 自己会跟着放大）。"""
+    global S
+    try:
+        S = max(1.0, root.winfo_fpixels("1i") / 96.0)         # 100% 屏 = 1.0，150% 屏 = 1.5
+        root.tk.call("tk", "scaling", root.winfo_fpixels("1i") / 72.0)
+    except Exception:
+        S = 1.0
+    return S
+
 
 
 def apply_theme(root):
@@ -261,6 +307,7 @@ def apply_theme(root):
     bg= / fg=，见 _build 里的 tk.Text。uicheck() 会扫一遍亮块，漏了就报出来。
     """
     st = ttk.Style(root)
+    setup_display(root)                      # 先量屏幕缩放：下面的间距都要乘它
     try:
         st.theme_use("clam")                      # 唯一老实使用给定颜色的内置主题
     except tk.TclError:
@@ -273,16 +320,18 @@ def apply_theme(root):
     for w in ("TFrame", "TLabelframe", "TLabel", "TPanedwindow"):
         st.configure(w, background=BG, foreground=FG)
     st.configure("TLabelframe.Label", background=BG, foreground=GOLD)      # 分组框标题
-    st.configure("TButton", background=PANEL, foreground=FG, borderwidth=1, focusthickness=0)
+    st.configure("TButton", background=PANEL, foreground=FG, borderwidth=px(1), focusthickness=0)
     st.map("TButton", background=[("active", BTN_HOVER), ("pressed", BTN_PRESS)],
            foreground=[("disabled", DISABLED)])
-    st.configure("Accent.TButton", background=GOLD, foreground=BG, font=("Microsoft YaHei UI", 10, "bold"))
+    st.configure("Accent.TButton", background=GOLD, foreground=BG,
+                 font=(FONT_NAME, 11, "bold"))
     st.map("Accent.TButton", background=[("active", GOLD_LT), ("pressed", GOLD)],
            foreground=[("disabled", DISABLED)])
     st.configure("Danger.TButton", background=PANEL, foreground=DANGER)
-    st.map("Danger.TButton", background=[("active", DANGER), ("pressed", DANGER)],
+    st.map("Danger.TButton", background=[("active", DANGER_FILL), ("pressed", DANGER_FILL)],
            foreground=[("active", WHITE), ("pressed", WHITE), ("disabled", DISABLED)])
-    st.configure("Link.TButton", background=BG, foreground=GOLD, borderwidth=0, focusthickness=0, padding=(2, 0))
+    st.configure("Link.TButton", background=BG, foreground=GOLD, borderwidth=0,
+                 focusthickness=0, padding=(px(2), 0))
     st.map("Link.TButton", background=[("active", BG)], foreground=[("active", GOLD_LT)])
     st.configure("TEntry", fieldbackground=FIELD, foreground=FG, insertcolor=FG, bordercolor=EDGE)
     st.map("TEntry", bordercolor=[("focus", GOLD)])
@@ -295,42 +344,45 @@ def apply_theme(root):
     st.configure("TCheckbutton", background=BG, foreground=FG,
                  indicatorbackground=FIELD, indicatorforeground=GOLD,
                  upperbordercolor=EDGE, lowerbordercolor=EDGE,
-                 indicatormargin=(0, 1, 6, 1), focuscolor=BG)
+                 indicatormargin=(0, px(1), px(6), px(1)), focuscolor=BG)
     st.map("TCheckbutton", background=[("active", BG)], foreground=[("disabled", DISABLED)],
            indicatorbackground=[("selected", GOLD), ("active", "selected", GOLD_LT)],
            indicatorforeground=[("selected", BG)])
     # Scale 的滑块与槽是分开的两个东西：background=滑块、troughcolor=槽，配完要实际拖一下看
     st.configure("TScale", background=GOLD, troughcolor=FIELD,
                  lightcolor=GOLD, darkcolor=GOLD, bordercolor=EDGE, focuscolor=BG)
-    st.configure("TNotebook", background=BG, bordercolor=EDGE, tabmargins=(6, 4, 6, 0))
-    st.configure("TNotebook.Tab", background=PANEL, foreground=SUB, padding=(18, 8))
+    st.configure("TNotebook", background=BG, bordercolor=EDGE,
+                 tabmargins=(px(6), px(4), px(6), 0))
+    st.configure("TNotebook.Tab", background=PANEL, foreground=SUB, padding=(px(18), px(8)))
     st.map("TNotebook.Tab", background=[("selected", BG)], foreground=[("selected", GOLD)])
     st.configure("Treeview", background=PANEL, fieldbackground=PANEL, foreground=FG,
-                 bordercolor=EDGE, rowheight=34)
+                 bordercolor=EDGE, rowheight=px(30))
     st.configure("Treeview.Heading", background=HEAD_BG, foreground=GOLD, relief="flat")  # 最容易漏
     st.map("Treeview.Heading", background=[("active", BTN_HOVER)])
     st.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", WHITE)])
     # 方案库的列表：两行式行（第一行名字、第二行小字摘要），行高要够
     st.configure("Lib.Treeview", background=PANEL, fieldbackground=PANEL, foreground=FG,
-                 borderwidth=0, rowheight=46)
+                 borderwidth=0, rowheight=px(52))
     st.map("Lib.Treeview", background=[("selected", SEL_BG)], foreground=[("selected", WHITE)])
     for sb in ("Vertical.TScrollbar", "Horizontal.TScrollbar"):
-        st.configure(sb, background=PANEL, troughcolor=BG, bordercolor=EDGE, arrowcolor=SUB)
-        st.map(sb, background=[("active", SEL_BG)])
+        # lightcolor / darkcolor 是 clam 给滚动条画的"高光/阴影"边 —— 不配的话它自己
+        # 拿背景色推出一圈亮边，看着像一条白条
+        st.configure(sb, background=PANEL, troughcolor=BG, bordercolor=EDGE, arrowcolor=SUB,
+                     lightcolor=EDGE, darkcolor=EDGE)
+        st.map(sb, background=[("active", SEL_BG)], arrowcolor=[("active", GOLD_LT)])
     st.configure("TSeparator", background=EDGE)
     # 文字风格（tk 控件不认样式表；ttk 的用这些名字）
-    st.configure("Title.TLabel", background=BG, foreground=GOLD,
-                 font=("Microsoft YaHei UI", 13, "bold"))
+    st.configure("Title.TLabel", background=BG, foreground=GOLD, font=FONT_TITLE)
     st.configure("Sub.TLabel", background=BG, foreground=SUB)
-    st.configure("Hint.TLabel", background=BG, foreground=SUB, font=("Microsoft YaHei UI", 9))
+    st.configure("Hint.TLabel", background=BG, foreground=SUB, font=FONT_SMALL)
     st.configure("Gold.TLabel", background=BG, foreground=GOLD_LT)
     st.configure("Status.TLabel", background=BG, foreground=GOLD_LT)
     st.configure("Bad.TLabel", background=BG, foreground=DANGER)
     st.configure("Card.TFrame", background=PANEL)
     # 标签筹码（详情面板里的小方块）
-    st.configure("Chip.TLabel", background=PANEL, foreground=GOLD, padding=(6, 2),
+    st.configure("Chip.TLabel", background=PANEL, foreground=GOLD, padding=(px(6), px(2)),
                  borderwidth=1, relief="solid", bordercolor=EDGE)
-    st.configure("ChipHot.TLabel", background=SEL_BG, foreground=GOLD_LT, padding=(6, 2),
+    st.configure("ChipHot.TLabel", background=SEL_BG, foreground=GOLD_LT, padding=(px(6), px(2)),
                  borderwidth=1, relief="solid", bordercolor=GOLD)
     try:
         root.configure(bg=BG)
@@ -342,9 +394,10 @@ def apply_theme(root):
 class App:
     def __init__(self, root):
         self.root = root
+        setup_display(root)               # 必须在几何尺寸与建控件之前
         root.title("法魂职业道具和装备随机器")
-        root.geometry("1180x820")          # 两页都需要宽度
-        root.minsize(1020, 720)
+        root.geometry(f"{px(1180)}x{px(820)}")   # 两页都需要宽度；px() 会按屏幕缩放
+        root.minsize(px(1020), px(720))
         self.engine = None
         self.plan = None
         self.pools = None
@@ -368,7 +421,7 @@ class App:
     # ══════════ 界面 ══════════
     def _build(self):
         """一屏两页：顶部标题 + 两个页签（随机设置 / 方案库）"""
-        head = ttk.Frame(self.root, padding=(16, 12, 16, 2))
+        head = ttk.Frame(self.root, padding=(px(16), px(12), px(16), px(2)))
         head.pack(fill="x")
         ttk.Label(head, text="法魂职业道具和装备随机器", style="Title.TLabel").pack(side="left")
         ttk.Label(head, text="只换物品、不搬位置；随时可以一键还原",
@@ -378,7 +431,7 @@ class App:
         self.nb.pack(fill="both", expand=True, padx=10, pady=(4, 10))
         self.page_set = ttk.Frame(self.nb)
         self.nb.add(self.page_set, text="  ⚙ 随机设置  ")
-        self.page_lib = ttk.Frame(self.nb, padding=(10, 8, 10, 4))
+        self.page_lib = ttk.Frame(self.nb, padding=(px(10), px(8), px(10), px(4)))
         self.nb.add(self.page_lib, text="  📚 方案库  ")
         self._build_settings(self._scrollable(self.page_set))
         self._build_library(self.page_lib)
@@ -392,9 +445,9 @@ class App:
         outer = ttk.Frame(parent)
         outer.pack(fill="both", expand=True)
         canvas = tk.Canvas(outer, bg=BG, highlightthickness=0, borderwidth=0,
-                           yscrollincrement=24)
+                           yscrollincrement=px(24))
         vsb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
-        inner = ttk.Frame(canvas, padding=(2, 4, 10, 10))
+        inner = ttk.Frame(canvas, padding=(px(2), px(4), px(10), px(10)))
         win = canvas.create_window((0, 0), window=inner, anchor="nw")
         canvas.configure(yscrollcommand=vsb.set)
         canvas.pack(side="left", fill="both", expand=True)
@@ -416,7 +469,7 @@ class App:
         mid = tkfont.Font(family="Microsoft YaHei UI", size=11, weight="bold")
 
         # ── 第 1 步 ──
-        s1 = ttk.LabelFrame(body, text=" 第 1 步 · 随机项目 ", padding=(12, 8))
+        s1 = ttk.LabelFrame(body, text=" 第 1 步 · 随机项目 ", padding=(px(12), px(8)))
         s1.pack(fill="x", pady=(0, 8))
         self.basis = tk.StringVar(value="guide")     # 固定：只动职业说明书里的物品
         r2 = ttk.Frame(s1); r2.pack(fill="x")
@@ -437,12 +490,12 @@ class App:
         self.lbl_combo.pack(anchor="w", pady=(4, 0))
 
         # ── 第 2 步 ──
-        s2 = ttk.LabelFrame(body, text=" 第 2 步 · 合理度 ", padding=(12, 8))
+        s2 = ttk.LabelFrame(body, text=" 第 2 步 · 合理度 ", padding=(px(12), px(8)))
         s2.pack(fill="x", pady=(0, 8))
         r3 = ttk.Frame(s2); r3.pack(fill="x")
         self.coherence = tk.DoubleVar(value=0.8)
         self.lbl_coh = ttk.Label(r3, text="80%", font=mid, width=6)
-        ttk.Scale(r3, from_=0.0, to=1.0, variable=self.coherence, orient="horizontal", length=420,
+        ttk.Scale(r3, from_=0.0, to=1.0, variable=self.coherence, orient="horizontal", length=px(420),
                   command=lambda v: (self.lbl_coh.config(text=f"{float(v)*100:.0f}%"), self._coh_hint())
                   ).pack(side="left", padx=(0, 10))
         self.lbl_coh.pack(side="left")
@@ -452,7 +505,7 @@ class App:
         self.lbl_cohtxt.pack(anchor="w", pady=(2, 0))
 
         # ── 第 3 步 ──
-        s3 = ttk.LabelFrame(body, text=" 第 3 步 · 随机种子 ", padding=(12, 8))
+        s3 = ttk.LabelFrame(body, text=" 第 3 步 · 随机种子 ", padding=(px(12), px(8)))
         s3.pack(fill="x", pady=(0, 8))
         r5 = ttk.Frame(s3); r5.pack(fill="x")
         self.seed = tk.StringVar(value="20261010")
@@ -461,7 +514,7 @@ class App:
 
         # ── 按钮 ──
         # ── 本地文件识别 ──
-        s4 = ttk.LabelFrame(body, text=" 本地文件 ", padding=(12, 6))
+        s4 = ttk.LabelFrame(body, text=" 本地文件 ", padding=(px(12), px(6)))
         s4.pack(fill="x", pady=(0, 8))
         self.lbl_env = ttk.Label(s4, text="检测中…", style="Hint.TLabel", justify="left")
         self.lbl_env.pack(anchor="w")
@@ -488,13 +541,13 @@ class App:
         self.lbl_status.pack(side="left", padx=14)
 
         # ── 结果（人话）──
-        s4 = ttk.LabelFrame(body, text=" 这次会改什么 ", padding=(12, 8))
+        s4 = ttk.LabelFrame(body, text=" 这次会改什么 ", padding=(px(12), px(8)))
         s4.pack(fill="x", pady=(0, 8))
         self.summary = tk.StringVar(value="还没生成。点上面的「① 生成随机方案」看看会怎么改。")
         ttk.Label(s4, textvariable=self.summary, justify="left").pack(anchor="w")
 
         # ── 更多设置（默认折叠）──
-        self.adv = ttk.LabelFrame(body, text=" 更多设置 ", padding=(12, 8))
+        self.adv = ttk.LabelFrame(body, text=" 更多设置 ", padding=(px(12), px(8)))
         a1 = ttk.Frame(self.adv); a1.pack(fill="x")
         self.sets = tk.BooleanVar(value=True)
         self.shadow = tk.BooleanVar(value=False)
@@ -512,7 +565,7 @@ class App:
         ttk.Label(a2, text="改动比例").pack(side="left")
         self.density = tk.DoubleVar(value=1.0)
         self.lbl_den = ttk.Label(a2, text="100%", width=6)
-        ttk.Scale(a2, from_=0.05, to=1.0, variable=self.density, orient="horizontal", length=200,
+        ttk.Scale(a2, from_=0.05, to=1.0, variable=self.density, orient="horizontal", length=px(200),
                   command=lambda v: self.lbl_den.config(text=f"{float(v)*100:.0f}%")).pack(side="left", padx=6)
         self.lbl_den.pack(side="left")
         a3 = ttk.Frame(self.adv); a3.pack(fill="x", pady=(6, 0))
@@ -521,7 +574,7 @@ class App:
             ttk.Button(a3, text=t, command=cmd).pack(side="left", padx=(0, 8))
 
         # ── 详细记录（默认折叠）──
-        self.detail = ttk.LabelFrame(body, text=" 详细记录 ", padding=(12, 8))
+        self.detail = ttk.LabelFrame(body, text=" 详细记录 ", padding=(px(12), px(8)))
         d = ttk.Frame(self.detail); d.pack(fill="both", expand=True)
         left = ttk.Frame(d); left.pack(side="left", fill="both", expand=False)
         ttk.Label(left, text="检查项").pack(anchor="w")
@@ -538,10 +591,11 @@ class App:
         self.tbl.pack(fill="both", expand=True)
         # tk.Text 不带 ttk，样式表管不到它 —— 颜色必须逐个传（否则是一块白）
         self.txt = tk.Text(self.detail, height=6, wrap="word", bg=FIELD, fg=FG,
+                           font=FONT_SMALL,
                            insertbackground=FG, selectbackground=SEL_BG, selectforeground=WHITE,
-                           relief="flat", highlightthickness=1,
+                           relief="flat", highlightthickness=px(1),
                            highlightbackground=EDGE, highlightcolor=GOLD)
-        self.txt.pack(fill="both", expand=True, pady=(8, 0))
+        self.txt.pack(fill="both", expand=True, pady=(px(8), 0))
 
     # ══════════ 页 2 · 方案库 ══════════
     def _build_library(self, body):
@@ -590,7 +644,7 @@ class App:
         self.lib_list.pack(fill="both", expand=True)
         self.lib_tree = ttk.Treeview(self.lib_list, columns=(), show="tree",
                                      selectmode="browse", style="Lib.Treeview")
-        self.lib_tree.column("#0", width=520, stretch=True)
+        self.lib_tree.column("#0", width=px(520), stretch=True)
         vsb = ttk.Scrollbar(self.lib_list, orient="vertical", command=self.lib_tree.yview)
         self.lib_tree.configure(yscrollcommand=vsb.set)
         self.lib_tree.pack(side="left", fill="both", expand=True)
@@ -604,16 +658,16 @@ class App:
         self.lib_empty = ttk.Frame(self.lib_box)
         ttk.Label(self.lib_empty, text="还没有方案", style="Gold.TLabel").pack(anchor="w", pady=(20, 4))
         self.lib_empty_txt = ttk.Label(
-            self.lib_empty, style="Hint.TLabel", justify="left", wraplength=380,
+            self.lib_empty, style="Hint.TLabel", justify="left", wraplength=px(380),
             text="先到「随机设置」生成一套（点 ① 生成随机方案），\n再点那里的「💾 保存到方案库」，方案就会出现在这里。")
         self.lib_empty_txt.pack(anchor="w")
         ttk.Button(self.lib_empty, text="去「随机设置」生成一套", style="Link.TButton",
                    command=lambda: self.nb.select(self.page_set)).pack(anchor="w", pady=(8, 0))
 
         # ── 右：详情（常驻，取代弹窗）──
-        right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(12, 8))
+        right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(px(12), px(8)))
         right.grid(row=0, column=1, sticky="nsew")
-        self.lib_title = ttk.Label(right, text="还没选方案", style="Title.TLabel", wraplength=300)
+        self.lib_title = ttk.Label(right, text="还没选方案", style="Title.TLabel", wraplength=px(300))
         self.lib_title.pack(anchor="w")
         self.lib_sub = ttk.Label(right, text="左边点一行，这里就是它的全部信息", style="Hint.TLabel")
         self.lib_sub.pack(anchor="w", pady=(2, 8))
@@ -645,13 +699,13 @@ class App:
             row = ttk.Frame(right)
             row.pack(fill="x", pady=1)
             ttk.Label(row, text=label, width=7, style="Sub.TLabel").pack(side="left")
-            v = ttk.Label(row, text="—", wraplength=280, justify="left")
+            v = ttk.Label(row, text="—", wraplength=px(280), justify="left")
             v.pack(side="left", fill="x", expand=True)
             self.lib_vals[key] = v
         # 底部一行：说清刚刚发生了什么（删除后可以从这里进回收站）
         trow2 = ttk.Frame(right)
         trow2.pack(side="bottom", fill="x", pady=(8, 0))
-        self.lib_toast = ttk.Label(trow2, text="", style="Hint.TLabel", wraplength=250,
+        self.lib_toast = ttk.Label(trow2, text="", style="Hint.TLabel", wraplength=px(250),
                                    justify="left")
         self.lib_toast.pack(side="left", fill="x", expand=True)
         self.lib_trash_btn = ttk.Button(trow2, text="打开回收站", style="Link.TButton",
@@ -1668,6 +1722,46 @@ SETTINGS_WIDGETS = ("b_gen", "b_dep", "lbl_env", "cb_mode", "lbl_combo", "lbl_co
                     "shops")
 
 
+# 对比度门槛（WCAG 比例）。作者反馈过"字很不明显"，所以把它做成可测的门槛：
+# 正文要 ≥10，次文字（说明 / 字段名）≥8，危险色 ≥4.5，禁用态 ≥3.5。
+CONTRAST_REQUIREMENTS = (
+    ("主文字 / 窗口底", FG, BG, 10.0),
+    ("次文字 / 窗口底", SUB, BG, 8.0),
+    ("次文字 / 面板底", SUB, PANEL, 7.0),
+    ("金标题 / 窗口底", GOLD, BG, 6.0),
+    ("危险色 / 面板底", DANGER, PANEL, 4.5),
+    ("禁用文字 / 面板底", DISABLED, PANEL, 3.5),
+    ("选中行文字 / 选中底", WHITE, SEL_BG, 8.0),
+)
+
+
+def _rel_lum(col):
+    """WCAG 的相对亮度。
+
+    注意：不能拿 `_lum()` 那个加权值算对比度 —— 那个只回答"看起来多亮"（不线性化），
+    而 WCAG 要求先把 sRGB 线性化，否则算出来的比值不是那个大家熟悉的 4.5 / 7 的口径。"""
+    h = (col or "").strip().lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return None
+    try:
+        rgb = [int(h[i:i + 2], 16) / 255.0 for i in (0, 2, 4)]
+    except ValueError:
+        return None
+    lin = [c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4 for c in rgb]
+    return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2]
+
+
+def contrast_ratio(fg, bg):
+    """两色的 WCAG 对比度（1 = 一样，21 = 黑白）"""
+    a, b = _rel_lum(fg), _rel_lum(bg)
+    if a is None or b is None:
+        return None
+    hi, lo = max(a, b), min(a, b)
+    return (hi + 0.05) / (lo + 0.05)
+
+
 def uicheck():
     """只建界面不进入事件循环（自动化测试用）。
 
@@ -1698,6 +1792,20 @@ def uicheck():
     print(f"   页 1 控件：{len(SETTINGS_WIDGETS) - len(missing)}/{len(SETTINGS_WIDGETS)}")
     if missing:
         problems.append("页 1 缺控件：" + ", ".join(missing))
+
+    # 字清不清楚是可测的：把用到的每种"字色/底色"配对比一下
+    print(f"   屏幕缩放 {S:.2f}× ｜ 对比度：")
+    worst = None
+    for name, fg_, bg_, need in CONTRAST_REQUIREMENTS:
+        r = contrast_ratio(fg_, bg_)
+        if r is None:
+            problems.append(f"对比度量不出来：{name}")
+            continue
+        ok_here = r >= need
+        print(f"     {'OK  ' if ok_here else '偏暗'} {name} {r:.2f}（要 ≥{need}）")
+        if not ok_here:
+            problems.append(f"对比度不足：{name} = {r:.2f} < {need}")
+        worst = r if worst is None else min(worst, r)
 
     if theme != "clam":
         problems.append(f"主题不是 clam：{theme}")
