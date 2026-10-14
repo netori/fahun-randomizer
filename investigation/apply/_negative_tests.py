@@ -5,6 +5,8 @@
 #   每一条都对应一次**真实发生过的故障**或一条**硬约束**（见《随机化算法规格.md》§7.5）。
 #
 #   只读：不写 MOD、不写计划、不启动游戏。
+import collections
+import hashlib
 import csv, glob, importlib.util, io, json, os, re, sys, tempfile
 import xml.etree.ElementTree as ET
 
@@ -139,6 +141,51 @@ def test_engine():
           _n_sets(dict(_base, density=0.5)) == _n_sets(dict(_base, density=0.5, rate_sets=None))
           and _n_sets(dict(_base, rate_domain=None)) == _all,
           f"50%: {_n_sets(dict(_base, density=0.5))} 套；rate_domain=None: {_n_sets(dict(_base, rate_domain=None))} 套")
+
+    # ── 两个新比例（2026-10-14 按作者要求收敛成这两条）：rate_caster / rate_shop ──
+    def _rows2(p):
+        return [x for x in p if x["old"] != x["new"]]
+
+    def _set_rows(cfg):
+        return sum(1 for x in _rows2(r.run(w, cfg, 20261010)[0]) if x.get("role") == "set")
+
+    def _caster_piece_rows(cfg):
+        return sum(1 for x in _rows2(r.run(w, cfg, 20261010)[0])
+                   if "caster" in x["pool"] and not x["pool"].endswith("·set"))
+
+    def _shop_rows(cfg):
+        return sum(1 for x in _rows2(r.run(w, cfg, 20261010)[0])
+                   if x["source_table"] == "ShopLineupParam")
+
+    _all_sets, _all_pieces = _set_rows(_base), _caster_piece_rows(_base)
+    _all_shop = _shop_rows(_base)
+    check("N12a rate_sets 只管整套、不动散件",
+          _set_rows(dict(_base, rate_sets=0.0)) == 0
+          and _caster_piece_rows(dict(_base, rate_sets=0.0)) == _all_pieces,
+          f"整套 {_all_sets}→{_set_rows(dict(_base, rate_sets=0.0))}｜"
+          f"散件 {_all_pieces}→{_caster_piece_rows(dict(_base, rate_sets=0.0))}")
+    check("N12b rate_caster 只管散件、不动整套",
+          _caster_piece_rows(dict(_base, rate_caster=0.0)) == 0
+          and _set_rows(dict(_base, rate_caster=0.0)) == _all_sets,
+          f"散件 {_all_pieces}→{_caster_piece_rows(dict(_base, rate_caster=0.0))}｜"
+          f"整套 {_all_sets}→{_set_rows(dict(_base, rate_caster=0.0))}")
+    check("N12c rate_shop=0 ⇒ 商店一行都不动；=1 ⇒ 与不传键一致",
+          _shop_rows(dict(_base, rate_shop=0.0)) == 0
+          and _shop_rows(dict(_base, rate_shop=1.0)) == _all_shop,
+          f"商店 {_all_shop} 行 → 0%: {_shop_rows(dict(_base, rate_shop=0.0))}｜"
+          f"100%: {_shop_rows(dict(_base, rate_shop=1.0))}")
+    _p_shop = r.run(w, dict(_base, rate_shop=0.5), 20261010)[0]
+    _per = collections.defaultdict(set)
+    for x in _p_shop:
+        _per[(x["unit"], x.get("part") or "")].add(str(x["new"]))
+    _split = [k for k, v in _per.items() if len(v) > 1]
+    check("N12d 商店比例按物品抽 ⇒ 同一 (单元,部位) 在所有来源里仍然同款（H9）",
+          not _split, f"不一致的 (单元,部位)：{len(_split)} 个")
+    _fp2 = lambda cfg: hashlib.sha256(json.dumps(
+        sorted((x["unit"], str(x.get("row_id")), x["old"], x["new"]) for x in r.run(w, cfg, 20261010)[0]),
+        ensure_ascii=False).encode()).hexdigest()
+    check("N12e 不传 rate_caster / rate_shop ⇒ 与显式填 1.0 逐字节一致（老配置不变）",
+          _fp2(dict(_base)) == _fp2(dict(_base, rate_caster=1.0, rate_shop=1.0)), "指纹一致")
 
     # H5 冻结/排除项不参与
     excl = os.path.join(WS, "..", "randomization-dryrun", "_multicopy_excluded.json")

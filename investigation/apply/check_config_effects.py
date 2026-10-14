@@ -172,9 +172,9 @@ def main():
         if prev is not None and s["changed"] >= prev:
             ok_dir = False
         prev = s["changed"]
-    ck("改动比例·越低改得越少", ok_dir, "；".join(detail))
+    ck("全局 density（引擎侧，界面不暴露）·越低改得越少", ok_dir, "；".join(detail))
 
-    # ⑦ 单独设比例：整套法祷
+    # ⑦ 改动比例（界面上只剩两条：法祷职业护甲 / 商店物品）
     prev = None
     ok_dir, detail = True, []
     for v in (1.0, 0.4, 0.0):
@@ -184,7 +184,30 @@ def main():
         if prev is not None and s["caster_sets"] >= prev:
             ok_dir = False
         prev = s["caster_sets"]
-    ck("单独比例·整套法祷", ok_dir and prev == 0, "；".join(detail))
+    ck("改动比例·法祷职业护甲（整套 rate_sets）", ok_dir and prev == 0, "；".join(detail))
+
+    def _pieces(cfg):
+        return sum(1 for x in run(cfg)[0] if x["old"] != x["new"]
+                   and "caster" in x["pool"] and not x["pool"].endswith("·set"))
+
+    _p_all, _p_zero = _pieces(dict(BASE)), _pieces(dict(BASE, rate_caster=0.0))
+    ck("改动比例·法祷职业护甲（散件 rate_caster）", _p_zero == 0 and _p_all > 0,
+       f"散件改动 {_p_all} → 0% 时 {_p_zero}")
+
+    def _n_shop(cfg):
+        return sum(1 for x in run(cfg)[0]
+                   if x["source_table"] == "ShopLineupParam" and x["old"] != x["new"])
+
+    _s_all, _s_half, _s_zero = _n_shop(dict(BASE)), _n_shop(dict(BASE, rate_shop=0.5)), _n_shop(dict(BASE, rate_shop=0.0))
+    ck("改动比例·商店物品（rate_shop）", 0 < _s_half < _s_all and _s_zero == 0,
+       f"商店改动行 100%→{_s_all}｜50%→{_s_half}｜0%→{_s_zero}")
+
+    def _changed(cfg):
+        return sum(1 for x in run(cfg)[0] if x["old"] != x["new"])
+
+    ck_known("全局 density（界面已撤，引擎仍认）",
+             f"100%→改动 {_changed(dict(BASE, density=1.0))}｜25%→{_changed(dict(BASE, density=0.25))}"
+             "（还能用，只是没有界面入口）")
 
     # ⑧ 套装开关：开 = 每次整套换（同单元各行必须来自同一套）；关 = 按部位单件
     ck("法祷护甲整套一起换·开", base["set_mixed_up"] == 0 and base["set_units"] > 0,

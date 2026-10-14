@@ -662,22 +662,19 @@ class App:
                         variable=self.shops).pack(side="left")
         ttk.Label(a2b, text="· 只影响说明书里的装备；价格 / 限量 / 解锁条件都不动",
                   style="Hint.TLabel").pack(side="left", padx=8)
-        # ── 改动比例：按类别各一条（2026-10-14 撤掉了全局滑块）──
-        #    为什么撤：全局那条已经用不上了 —— 每条池子都由自己那一类说了算，
-        #    "少改一点"直接在对应类别上拖就行。不勾 = 这一类全改（100%）。
-        #    跟着第 1 步的勾选与"混合方式"**动态增减**：没勾的类别不摆出来；
-        #    **整类进了混池的**（全部混合时的护甲/卢恩）也收起来，由「混池」那条统管 ——
-        #    否则会让人以为"我调了护甲的比例，怎么没生效"。
+        # ── 改动比例：只留两条（2026-10-14 按作者要求收敛）──
+        #    · 法祷职业护甲 —— 整套与散件一起调（引擎里是 rate_sets + rate_caster 两个键）
+        #    · 商店物品     —— **有商店在卖的那批物品**里，多少参与互换（rate_shop，按物品抽）
+        #    其余（混池/卢恩/护甲/装备）不再摆出来：作者只关心这两条的随机率。
+        #    不勾 = 这一类全改（100%）。
         a2r = ttk.Frame(self.adv); a2r.pack(fill="x", pady=(6, 0))
         ttk.Label(a2r, text="改动比例", style="Sub.TLabel").pack(side="left")
-        ttk.Label(a2r, text="· 只列当前真正起作用的那几条；不勾 = 这一类全改；整套法祷装备优先于护甲",
+        ttk.Label(a2r, text="· 不勾 = 这一类全改；商店那条按**物品**抽（货架与宝箱同一件一起变）",
                   style="Hint.TLabel").pack(side="left", padx=6)
         # 用 grid（不用 pack）：隐藏/恢复的时候格子还在，**顺序不会乱**
         rgrid = ttk.Frame(self.adv); rgrid.pack(fill="x")
         self.rate_rows = {}
-        for i, (key, text) in enumerate((("sets", "整套法祷装备"), ("mixed", "混池"),
-                                         ("rune", "卢恩"), ("armor", "护甲"),
-                                         ("weapon", "装备（武器）"))):
+        for i, (key, text) in enumerate((("caster", "法祷职业护甲"), ("shop", "商店物品"))):
             self._mk_override_row(rgrid, self.rate_rows, key, text, 0.05, 1.0, i)
         self._refresh_rates()               # 一建出来就按当前勾选理顺一次
 
@@ -1325,12 +1322,14 @@ class App:
             for k, v in self.doms.items():
                 v.set(k in (cfg.get("domains") or ["rune", "armor", "weapon"]))
             self._refresh_modes()
-            # 单独设的比例也要填回来（旧方案里没有这两项 → 回到"跟全局比例走"）
-            _rs2 = cfg.get("rate_sets")
-            self._rate_set("sets", _rs2 is not None, _rs2)
-            _rd2 = cfg.get("rate_domain") or {}
-            for _k2 in ("armor", "weapon", "rune"):
-                self._rate_set(_k2, _k2 in _rd2, _rd2.get(_k2))
+            # 单独设的比例：只认界面上那两条（法祷职业护甲 / 商店物品）；老方案里的
+            # rate_mixed / rate_domain 不再回填到界面（引擎仍然认它们，行为不变）
+            _rc2 = cfg.get("rate_caster")
+            if _rc2 is None:
+                _rc2 = cfg.get("rate_sets")
+            self._rate_set("caster", _rc2 is not None, _rc2)
+            _rsh2 = cfg.get("rate_shop")
+            self._rate_set("shop", _rsh2 is not None, _rsh2)
             self._refresh_rates()
             _cm2 = cfg.get("coh_mixed")
             self._coh_set("mixed", _cm2 is not None, _cm2)
@@ -1724,24 +1723,12 @@ class App:
         return self._ov_set(self.rate_rows, key, on, val)
 
     def _rate_applicable(self):
-        """哪几条"改动比例"现在真的有用 —— 判据与「单独设合理度」同源：
-        · 类别没勾 → 那一条没用（不摆出来）
-        · 没勾护甲 → 整套法祷装备也没用（它属于护甲）
-        · 关了"整套一起换" → 没有"整套"这条线了（护甲改成按部位单件换）
-        · **整类进了混池的**（全部混合时的护甲/卢恩）也没有自己那条，由「混池」统管
-        · 混池：当前会建混池才有这条
-        · 装备（武器）：勾了就有 —— 它只按比例掺入混池，总有一部分留在自己的池里
+        """哪几条"改动比例"现在有用（只有两条）：
+        · 法祷职业护甲：勾了护甲才有意义（它属于护甲）
+        · 商店物品：勾了「商店里的职业装备也一起换」才有意义 —— 没勾时商店根本不参与
         """
         doms = self._picked_doms()
-        in_mix = set()
-        for g in self._join_groups():
-            in_mix |= set(g)
-        out = {"mixed": bool(self._join_groups()),
-               "sets": ("armor" in doms) and bool(self.sets.get())}
-        for d in ("rune", "armor"):
-            out[d] = (d in doms) and (d not in in_mix)
-        out["weapon"] = "weapon" in doms
-        return out
+        return {"caster": "armor" in doms, "shop": bool(self.shops.get())}
 
     def _refresh_rates(self, *_a):
         """按当前勾选动态增减这几条比例行（隐藏的行**一定**回到未勾选，
@@ -1855,10 +1842,12 @@ class App:
                 "merge_shadow": False, "sets": self.sets.get(),   # 恒定 False：界面不再暴露这个空转开关
                 # density 不再由界面给：全局滑块已撤，缺省（无此键）= 每类全改 100%
                 "seed": int(self.seed.get()),
-                # 单独设的比例（没勾就不带这几个键 ⇒ 这一类全改）
-                "rate_sets": _rates.get("sets"),
-                "rate_mixed": _rates.get("mixed"),
-                "rate_domain": {k: v for k, v in _rates.items() if k in ("armor", "weapon", "rune")} or None,
+                # 单独设的比例（只留两条；没勾就不带键 ⇒ 这一类全改）
+                #   法祷职业护甲 = 整套(rate_sets) + 散件(rate_caster) 一起给同一个值
+                #   商店物品     = 有商店在卖的那批物品里，多少参与互换（按物品抽，H9 一致）
+                "rate_sets": _rates.get("caster"),
+                "rate_caster": _rates.get("caster"),
+                "rate_shop": _rates.get("shop"),
                 # 单独设的合理度（没勾就不带这两个键 ⇒ 跟全局合理度走）
                 "coh_mixed": _cohs.get("coh_mixed"),
                 "coh_domain": _cohs.get("coh_domain"),
@@ -2046,12 +2035,14 @@ class App:
         for k, v in self.doms.items():
             v.set(k in _d)
         self._refresh_modes()
-        # 单独设的比例：rate_sets + rate_domain（旧设置文件里没有这两项 → 全部回到"跟全局比例走"）
-        _rs = c.get("rate_sets")
-        self._rate_set("sets", _rs is not None, _rs)
-        _rd = c.get("rate_domain") or {}
-        for _k in ("armor", "weapon", "rune"):
-            self._rate_set(_k, _k in _rd, _rd.get(_k))
+        # 单独设的比例：只认界面上那两条（法祷职业护甲 / 商店物品）
+        # 旧设置文件里的 rate_mixed / rate_domain 不再回填到界面（引擎仍认它们，行为不变）
+        _rc = c.get("rate_caster")
+        if _rc is None:
+            _rc = c.get("rate_sets")
+        self._rate_set("caster", _rc is not None, _rc)
+        _rsh = c.get("rate_shop")
+        self._rate_set("shop", _rsh is not None, _rsh)
         self._refresh_rates()
         # 单独设的合理度（旧设置文件没有 → 回到跟全局走）
         _cm = c.get("coh_mixed")
@@ -2467,35 +2458,77 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     import tempfile
     import tkinter.filedialog as fd
 
-    # ── 单独设比例：整套法祷装备 / 按大类 ──
+    # ── 改动比例：只剩两条（法祷职业护甲 / 商店物品）2026-10-14 收敛 ──
     _c0 = app._collect()
-    ck("单独比例：默认不勾 ⇒ 不带进 cfg（等于跟全局比例走）",
-       _c0.get("rate_sets") is None and _c0.get("rate_domain") is None,
-       f"rate_sets={_c0.get('rate_sets')} rate_domain={_c0.get('rate_domain')}")
-    # 默认是"全部混合"：这时只有「整套 / 混池 / 装备」三条在（护甲/卢恩整类进了混池）
-    app._rate_set("sets", True, 0.4)
-    app._rate_set("mixed", True, 0.35)
+    ck("改动比例：默认不勾 ⇒ 三个键都不带（= 全改）",
+       _c0.get("rate_sets") is None and _c0.get("rate_caster") is None
+       and _c0.get("rate_shop") is None,
+       f"sets={_c0.get('rate_sets')} caster={_c0.get('rate_caster')} shop={_c0.get('rate_shop')}")
+    app.shops.set(True); app._refresh_rates(); root.update()
+    app._rate_set("caster", True, 0.4)
+    app._rate_set("shop", True, 0.35)
+    app._refresh_rates()
     root.update()
     _c1 = app._collect()
-    ck("单独比例：勾了就进 cfg（整套 40% + 混池 35%）",
-       _c1.get("rate_sets") == 0.4 and _c1.get("rate_mixed") == 0.35,
-       f"rate_sets={_c1.get('rate_sets')} rate_mixed={_c1.get('rate_mixed')}")
-    ck("单独比例：没勾的那条滑块收起来了（不勾=跟全局走，一眼能看出）",
-       not app.rate_rows["weapon"]["scale"].winfo_manager()
-       and bool(app.rate_rows["sets"]["scale"].winfo_manager()),
-       f"整套路={app.rate_rows['sets']['scale'].winfo_manager()!r} "
-       f"武器路={app.rate_rows['weapon']['scale'].winfo_manager()!r}")
-    # 旧方案（cfg 里没有这两项）载回来 → 必须回到"跟全局走"，不能留着上一次的勾
+    ck("改动比例：勾了就进 cfg（法祷护甲 40% → sets+caster 两个键；商店 35%）",
+       _c1.get("rate_sets") == 0.4 and _c1.get("rate_caster") == 0.4 and _c1.get("rate_shop") == 0.35,
+       f"sets={_c1.get('rate_sets')} caster={_c1.get('rate_caster')} shop={_c1.get('rate_shop')}")
+    # 没勾的那条：滑块收起（不勾 = 这一类全改）
+    app._rate_set("shop", False, None)
+    app._refresh_rates()
+    root.update()
+    ck("改动比例：没勾的那条滑块收起来（不勾 = 这一类全改，一眼能看出）",
+       not app.rate_rows["shop"]["scale"].winfo_manager()
+       and bool(app.rate_rows["caster"]["scale"].winfo_manager()),
+       f"法祷路={app.rate_rows['caster']['scale'].winfo_manager()!r} "
+       f"商店路={app.rate_rows['shop']['scale'].winfo_manager()!r}")
+    ck("改动比例：没勾的那条不进 cfg",
+       app._collect().get("rate_shop") is None, f"shop={app._collect().get('rate_shop')}")
+    ck("改动比例：界面上只有这两条（混池/卢恩/护甲/装备 已删）",
+       list(app.rate_rows.keys()) == ["caster", "shop"], f"{list(app.rate_rows.keys())}")
+    # 旧方案（cfg 里那几项都没有）载回来 → 必须回到"全改"，不能留着上一次的勾
     app._lib_apply_cfg()
     root.update()
     _c2 = app._collect()
-    ck("单独比例：旧方案没有这两项 ⇒ 载入后回到跟全局走",
-       _c2.get("rate_sets") is None and _c2.get("rate_domain") is None,
-       f"rate_sets={_c2.get('rate_sets')} rate_domain={_c2.get('rate_domain')}")
+    ck("改动比例：旧方案没有这几项 ⇒ 载入后回到全改",
+       _c2.get("rate_sets") is None and _c2.get("rate_caster") is None and _c2.get("rate_shop") is None,
+       f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')} shop={_c2.get('rate_shop')}")
 
-    # ── 动态：这几条跟着第 1 步的勾选、混合方式、『整套』开关增减 ──
-    #    换混合方式走**真实事件路径**（event_generate 触发下拉框绑定）——
-    #    2026-10-14 的真 bug 正是"下拉换方式后那两组不动"，直接调刷新函数会把它盖过去。
+    # ── 动态：只跟着"勾了哪些类别 / 商店开没开"增减 ──
+    app.shops.set(True)                     # 方案库载入会把商店开关带回方案里的值，这里显式打开
+    app._rate_set("caster", True, 0.4)
+    app._refresh_rates()
+    root.update()
+    app.doms["armor"].set(False); app._toggle_dom("armor"); root.update()
+    ck("改动比例：取消护甲 ⇒ 法祷职业护甲那条收起来（它属于护甲）",
+       not app.rate_rows["caster"]["row"].winfo_manager()
+       and bool(app.rate_rows["shop"]["row"].winfo_manager()),
+       f"法祷={app.rate_rows['caster']['row'].winfo_manager()!r} "
+       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    _c3 = app._collect()
+    ck("改动比例：收起来的那条不会偷偷带进 cfg",
+       _c3.get("rate_sets") is None and _c3.get("rate_caster") is None,
+       f"sets={_c3.get('rate_sets')} caster={_c3.get('rate_caster')}")
+    app.doms["armor"].set(True); app._toggle_dom("armor"); root.update()
+    ck("改动比例：勾回来那条又出现（值记着，勾选框是干净的）",
+       bool(app.rate_rows["caster"]["row"].winfo_manager())
+       and round(app.rate_rows["caster"]["val"].get(), 2) == 0.4
+       and not app.rate_rows["caster"]["on"].get(),
+       f"可见={bool(app.rate_rows['caster']['row'].winfo_manager())} "
+       f"值={round(app.rate_rows['caster']['val'].get(), 2)} 勾={app.rate_rows['caster']['on'].get()}")
+    app.shops.set(False); app._refresh_rates(); root.update()
+    ck("改动比例：关掉商店 ⇒ 商店物品那条收起来（那时商店根本不参与）",
+       not app.rate_rows["shop"]["row"].winfo_manager(),
+       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    app.shops.set(True); app._refresh_rates(); root.update()
+    ck("改动比例：打开商店 ⇒ 商店物品那条回来",
+       bool(app.rate_rows["shop"]["row"].winfo_manager()),
+       f"商店={app.rate_rows['shop']['row'].winfo_manager()!r}")
+    app._rate_set("caster", False); app._rate_set("shop", False); root.update()
+
+    # ── 单独设合理度：只有"真正起作用"的类别才出现（走**真实事件路径**：
+    #    event_generate 触发下拉框绑定 —— 2026-10-14 的真 bug 正是"下拉换方式后两组不动"，
+    #    直接调刷新函数会把它盖过去，所以这里必须走事件）──
     _modes = list(app.cb_mode.cget("values"))
     _i_all = 0
     _i_sep = [i for i, v in enumerate(_modes) if "各自" in v][0]
@@ -2505,59 +2538,10 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
         app.cb_mode.event_generate("<<ComboboxSelected>>")
         root.update()
 
-    _pick_mode(_i_all)
-    ck("动态刷新：换混合方式会触发那两组刷新（真实事件路径）",
-       app._rate_applicable().get("mixed") is True and app._coh_applicable().get("mixed") is True,
-       f"rate={app._rate_applicable()}")
-    ck("改动比例：全部混合时只留「整套 / 混池 / 装备」",
-       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()] == ["sets", "mixed", "weapon"],
-       f"可见={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}")
-    ck("单独合理度：全部混合时只留「混池 / 装备」",
-       [k for k, r in app.coh_rows.items() if r["row"].winfo_manager()] == ["mixed", "weapon"],
-       f"可见={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
-    _pick_mode(_i_sep)
-    ck("换到各自随机：混池那两条消失、类别那几条回来（两组都跟着变）",
-       [k for k, r in app.rate_rows.items() if r["row"].winfo_manager()]
-       == ["sets", "mixed", "rune", "armor", "weapon"][0:1] + ["rune", "armor", "weapon"]
-       and [k for k, r in app.coh_rows.items() if r["row"].winfo_manager()] == ["rune", "armor", "weapon"],
-       f"比例={[k for k, r in app.rate_rows.items() if r['row'].winfo_manager()]}｜"
-       f"合理度={[k for k, r in app.coh_rows.items() if r['row'].winfo_manager()]}")
-
-    app._rate_set("rune", True, 0.6)
-    app.doms["rune"].set(False); app._toggle_dom("rune"); root.update()
-    ck("单独比例：类别没勾就不摆出来（取消卢恩 ⇒ 卢恩那条收起来）",
-       not app.rate_rows["rune"]["row"].winfo_manager()
-       and bool(app.rate_rows["armor"]["row"].winfo_manager()),
-       f"卢恩={app.rate_rows['rune']['row'].winfo_manager()!r} "
-       f"护甲={app.rate_rows['armor']['row'].winfo_manager()!r}")
-    ck("单独比例：收起来的那条不会偷偷带进 cfg",
-       not (app._collect().get("rate_domain") or {}).get("rune"),
-       f"rate_domain={app._collect().get('rate_domain')}")
-    app.doms["rune"].set(True); app._toggle_dom("rune"); root.update()
-    ck("单独比例：勾回来那条又出现（值记着，勾选框是干净的）",
-       bool(app.rate_rows["rune"]["row"].winfo_manager())
-       and round(app.rate_rows["rune"]["val"].get(), 2) == 0.6
-       and not app.rate_rows["rune"]["on"].get(),
-       f"可见={bool(app.rate_rows['rune']['row'].winfo_manager())} "
-       f"值={round(app.rate_rows['rune']['val'].get(), 2)} 勾={app.rate_rows['rune']['on'].get()}")
-    app.doms["armor"].set(False); app._toggle_dom("armor"); root.update()
-    ck("单独比例：取消护甲 ⇒ 整套那条也收起来（整套属于护甲）",
-       not app.rate_rows["sets"]["row"].winfo_manager()
-       and not app.rate_rows["armor"]["row"].winfo_manager(),
-       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
-    app.doms["armor"].set(True); app._toggle_dom("armor"); root.update()
-    app.sets.set(False); app._refresh_rates(); root.update()
-    ck("单独比例：关掉「整套一起换」⇒ 整套那条收起来（那时没有'整套'这条线）",
-       not app.rate_rows["sets"]["row"].winfo_manager(),
-       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
-    app.sets.set(True); app._refresh_rates(); root.update()
-    ck("单独比例：打开「整套一起换」⇒ 整套那条回来",
-       bool(app.rate_rows["sets"]["row"].winfo_manager()),
-       f"整套={app.rate_rows['sets']['row'].winfo_manager()!r}")
-
-    # ── 单独设合理度：只有"真正起作用"的类别才出现（同样走真实事件路径）──
     app.nb.select(app.page_set); root.update()
     _pick_mode(_i_all)
+    ck("动态刷新：换混合方式会触发两组刷新（真实事件路径）",
+       app._coh_applicable().get("mixed") is True, f"coh={app._coh_applicable()}")
     _ca = app._coh_applicable()
     ck("单独合理度：全部混合时只有「混池」与「装备」（卢恩/护甲整类进了混池）",
        _ca["mixed"] and _ca["weapon"] and not _ca["rune"] and not _ca["armor"], f"{_ca}")
