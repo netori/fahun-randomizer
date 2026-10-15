@@ -1,7 +1,8 @@
 # N网（Nexus Mods）发布页文案 —— 直接复制粘贴用
 
 > 上传入口：<https://www.nexusmods.com/> → 右上头像 → **Upload a mod** → 游戏选 **Elden Ring** →
-> 类型选 **Modding Tools / Utilities**（不是 "Gameplay"）→ 上传 `发布包/ConvergenceClassItemRandomizer_v1.2.0.zip`。
+> ⚠️ 这条 mod 已经挂在 **Gameplay** 分类下（mods/11323）—— **别改分类**；更新走同一页的 *Upload new version*，版本号 `1.2.0`。
+> 上传文件：`发布包/ConvergenceClassItemRandomizer_v1.2.0.zip`。
 
 ---
 
@@ -158,7 +159,7 @@ Unofficial fan tool; not affiliated with FromSoftware, Bandai Namco or The Conve
 
 | 字段 | 建议 |
 |---|---|
-| Category | **Modding Tools / Utilities**（别选 Gameplay） |
+| Category | **保持现状 Gameplay**（这条 mod 已在 Gameplay 下，改分类像开新页面） |
 | Version | `1.2.0`（引擎版本 1.1；上一个发布标签是 v1.1.0·10-13） |
 | Requirements | 无硬依赖；正文里写出"要装 The Convergence + 中文版" |
 | Permissions | 建议：**允许转载/整合**（Mod packs: Yes / Other authors: Yes，看你自己意愿；不允许上传到别站收费） |
