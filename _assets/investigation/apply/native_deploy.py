@@ -77,7 +77,7 @@ def find_original(pattern):
     return hits[0] if hits else None
 
 
-def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None):
+def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=None):
     relocate()
     # ── 打包版：把「所有会写文件的路径」重定位到 exe 旁边那份工作区 ──
     # 这些目录原本按"代码所在位置"拼，打包后那指向临时解包目录，
@@ -207,6 +207,26 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None):
     # ④ regulation
     rep = native_apply.apply_native(plan_csv, source=reg, out_path=reg, verify=True, quiet=True)
     log(f"[④] regulation：写入 {sum(v['applied'] for v in rep['stats'].values())} 格，跳过 {len(rep['skipped'])}；回读校验通过")
+
+    # ④a 敌人随机（与物品随机**同一次部署**写入）
+    #     为什么必须在一起：本函数开头会先把 regulation 复原成原始版，
+    #     所以"物品"和"敌人"两套改动必须在这一次里先后落盘，否则后者会把前者冲掉。
+    #     两边写的是不同的表（物品=ItemLotParam*/ShopLineupParam；敌人=NpcParam），互不干扰。
+    #     计划是**现场按 cfg 生成**的：同种子 ⇒ 同一份计划（可复现、也不用把大文件塞进方案库）。
+    if enemy_cfg and enemy_cfg.get("on"):
+        import enemy_randomizer as er
+        _u, _plan, _warn, _issues = er.plan_for_cfg(enemy_cfg)
+        for _w in _warn:
+            log(f"[④a] 警告：{_w}")
+        if _issues:
+            raise RuntimeError(f"敌人随机自检未通过（{len(_issues)} 项）：{_issues[:3]}")
+        _tmp = os.path.join(LOG, f"enemy_plan_{ts}.csv")
+        er.write_plan(_plan, _u, _tmp)
+        _res = er.apply_plan(er.read_plan(_tmp), source=reg, out_path=reg, verify=True, quiet=True)
+        log(f"[④a] 敌人随机：整行置换 {_res['rows']} 行"
+            f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
+        rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],
+                             "fingerprint": _res["fingerprint"], "plan": os.path.basename(_tmp)})
     rec["steps"].append({"step": "regulation", "ok": not rep["skipped"], "stats": rep["stats"],
                          "skipped": rep["skipped"], "bytes_changed": rep["changed_bytes"]})
 
