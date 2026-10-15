@@ -520,14 +520,20 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
     """
     plain = plain if plain is not None else load_plain(reg_path)
     units = load_units(plain)
+    if names is None:
+        names = load_name_table()
     classify(units, class_table if class_table is not None
              else load_class_table(os.environ.get("ENEMY_CLASS_TABLE")),
-             names=names if names is not None else load_name_table())
+             names=names)
     cfg = {"seed": enemy_cfg.get("seed", 20261015),
            "enemy_rate": float(enemy_cfg.get("rate", 1.0)),
            "enemy_pools": enemy_cfg.get("pools") or CLASS_ORDER,
            "enemy_source": enemy_cfg.get("source") or "all"}
     plan, warn = make_plan(units, cfg)
+    if not names and not class_table:
+        # 少了名字表就分不出"友好 NPC"，可能把它们也换掉 —— 必须说出来，不静默
+        warn.append("名字表缺失（investigation/enemy_table.csv 不在）—— 无法识别友好 NPC，"
+                    "本次可能把 NPC 也换掉；请确认这个文件在")
     issues = verify_plan(units, plan, cfg)
     return units, plan, warn, issues
 

@@ -43,7 +43,9 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/randomization-catalog-review/evidence/starter_set_freeze.json",
         "investigation/randomization-dryrun/evidence/shop_analysis.json",
         "investigation/randomization-dryrun/guide_candidate_draft.csv",
-        "investigation/randomization-dryrun/class_candidate_draft.csv"]
+        "investigation/randomization-dryrun/class_candidate_draft.csv",
+        # 敌人随机要用：它不只是名字表 —— 友好 NPC 的排除规则依赖它（缺了会把 NPC 也换掉）
+        "investigation/enemy_table.csv"]
 BASELINE = ["GoodsCaption.fmg.xml", "PlaceName.fmg.xml", "PlaceName_dlc01.fmg.xml", "PlaceName_dlc02.fmg.xml"]
 
 
