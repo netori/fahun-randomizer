@@ -791,6 +791,34 @@ class App:
         # ── 右：详情（常驻，取代弹窗）──
         right = ttk.LabelFrame(wrap, text=" 详情 ", padding=(px(12), px(8)))
         right.grid(row=0, column=1, sticky="nsew")
+        # 底部两块**先**建好：pack 是"先到先占位"，它们先占住底部，滚动区才能吃剩下的空间
+        # （2026-10-15 作者反馈：详情做细之后内容超一屏、滚不动，只能全屏才看得全）
+        trow2 = ttk.Frame(right)
+        trow2.pack(side="bottom", fill="x", pady=(8, 0))
+        self.lib_toast = ttk.Label(trow2, text="", style="Hint.TLabel", wraplength=px(250),
+                                   justify="left")
+        self.lib_toast.pack(side="left", fill="x", expand=True)
+        self.lib_trash_btn = ttk.Button(trow2, text="打开回收站", style="Link.TButton",
+                                        command=self._lib_open_trash)
+        # 详情面板的动作按钮（对着选中的那一个方案干活）
+        act = ttk.Frame(right)
+        act.pack(side="bottom", fill="x", pady=(10, 0))
+        act.columnconfigure(0, weight=1)
+        act.columnconfigure(1, weight=1)
+        self.lib_btns = {}
+        for i, (key, text, cmd, sty) in enumerate((
+                ("write", "写入游戏", self._lib_write, "Accent.TButton"),
+                ("dup", "复制一份", self._lib_dup, "TButton"),
+                ("load", "载入到设置", self._lib_apply_cfg, "TButton"),
+                ("star", "收藏 ★", self._lib_star, "TButton"),
+                ("export", "导出…", self._lib_export, "TButton"),
+                ("delete", "删除", self._lib_delete, "Danger.TButton"))):
+            b = ttk.Button(act, text=text, command=cmd, style=sty)
+            b.grid(row=i // 2, column=i % 2, sticky="ew", padx=(0 if i % 2 == 0 else 6, 0),
+                   pady=(0, 6))
+            self.lib_btns[key] = b
+        # 其余详情内容全部进**滚动区**（滚轮只在鼠标进详情区时接管，离开就还回去）
+        right = self._scrollable(right)
         self.lib_title = ttk.Label(right, text="还没选方案", style="Title.TLabel", wraplength=px(300))
         self.lib_title.pack(anchor="w")
         self.lib_sub = ttk.Label(right, text="左边点一行，这里就是它的全部信息", style="Hint.TLabel")
@@ -833,31 +861,6 @@ class App:
                 v = ttk.Label(row, text="—", wraplength=px(280), justify="left")
                 v.pack(side="left", fill="x", expand=True)
                 self.lib_vals[key] = v
-        # 底部一行：说清刚刚发生了什么（删除后可以从这里进回收站）
-        trow2 = ttk.Frame(right)
-        trow2.pack(side="bottom", fill="x", pady=(8, 0))
-        self.lib_toast = ttk.Label(trow2, text="", style="Hint.TLabel", wraplength=px(250),
-                                   justify="left")
-        self.lib_toast.pack(side="left", fill="x", expand=True)
-        self.lib_trash_btn = ttk.Button(trow2, text="打开回收站", style="Link.TButton",
-                                        command=self._lib_open_trash)
-        # 详情面板的动作按钮（对着选中的那一个方案干活）
-        act = ttk.Frame(right)
-        act.pack(side="bottom", fill="x", pady=(10, 0))
-        act.columnconfigure(0, weight=1)
-        act.columnconfigure(1, weight=1)
-        self.lib_btns = {}
-        for i, (key, text, cmd, sty) in enumerate((
-                ("write", "写入游戏", self._lib_write, "Accent.TButton"),
-                ("dup", "复制一份", self._lib_dup, "TButton"),
-                ("load", "载入到设置", self._lib_apply_cfg, "TButton"),
-                ("star", "收藏 ★", self._lib_star, "TButton"),
-                ("export", "导出…", self._lib_export, "TButton"),
-                ("delete", "删除", self._lib_delete, "Danger.TButton"))):
-            b = ttk.Button(act, text=text, command=cmd, style=sty)
-            b.grid(row=i // 2, column=i % 2, sticky="ew", padx=(0 if i % 2 == 0 else 6, 0),
-                   pady=(0, 6))
-            self.lib_btns[key] = b
         self._lib_cur = None
         self._lib_metas = {}
 
@@ -2495,6 +2498,34 @@ def uitest():
            "写入" in _lk["wrote"], f"写入记录={_lk['wrote']!r}")
         ck("详情是常驻面板（不是弹窗）", not getattr(app, "_libwin", None),
            "没有额外的 Toplevel")
+        # 详情能滚动（2026-10-15 作者报："详情那一栏无法用滑轮上下移动，一部分文本只能全屏才看得到"）
+        def _anc(w):
+            out, cur = [], w
+            while cur is not None:
+                out.append(cur)
+                cur = getattr(cur, "master", None)
+            return out
+
+        def _canvas_of(w):
+            return next((a for a in _anc(w) if isinstance(a, tk.Canvas)), None)
+
+        _c_detail = _canvas_of(app.lib_title)
+        ck("详情内容装进了滚动区（能滚轮上下移）",
+           _c_detail is not None and _canvas_of(app.lib_btns["write"]) is None
+           and _canvas_of(app.lib_toast) is None,
+           f"标题在滚动区={_c_detail is not None}｜按钮在滚动区={_canvas_of(app.lib_btns['write']) is not None}")
+        _geo0 = root.geometry()
+        root.geometry("1100x420"); root.update()
+        _y0 = _c_detail.yview() if _c_detail else (0, 0)
+        if _c_detail:
+            _c_detail.yview_scroll(3, "units")
+        root.update()
+        _y1 = _c_detail.yview() if _c_detail else (0, 0)
+        ck("窗口缩小时详情真的能滚（滚完按钮还在）",
+           _c_detail is not None and (_y1[0] > _y0[0] or _y1[1] < 1.0)
+           and bool(app.lib_btns["write"].winfo_ismapped()),
+           f"yview {tuple(round(x, 3) for x in _y0)} → {tuple(round(x, 3) for x in _y1)}")
+        root.geometry(_geo0); root.update()
 
         # 切回方案库页要自己刷新（不然在别处存了方案、回到这页看不见）
         planlib.save_plan(rows[:30], "新来的", cfg={"seed": 20261012}, seed=20261012)
