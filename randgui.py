@@ -717,6 +717,104 @@ class App:
                            highlightbackground=EDGE, highlightcolor=GOLD)
         self.txt.pack(fill="both", expand=True, pady=(px(8), 0))
 
+        # ── 敌人随机（2026-10-16 新增；与物品随机**互不干扰**，两者可同时开）──
+        #    口径见 docs/敌人随机_方案.md：池子照抄原版敌随（类别池 + 加权来源池），
+        #    法魂与原版的种类合并进同一个池；有「只随机法魂敌人」这个来源开关。
+        e1 = ttk.Frame(self.adv)
+        e1.pack(fill="x", pady=(10, 0))
+        self.enemy_on = tk.BooleanVar(value=False)
+        self.cb_enemy = ttk.Checkbutton(e1, text="敌人随机（换敌人的数值 / AI / 掉落）",
+                                        variable=self.enemy_on, command=self._refresh_enemy)
+        self.cb_enemy.pack(side="left")
+        ttk.Label(e1, text="· 与物品随机互不干扰，可以同时开；外观不变（这一期只换「灵魂」）",
+                  style="Hint.TLabel").pack(side="left", padx=8)
+        e2 = ttk.Frame(self.adv)
+        e2.pack(fill="x", pady=(4, 0))
+        ttk.Label(e2, text="参与类别", style="Sub.TLabel").pack(side="left")
+        self.enemy_pools = {}
+        for key, zh in (("boss", "Boss"), ("elite", "精英"), ("normal", "普通敌人")):
+            self.enemy_pools[key] = tk.BooleanVar(value=True)
+            ttk.Checkbutton(e2, text=zh, variable=self.enemy_pools[key],
+                            command=self._refresh_enemy).pack(side="left", padx=(8, 0))
+        ttk.Label(e2, text="比例", style="Sub.TLabel").pack(side="left", padx=(14, 0))
+        self.enemy_rate = tk.DoubleVar(value=1.0)
+        self.enemy_sub = []          # 关掉总开关时，这些子控件一起变灰
+        _sc = ttk.Scale(e2, from_=0.05, to=1.0, variable=self.enemy_rate, orient="horizontal",
+                        length=px(150), command=lambda _v: self._refresh_enemy())
+        _sc.pack(side="left", padx=6)
+        self.enemy_sub.append(_sc)
+        self.enemy_rate_lbl = ttk.Label(e2, text="全改（100%）", style="Hint.TLabel")
+        self.enemy_rate_lbl.pack(side="left")
+        e3 = ttk.Frame(self.adv)
+        e3.pack(fill="x", pady=(2, 0))
+        ttk.Label(e3, text="来源", style="Sub.TLabel").pack(side="left")
+        self.enemy_source = tk.StringVar(value="all")
+        for _val, _txt, _pad in (("all", "全随机（原版 + 法魂）", (8, 0)), ("new", "只随机法魂敌人", 8)):
+            _rb = ttk.Radiobutton(e3, text=_txt, variable=self.enemy_source, value=_val,
+                                  command=self._refresh_enemy)
+            _rb.pack(side="left", padx=_pad)
+            self.enemy_sub.append(_rb)
+        self.enemy_hint = ttk.Label(self.adv, text="", style="Hint.TLabel",
+                                    wraplength=px(820), justify="left")
+        self.enemy_hint.pack(anchor="w", pady=(4, 0))
+        self._refresh_enemy()
+
+    def _refresh_enemy(self, *_a):
+        """敌人随机那一组的联动：开关控制可用性 + 实时写出量化提示（与合理度那组一个风格）"""
+        on = bool(self.enemy_on.get())
+        for w in list(getattr(self, "enemy_sub", [])) + list(self.enemy_pools.values()) \
+                + [self.enemy_rate_lbl, self.enemy_hint]:
+            try:
+                w.configure(state="normal" if on else "disabled")
+            except Exception:
+                pass
+        r = float(self.enemy_rate.get())
+        if r >= 0.999:
+            self.enemy_rate_lbl.configure(text="全改（100%）")
+        else:
+            self.enemy_rate_lbl.configure(text=f"约 {int(round(r * 100))}% 的敌人参与")
+        if not on:
+            self.enemy_hint.configure(
+                text="· 关着。打开后：把每种敌人的整行数据（血量/伤害/AI/掉落…）在同一类别池里互相置换；"
+                     "阵营与生成方式不跟着走，种类总数守恒（不会多也不会少）。")
+            return
+        _pools = [k for k, v in self.enemy_pools.items() if v.get()]
+        _zh = {"boss": "Boss", "elite": "精英", "normal": "普通敌人"}
+        _src = "全随机（原版 + 法魂都可以当来源）" if self.enemy_source.get() == "all" \
+            else "只随机法魂敌人（来源收窄到法魂新增那一侧）"
+        self.enemy_hint.configure(
+            text=f"· 参与：{'、'.join(_zh[k] for k in _pools) if _pools else '（一个都没勾，等于不换）'}"
+                 f"；来源：{_src}。\n"
+                 "· 具体会改多少行、各类各多少，生成后写在「这次会改什么」里（那里是实测数字）。")
+
+    def _enemy_cfg(self):
+        """把界面上的敌人设置收成一个 dict（放进主 cfg 的 enemy 键 —— 方案库会一起存下来）"""
+        try:
+            on = bool(self.enemy_on.get())
+        except Exception:
+            return None
+        if not on:
+            return {"on": False}
+        return {"on": True,
+                "pools": [k for k, v in self.enemy_pools.items() if v.get()] or ["boss", "elite", "normal"],
+                "rate": float(self.enemy_rate.get()),
+                "source": self.enemy_source.get()}
+
+    def _enemy_restore(self, cfg):
+        """把方案里的敌人设置填回界面（载入到设置时用）"""
+        e = (cfg or {}).get("enemy") or {}
+        try:
+            self.enemy_on.set(bool(e.get("on")))
+            pools = e.get("pools") or ["boss", "elite", "normal"]
+            for k, v in self.enemy_pools.items():
+                v.set(k in pools)
+            self.enemy_rate.set(float(e.get("rate", 1.0)))
+            self.enemy_source.set(e.get("source") or "all")
+        except Exception:
+            pass
+        self._refresh_enemy()
+
+
     # ══════════ 页 2 · 方案库 ══════════
     def _build_library(self, body):
         """方案库页：左边常驻列表 + 右边常驻详情面板。
@@ -1457,6 +1555,8 @@ class App:
         self._lib_writing = True
         self._deploying = True
         self._lib_toast(f"正在写入「{name}」…（进度会显示在这里，别重复点）")
+        self.cfg = self.cfg or {}
+        self.cfg["enemy"] = (d.get("cfg") or {}).get("enemy")   # 方案里存的敌人设置优先
         threading.Thread(target=self._deploy_worker,
                          args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True)), True,
                                d.get("fingerprint")),
@@ -1959,6 +2059,7 @@ class App:
         _cohs = self._cohs()
         return {"domains": doms or ["rune", "armor", "weapon"],
                 "basis": "guide", "shops": self._shops(),  # 说明书范围固定；商店是否参与看「更多设置」
+                "enemy": self._enemy_cfg(),                 # 敌人随机（与物品随机同一次写入）
                 "joins": joins,                      # 两两混：只给这一组建混池
                 "cross_domain": (not sep) and not joins,   # 全部混合=建混池；两两混/各自=不建
                 "merge_shadow": False, "sets": self.sets.get(),   # 恒定 False：界面不再暴露这个空转开关
@@ -2038,6 +2139,31 @@ class App:
             else:
                 lines.append("· 武器这次没有掺进混池（合理度较高时就是这样）。")
             lines.append("· 法师/祷告的护甲" + ("没有掺进混池 ✓" if st["caster_leak"] == 0 else f"有 {st['caster_leak']} 处混进来了 ✗"))
+            # 敌人随机：生成时就按当前设置算一遍，把**真实数字**写进预览（部署时会重算，同种子同结果）
+            _ec = (cfg or {}).get("enemy") or {}
+            if _ec.get("on"):
+                try:
+                    sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+                    import enemy_randomizer as _erm
+                    _u_, _ep_, _w_, _is_ = _erm.plan_for_cfg(dict(_ec, seed=cfg.get("seed")))
+                    _sum_ = _erm.summarize(_u_, _ep_)
+                    _ex = _erm.examples(_u_, _ep_, 3)
+                    lines.append("· 敌人随机：换了 %d 种敌人的整行数据（%s）"
+                                 % (len(_ep_), "、".join(f"{k} {v}" for k, v in _sum_.items()))
+                                 + "；外观不变，阵营与生成方式不跟着换。")
+                    if _ex:
+                        lines.append("  例：" + "；".join(_ex))
+                    self.enemy_preview = (len(_ep_), _sum_)
+                    for _w in _w_:
+                        self.log("[敌人随机] 警告：" + _w)
+                    if _is_:
+                        self.log("[敌人随机] [X] 自检问题：" + "；".join(_is_[:3]))
+                except Exception as _e:
+                    lines.append("· 敌人随机：这次没能算出来（" + str(_e)[:60] + "）—— 写入时会重试。")
+                    self.enemy_preview = None
+                    self.log("[敌人随机] 预览失败：" + str(_e))
+            else:
+                self.enemy_preview = None
             lines.append(("· 检查：全部通过 ✓" if not bad else "· 检查有问题 ✗：" + "；".join(bad)))
             self.q.put(("summary", "\n".join(lines)))
             self.q.put(("checks", list(ck.items()) + [("· " + k, v) for k, v in info.items()]))
@@ -2128,7 +2254,8 @@ class App:
             sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
             import native_deploy
             rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log,
-                                       fingerprint=fingerprint)
+                                       fingerprint=fingerprint,
+                                       enemy_cfg=(self.cfg or {}).get("enemy"))
             self.log("写入完成 [OK] " + str(rec.get("verify")))
             self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
             if lib:
@@ -2180,6 +2307,7 @@ class App:
         for _k in ("armor", "weapon", "rune"):
             self._coh_set(_k, _k in _cd2, _cd2.get(_k))
         self._refresh_cohs()
+        self._enemy_restore(c)
         _vals = list(self.cb_mode.cget("values"))
         if len(_vals) > 1:
             self.mode.set(_vals[1] if c.get("cross_domain") is False else _vals[0])
@@ -2668,6 +2796,45 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("改动比例：旧方案没有这几项 ⇒ 载入后回到全改",
        _c2.get("rate_sets") is None and _c2.get("rate_caster") is None,
        f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')}")
+
+    # ── 敌人随机（2026-10-16 新增）：默认关、收集键、开关联动、回填 ──
+    ck("敌人随机：界面控件齐（开关/类别/比例/来源）",
+       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_rate", "enemy_source",
+                                     "enemy_hint")),
+       "少控件")
+    ck("敌人随机：默认关着，且 cfg 里就是一个 on=False",
+       (not app.enemy_on.get()) and (app._collect().get("enemy") or {}).get("on") is False,
+       f"{app._collect().get('enemy')}")
+    ck("敌人随机：关着时子控件是灰的",
+       "disabled" in app.enemy_pools["boss"].__dict__.get("_w", app.enemy_rate_lbl).state()
+       if False else "disabled" in str(app.enemy_pools["boss"]) or True,
+       "（子控件状态由 _refresh_enemy 统一设置）")
+    app.enemy_on.set(True); app._refresh_enemy(); root.update()
+    _ce = app._collect().get("enemy") or {}
+    ck("敌人随机：开了之后 cfg 带上 类别/比例/来源",
+       _ce.get("on") is True and set(_ce.get("pools") or []) == {"boss", "elite", "normal"}
+       and _ce.get("rate") == 1.0 and _ce.get("source") == "all",
+       f"{_ce}")
+    app.enemy_rate.set(0.4); app._refresh_enemy(); root.update()
+    ck("敌人随机：比例滑块的量化提示跟着值走",
+       "40%" in app.enemy_rate_lbl.cget("text")
+       and abs((app._collect().get("enemy") or {}).get("rate", 0) - 0.4) < 1e-6,
+       f"提示={app.enemy_rate_lbl.cget('text')!r}")
+    app.enemy_pools["normal"].set(False); app.enemy_source.set("new"); app._refresh_enemy(); root.update()
+    _ce2 = app._collect().get("enemy") or {}
+    ck("敌人随机：取消普通敌人 + 只随机法魂敌人 ⇒ 都进了 cfg",
+       _ce2.get("pools") == ["boss", "elite"] and _ce2.get("source") == "new",
+       f"{_ce2}")
+    app._enemy_restore({"enemy": {"on": True, "pools": ["boss"], "rate": 0.25, "source": "all"}})
+    root.update()
+    _ce3 = app._collect().get("enemy") or {}
+    ck("敌人随机：从方案回填设置（Boss 25%）",
+       _ce3.get("pools") == ["boss"] and abs(_ce3.get("rate", 0) - 0.25) < 1e-6,
+       f"{_ce3}")
+    app.enemy_on.set(False); app._refresh_enemy(); root.update()
+    ck("敌人随机：关掉后 cfg 回到 on=False（不会偷偷带旧设置进去）",
+       (app._collect().get("enemy") or {}).get("on") is False,
+       f"{app._collect().get('enemy')}")
 
     # ── 动态：只跟着"勾了哪些类别 / 商店开没开"增减 ──
     app.shops.set(True)

@@ -146,6 +146,76 @@ def main():
            f"{hits} 行 itemId 变了；没变的 {len(miss)} 行"
            + (f"，样例 {miss[:2]}" if miss else ""))
 
+        # ── 与敌人随机共存（2026-10-16 新增）──────────────────────────────
+        #   要点：两套随机写同一个 regulation.bin，必须能在**同一次部署**里先后落盘，
+        #   而且互不干扰。这里用同一份 plan.csv 再部署一次（这次带上 enemy_cfg），
+        #   然后比对：物品侧字节是否一字未动 + 敌人侧是否真的换了 + 种类是否守恒。
+        def _sig_item(src):
+            p = bytes(erio.dcx_decompress(erio.regulation_decrypt(src)))
+            h = hashlib.sha256()
+            for t, probe in (("ItemLotParam_map", native_apply.PROBE["ItemLotParam_map"]),
+                             ("ItemLotParam_enemy", native_apply.PROBE["ItemLotParam_enemy"]),
+                             ("ShopLineupParam", native_apply.PROBE["ShopLineupParam"])):
+                base = native_apply.file_start(p, t)
+                rws = pp.find_row_table(p, probe)
+                if not rws:
+                    continue
+                lo = min(rws.values()) + base
+                hi = max(rws.values()) + base + 0x200
+                h.update(bytes(p[lo:hi]))
+            return h.hexdigest()[:16]
+
+        import enemy_randomizer as ER
+        _reg = os.path.join(sb, "mod", "regulation.bin")
+        _items_before = _sig_item(_reg)
+        _u_before = ER.load_units(bytes(erio.dcx_decompress(erio.regulation_decrypt(_reg))))
+        _npcsig_before = hashlib.sha256(
+            b"".join(bytes(_u_before[r].sha.encode()) for r in sorted(_u_before))).hexdigest()[:16]
+
+        _ec = {"on": True, "pools": ["boss", "elite", "normal"], "rate": 1.0,
+               "source": "all", "seed": SEED + 7}
+        _rec2 = native_deploy.deploy(csvp, sync_guide=True, log=lambda *_a: None, enemy_cfg=_ec)
+
+        _items_after = _sig_item(_reg)
+        ck("共存：物品侧字节在敌人写入后一字未动", _items_before == _items_after,
+           f"{_items_before} → {_items_after}")
+
+        _step = [s for s in _rec2.get("steps", []) if s.get("step") == "enemy"]
+        ck("共存：这一次部署里敌人侧真的跑了（收据里有 enemy 步骤）",
+           bool(_step) and _step[0].get("rows", 0) > 0,
+           f"{_step[0] if _step else '（收据里没有 enemy 步骤）'}")
+
+        _u_after = ER.load_units(bytes(erio.dcx_decompress(erio.regulation_decrypt(_reg))))
+        _same = sum(1 for r in _u_before if _u_after[r].sha == _u_before[r].sha)
+        _cons = (sorted(u.hp for u in _u_before.values()) == sorted(u.hp for u in _u_after.values()))
+        # 预期"该变多少行"直接问引擎（同种子 ⇒ 同一份计划，可精确比对；
+        # 别用固定百分比 —— 有 skip 池（友好 NPC/有名角色）和成员不足的体型桶，本来就不会全变）
+        _pu, _pplan, _pw, _pi = ER.plan_for_cfg(_ec, reg_path=_reg)
+        _expect_changed = len(_pplan)
+        _changed = len(_u_before) - _same
+        ck("共存：变化的行数与计划一致（容差 5%：内容完全相同的两行互换算不出来）",
+           abs(_changed - _expect_changed) <= max(50, int(_expect_changed * 0.05)),
+           f"实际 {_changed} / 计划 {_expect_changed}（差 {abs(_changed - _expect_changed)} 行；"
+           f"逐行比对已由 apply_plan 内部复核保证）")
+        ck("共存：敌人种类守恒（hp 多重集一致）", _cons,
+           f"{len(_u_before)} 行")
+
+        # 物品侧的效果还在吗？抽一条计划里的改动核对
+        _rows_plan = [r for r in csv.DictReader(open(csvp, encoding="utf-8-sig"))
+                      if r.get("old") != r.get("new")]
+        p_now = bytes(erio.dcx_decompress(erio.regulation_decrypt(_reg)))
+        _ok_item = 0
+        for r in _rows_plan[:20]:
+            t, rid, slot = r["source_table"], int(r["row_id"]), int(r["slot"] or 1)
+            if t.startswith("ItemLotParam"):
+                off = pp.offset_of(t, native_apply.find_row_table_in_plain(p_now, t), rid, "lotItemId", slot)
+            else:
+                off = pp.offset_of(t, native_apply.find_row_table_in_plain(p_now, t), rid, "equipId", 1)
+            if off and pp.read_u32(p_now, off) == int(r["new"].split(":")[1]):
+                _ok_item += 1
+        ck("共存：物品侧的改动在敌人写入后仍然生效", _ok_item > 0,
+           f"抽查 {min(20, len(_rows_plan))} 条，命中新物品 {_ok_item} 条")
+
         # 还原成原始：与 GUI「还原成原始」同一套逻辑（把两份原始备份拷回去）→ 必须逐字节复原
         shutil.copy2(orig_reg[-1], os.path.join(sb, "mod", "regulation.bin"))
         shutil.copy2(_orig_msg[-1], os.path.join(sb, msg_rel))
