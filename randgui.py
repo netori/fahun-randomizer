@@ -752,7 +752,8 @@ class App:
         on = bool(self.enemy_on.get())
         for w in list(getattr(self, "enemy_sub", [])) \
                 + list(self.enemy_pools.values()) + list(getattr(self, "enemy_cls_rates", {}).values()) \
-                + [self.enemy_rate_lbl, self.enemy_hint, self.enemy_seed_e]:
+                + [w for w in (getattr(self, "enemy_rate_lbl", None), self.enemy_hint,
+                               self.enemy_seed_e, getattr(self, "enemy_hp_lbl", None)) if w is not None]:
             try:
                 w.configure(state="normal" if on else "disabled")
             except Exception:
@@ -767,9 +768,11 @@ class App:
                                     else "%.0f%%" % (float(v.get()) * 100)))
             except Exception:
                 pass
-        r = float(self.enemy_rate.get())
-        self.enemy_rate_lbl.configure(text="全改（100%）" if r >= 0.999
-                                      else "约 %d%% 的敌人参与" % round(r * 100))
+        # 血量系数标签（参考实现里"缩放敌人血量"那一项）
+        if hasattr(self, "enemy_hp_lbl"):
+            _f = float(self.enemy_hp_scale.get())
+            self.enemy_hp_lbl.configure(text=("%.2f×（不变）" % _f) if abs(_f - 1.0) < 0.005
+                                        else "%.2f×" % _f)
         if not on:
             self.enemy_hint.configure(
                 text="· 关着。打开后：把每种敌人的整行数据（血量/伤害/AI/掉落…）在同一类别池里互相置换；"
@@ -886,7 +889,8 @@ class App:
         rates = {k: round(float(v.get()), 3) for k, v in self.enemy_cls_rates.items()
                  if self.enemy_pools[k].get() and float(v.get()) > 0}
         d = {"on": True, "pools": list(rates) or ["boss", "elite", "normal"],
-             "rates": rates, "rate": float(self.enemy_rate.get()),
+             "rates": rates,
+             "rate": float(self.enemy_rate.get()) if hasattr(self, "enemy_rate") else 1.0,
              "source": self.enemy_source.get(),
              "ignore_size": bool(self.enemy_ignore_size.get()),
              "visual": bool(self.enemy_visual.get()),
@@ -897,6 +901,9 @@ class App:
         _ty = self._enemy_types_picked()
         if _ty:
             d["types"] = _ty
+        if getattr(self, "enemy_hp_scale_on", None) is not None and self.enemy_hp_scale_on.get():
+            d["hp_scale"] = round(float(self.enemy_hp_scale.get()), 3)
+            d["hp_scale_multiphase_half"] = bool(self.enemy_mp_scale.get())
         if self.enemy_seed_sep.get():
             try:
                 d["seed"] = int(str(self.enemy_seed.get()).strip())
@@ -920,7 +927,13 @@ class App:
                     sv.set(float(e.get("rate", 1.0)))
                 else:
                     sv.set(0.0)
-            self.enemy_rate.set(float(e.get("rate", 1.0)))
+            if hasattr(self, "enemy_rate"):
+                self.enemy_rate.set(float(e.get("rate", 1.0)))
+            if getattr(self, "enemy_hp_scale_on", None) is not None:
+                _hs = e.get("hp_scale") or 1.0
+                self.enemy_hp_scale_on.set(abs(float(_hs) - 1.0) > 0.005)
+                self.enemy_hp_scale.set(float(_hs))
+                self.enemy_mp_scale.set(bool(e.get("hp_scale_multiphase_half", True)))
             self.enemy_ignore_size.set(bool(e.get("ignore_size")))
             if e.get("seed"):
                 self.enemy_seed_sep.set(True)
@@ -1000,11 +1013,7 @@ class App:
         glob.pack(fill="x", pady=(px(10), 0))
         gr = ttk.Frame(glob)
         gr.pack(fill="x")
-        ttk.Label(gr, text="总比例", style="Sub.TLabel").pack(side="left")
-        tot_v = tk.DoubleVar(value=float(self.enemy_rate.get()))
-        ttk.Scale(gr, from_=0.05, to=1.0, variable=tot_v, orient="horizontal",
-                  length=px(160)).pack(side="left", padx=px(8))
-        ttk.Label(gr, text="　来源", style="Sub.TLabel").pack(side="left")
+        ttk.Label(gr, text="来源", style="Sub.TLabel").pack(side="left")
         src_v = tk.StringVar(value=str(self.enemy_source.get()))
         ttk.Radiobutton(gr, text="全随机（原版 + 法魂）", variable=src_v, value="all").pack(side="left", padx=px(4))
         ttk.Radiobutton(gr, text="只随机法魂敌人", variable=src_v, value="new").pack(side="left", padx=px(4))
@@ -1069,7 +1078,7 @@ class App:
             try:
                 d = {"pools": [k for k, v in rows.items() if v.get() > 0],
                      "rates": {k: round(v.get(), 3) for k, v in rows.items() if v.get() > 0},
-                     "rate": float(tot_v.get()), "source": src_v.get(),
+                     "source": src_v.get(),
                      "ignore_size": bool(sz_v.get()), "visual": bool(vi_v.get())}
                 json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
                 self.log(f"敌人预设已导出 → {p}")
@@ -1085,7 +1094,6 @@ class App:
                 d = json.load(open(p, encoding="utf-8"))
                 for k, v in rows.items():
                     v.set(float((d.get("rates") or {}).get(k, d.get("rate", 1.0) if k in (d.get("pools") or []) else 0.0)))
-                tot_v.set(float(d.get("rate", 1.0)))
                 src_v.set(d.get("source") or "all")
                 sz_v.set(bool(d.get("ignore_size")))
                 vi_v.set(bool(d.get("visual")))
@@ -1098,7 +1106,6 @@ class App:
         def reset():
             for k in rows:
                 rows[k].set(1.0)
-            tot_v.set(1.0)
             src_v.set("all")
             sz_v.set(False)
             vi_v.set(False)
@@ -1110,7 +1117,6 @@ class App:
             for k, v in rows.items():
                 self.enemy_cls_rates[k].set(float(v.get()))
                 self.enemy_pools[k].set(float(v.get()) > 0)
-            self.enemy_rate.set(float(tot_v.get()))
             self.enemy_source.set(src_v.get())
             self.enemy_ignore_size.set(bool(sz_v.get()))
             self.enemy_visual.set(bool(vi_v.get()))
@@ -1133,39 +1139,131 @@ class App:
 
     # ── 页 2 · 敌人随机 ──
     def _build_enemy_page(self, body):
-        """敌人随机独立一页：设置 + 只写入敌人（做成方案层）+ 用这个方案玩。
+        """敌人随机页 —— 分组名与项目顺序照参考实现（thefifthmatt ER Randomizer）的原文。
 
-        为什么单独开一页：物品与敌人是两套独立的随机（写不同的表、独立的随机流），
-        混在「更多设置」里既不好找，也容易让人以为必须一起开。
-        但**写入**仍然建议合成一层 —— 两边的产物都落在 regulation.bin 里，
-        分两个方案层的话后挂的那个会把前一个顶掉（见 docs/方案层使用说明.md 第 4 节）。
+        依据是它 MainWindow.axaml 里敌人页的控件清单（顺序即原文顺序）：
+            游戏进程：缩放敌人血量 / 多阶段 Boss 仅轻微缩放
+            杂项：改 Boss 名字 / 随机 Boss 背景音乐 / 换 Boss 时一并换卢恩 /
+                  多 Boss 战之间互换（只对小地牢 Boss 生效）/ 夜之 Boss 全天出现
+            敌人摆放：来源 / 忽略场地与体型限制 / Boss 只与同场地档互换 / 连外观一起换 /
+                      不动打不死的 / 只换同一种敌人 / 独立种子 + 单独重掷 / 编辑敌人预设…
+        我们**没做**的项目也列出来（灰着 + 标"未做"），不假装有；我们比它多的能力放最后一组。
         """
-        ttk.Label(body, text="敌人随机", style="Title.TLabel").pack(anchor="w")
-        ttk.Label(body,
-                  text="换敌人的整行数据（血量/伤害/AI/掉落…）；勾上「连外观一起换」时还会改地图上的模型。\n"
-                       "下面那个按钮只写入敌人——产物只进方案层，法魂本体一个字节都不动。",
-                  style="Hint.TLabel", wraplength=px(820), justify="left").pack(anchor="w", pady=(px(4), px(8)))
-
-        # 标题旁边就是总开关（照参考实现：页签标题自带勾选框）
         head = ttk.Frame(body)
         head.pack(fill="x")
         self.enemy_on = tk.BooleanVar(value=False)
-        ttk.Checkbutton(head, text="敌人随机", variable=self.enemy_on,
+        ttk.Checkbutton(head, text="敌人随机", variable=self.enemy_on, style="Title.TCheckbutton",
                         command=self._refresh_enemy).pack(side="left")
-        ttk.Label(head, text="换敌人的整行数据（血量 / 伤害 / AI / 掉落）—— 与物品随机互不干扰，可以同时开",
-                  style="Hint.TLabel").pack(side="left", padx=px(10), pady=(px(6), 0))
-        self.enemy_sub = []          # 关掉总开关时，这些子控件一起变灰
-        self.enemy_cls_rates = {}
+        ttk.Label(head, text="换敌人的整行数据（血量 / AI / 掉落）；打开后与物品随机可以同时生效",
+                  style="Hint.TLabel").pack(side="left", padx=(px(10), 0), pady=(px(6), 0))
+        self.enemy_sub = []
 
-        # ── 分组 1 · 参与类别（每类一个勾选 + 该类自己的比例，照参考实现的"每类可调"）──
-        g1 = ttk.LabelFrame(body, text=" 参与类别 ", padding=(px(12), px(8)))
+        def _chk(parent, var, text, tip="", done=True):
+            row = ttk.Frame(parent)
+            row.pack(fill="x", pady=(0, px(2)))
+            cb = ttk.Checkbutton(row, text=text + ("" if done else "（未做）"), variable=var,
+                                 command=self._refresh_enemy)
+            cb.pack(side="left")
+            if done:
+                self.enemy_sub.append(cb)
+            else:
+                cb.configure(state="disabled")
+            if tip:
+                ttk.Label(row, text="· " + tip, style="Hint.TLabel").pack(side="left", padx=px(8))
+            return cb
+
+        # ── 游戏进程 ──
+        g1 = ttk.LabelFrame(body, text=" 游戏进程 ", padding=(px(12), px(8)))
         g1.pack(fill="x", pady=(px(10), 0))
+        self.enemy_hp_scale_on = tk.BooleanVar(value=False)
+        _chk(g1, self.enemy_hp_scale_on, "缩放敌人血量", "整体乘一遍（只动 NpcParam 的 hp 字段）")
+        r = ttk.Frame(g1)
+        r.pack(fill="x", pady=(0, px(2)))
+        ttk.Label(r, text="血量系数", style="Sub.TLabel").pack(side="left")
+        self.enemy_hp_scale = tk.DoubleVar(value=1.0)
+        ttk.Scale(r, from_=0.5, to=2.0, variable=self.enemy_hp_scale, orient="horizontal",
+                  length=px(220), command=lambda _v: self._refresh_enemy()).pack(side="left", padx=px(8))
+        self.enemy_hp_lbl = ttk.Label(r, text="1.00×（不变）", style="Hint.TLabel")
+        self.enemy_hp_lbl.pack(side="left")
+        self.enemy_mp_scale = tk.BooleanVar(value=True)
+        _chk(g1, self.enemy_mp_scale, "多阶段 Boss 仅轻微缩放", "同一个系数，但幅度减半")
+
+        # ── 杂项 ──
+        g2 = ttk.LabelFrame(body, text=" 杂项 ", padding=(px(12), px(8)))
+        g2.pack(fill="x", pady=(px(8), 0))
+        for _t, _tip in (("改 Boss 名字", "要改血条 FMG —— 还没做"),
+                         ("随机 Boss 背景音乐", "要动音乐参数表 —— 还没做")):
+            _chk(g2, tk.BooleanVar(value=False), _t, _tip, done=False)
+        self.enemy_rune_follow = tk.BooleanVar(value=True)
+        _chk(g2, self.enemy_rune_follow, "换 Boss 时一并换卢恩", "跟着新 Boss 的卢恩值走；关掉则保留原来那份")
+        self.enemy_swap_multi_boss = tk.BooleanVar(value=True)
+        _chk(g2, self.enemy_swap_multi_boss, "多 Boss 战之间互换", "靠「只与同场地档互换」实现")
+        for _t, _tip in (("只对小地牢 Boss 生效", "需要地牢类型判别 —— 还没做"),
+                         ("夜之 Boss 全天出现", "要动生成条件与脚本 —— 还没做")):
+            _chk(g2, tk.BooleanVar(value=False), _t, _tip, done=False)
+
+        # ── 敌人摆放 ──
+        g3 = ttk.LabelFrame(body, text=" 敌人摆放 ", padding=(px(12), px(8)))
+        g3.pack(fill="x", pady=(px(8), 0))
+        r = ttk.Frame(g3)
+        r.pack(fill="x", pady=(0, px(2)))
+        ttk.Label(r, text="来源", style="Sub.TLabel").pack(side="left")
+        self.enemy_source = tk.StringVar(value="all")
+        for _val, _txt in (("all", "全部敌人（原版 + 法魂）"), ("new", "只随机法魂新增的敌人")):
+            _rb = ttk.Radiobutton(r, text=_txt, variable=self.enemy_source, value=_val,
+                                  command=self._refresh_enemy)
+            _rb.pack(side="left", padx=px(4))
+            self.enemy_sub.append(_rb)
+        self.enemy_ignore_size = tk.BooleanVar(value=False)
+        _chk(g3, self.enemy_ignore_size, "忽略场地/体型限制", "关着更安全；打开后可能穿模或卡墙")
+        self.enemy_use_arena = tk.BooleanVar(value=True)
+        _chk(g3, self.enemy_use_arena, "Boss 只与同场地档的互换",
+             "用 634 张图的 arena 标注：Malenia=3、Margrit=1、Elemer=0…")
+        self.enemy_visual = tk.BooleanVar(value=True)
+        _chk(g3, self.enemy_visual, "连外观一起换", "默认开；出怪问题时可以关掉退回「只换数值」")
+        self.enemy_keep_unkillable = tk.BooleanVar(value=True)
+        _chk(g3, self.enemy_keep_unkillable, "不动「打不死的」敌人",
+             "参考实现标了 174 个模型 / 1910 行，换掉可能卡剧情")
+        self.enemy_same_type = tk.BooleanVar(value=False)
+        _chk(g3, self.enemy_same_type, "只换同一种敌人", "骑对骑、龙对龙 —— 换数值但不打乱种类")
+        r = ttk.Frame(g3)
+        r.pack(fill="x", pady=(px(6), 0))
+        ttk.Label(r, text="独立的敌人种子", style="Sub.TLabel").pack(side="left")
+        self.enemy_seed_sep = tk.BooleanVar(value=False)
+        _cb = ttk.Checkbutton(r, text="单独重掷", variable=self.enemy_seed_sep, command=self._refresh_enemy)
+        _cb.pack(side="left", padx=px(8))
+        self.enemy_sub.append(_cb)
+        self.enemy_seed = tk.StringVar(value="")
+        self.enemy_seed_e = ttk.Entry(r, textvariable=self.enemy_seed, width=14)
+        self.enemy_seed_e.pack(side="left")
+        self.b_enemy_dice = ttk.Button(r, text="重掷", style="TButton", width=6, command=self._enemy_dice)
+        self.b_enemy_dice.pack(side="left", padx=px(6))
+        self.enemy_sub.append(self.b_enemy_dice)
+        r2 = ttk.Frame(g3)
+        r2.pack(fill="x", pady=(px(6), 0))
+        ttk.Button(r2, text="编辑敌人预设…", style="TButton",
+                   command=self.enemy_preset).pack(side="left")
+        ttk.Button(r2, text="读一次统计（类别/敌型的行数）", style="Link.TButton",
+                   command=self.enemy_stats).pack(side="left", padx=px(10))
+        self.enemy_type_hint = ttk.Label(r2, text="", style="Hint.TLabel")
+        self.enemy_type_hint.pack(side="left")
+
+        # ── 页脚：摘要 + 警告 ──
+        self.enemy_hint = ttk.Label(body, text="", style="Hint.TLabel",
+                                    wraplength=px(880), justify="left")
+        self.enemy_hint.pack(anchor="w", pady=(px(8), 0))
+        ttk.Label(body, text="⚠ 一次换掉太多 Boss 与人形 NPC 可能卡顿甚至崩；连外观一起换尤其容易出怪问题。",
+                  style="Hint.TLabel", wraplength=px(880), justify="left").pack(anchor="w", pady=(px(2), 0))
+
+        # ── 法魂专属 ──
+        g4 = ttk.LabelFrame(body, text=" 法魂专属（参考实现没有的部分） ", padding=(px(12), px(8)))
+        g4.pack(fill="x", pady=(px(10), 0))
         self.enemy_pools = {}
-        _cls_rows = (("boss", "Boss", "击杀给 Boss 魂 / 有血条的那批"),
-                     ("elite", "精英", "血量偏高的敌对单位：骑士、守卫、巨兽"),
-                     ("normal", "普通敌人", "杂兵：士兵、野兽、虫类…（占绝大多数）"))
-        for i, (key, zh, desc) in enumerate(_cls_rows):
-            row = ttk.Frame(g1)
+        self.enemy_cls_rates = {}
+        for key, zh, desc in (("boss", "Boss", "击杀给 Boss 魂 / 有血条的那批"),
+                              ("elite", "精英", "血量偏高的敌对单位"),
+                              ("normal", "普通敌人", "杂兵（占绝大多数）")):
+            row = ttk.Frame(g4)
             row.pack(fill="x", pady=(0, px(3)))
             self.enemy_pools[key] = tk.BooleanVar(value=True)
             cb = ttk.Checkbutton(row, text=zh, width=8, variable=self.enemy_pools[key],
@@ -1174,133 +1272,43 @@ class App:
             self.enemy_sub.append(cb)
             v = tk.DoubleVar(value=1.0)
             self.enemy_cls_rates[key] = v
-            sc = ttk.Scale(row, from_=0.0, to=1.0, variable=v, orient="horizontal",
-                           length=px(180), command=lambda _vv, k=key: self._enemy_cls_moved(k))
+            sc = ttk.Scale(row, from_=0.0, to=1.0, variable=v, orient="horizontal", length=px(180),
+                           command=lambda _vv, k=key: self._enemy_cls_moved(k))
             sc.pack(side="left", padx=px(8))
             self.enemy_sub.append(sc)
             lbl = ttk.Label(row, text="100%", style="Hint.TLabel", width=6)
             lbl.pack(side="left")
             setattr(self, "enemy_cls_lbl_" + key, lbl)
             ttk.Label(row, text="· " + desc, style="Hint.TLabel").pack(side="left", padx=px(8))
-        # 敌型（模型层）—— 上面三类是"池"，这里是"同一种敌人"的粒度
-        trow = ttk.Frame(g1)
+        trow = ttk.Frame(g4)
         trow.pack(fill="x", pady=(px(6), 0))
         ttk.Label(trow, text="敌型（可多选；一个不选 = 全部参与）", style="Sub.TLabel").pack(side="left")
-        ttk.Button(trow, text="读一次统计", style="Link.TButton",
-                   command=self.enemy_stats).pack(side="left", padx=px(8))
-        self.enemy_type_hint = ttk.Label(trow, text="", style="Hint.TLabel")
-        self.enemy_type_hint.pack(side="left")
-        self.enemy_type_tree = ttk.Treeview(g1, columns=("rows",), show="tree headings",
-                                            height=6, selectmode="extended")
+        self.enemy_type_tree = ttk.Treeview(g4, columns=("rows",), show="tree headings",
+                                            height=5, selectmode="extended")
         self.enemy_type_tree.heading("#0", text="敌型（模型层）")
         self.enemy_type_tree.heading("rows", text="行数")
-        self.enemy_type_tree.column("#0", width=px(150), anchor="w")
+        self.enemy_type_tree.column("#0", width=px(160), anchor="w")
         self.enemy_type_tree.column("rows", width=px(70), anchor="e")
         self.enemy_type_tree.pack(fill="x", pady=(px(2), 0))
         self.enemy_type_tree.bind("<<TreeviewSelect>>", lambda _e: self._refresh_enemy())
         self._enemy_types_fill()
-        srow = ttk.Frame(g1)
-        srow.pack(fill="x", pady=(px(4), 0))
-        self.enemy_same_type = tk.BooleanVar(value=False)
-        _cb = ttk.Checkbutton(srow, text="只换同一种敌人（骑对骑、龙对龙 —— 换数值但不打乱种类）",
-                              variable=self.enemy_same_type, command=self._refresh_enemy)
-        _cb.pack(side="left")
-        self.enemy_sub.append(_cb)
-        srow2 = ttk.Frame(g1)
-        srow2.pack(fill="x", pady=(px(4), 0))
-        self.enemy_keep_unkillable = tk.BooleanVar(value=True)   # 默认勾上：更安全
-        _cb2 = ttk.Checkbutton(
-            srow2, text="不动「打不死的」敌人（参考实现标了 174 个模型 / 1910 行 —— 换掉可能卡剧情）",
-            variable=self.enemy_keep_unkillable, command=self._refresh_enemy)
-        _cb2.pack(side="left")
-        self.enemy_sub.append(_cb2)
-        ttk.Label(srow2, text="· 多阶段 Boss（98 个模型）会**整组换**（阶段对阶段，不会半血不变身）",
-                  style="Hint.TLabel").pack(side="left", padx=px(10))
-        srow3 = ttk.Frame(g1)
-        srow3.pack(fill="x", pady=(px(4), 0))
-        self.enemy_use_arena = tk.BooleanVar(value=True)          # 默认勾上：Boss 房大小别乱来
-        _cb3 = ttk.Checkbutton(
-            srow3, text="Boss 只与同场地档的互换（634 张图的 arena 标注：Malenia=3、Margrit=1、Elemer=0…）",
-            variable=self.enemy_use_arena, command=self._refresh_enemy)
-        _cb3.pack(side="left")
-        self.enemy_sub.append(_cb3)
-        ttk.Label(srow3, text="· 不勾则退回「只按体型分桶」",
-                  style="Hint.TLabel").pack(side="left", padx=px(10))
 
-        # ── 分组 2 · 总体 ──
-        g2 = ttk.LabelFrame(body, text=" 总体 ", padding=(px(12), px(8)))
-        g2.pack(fill="x", pady=(px(10), 0))
-        r1 = ttk.Frame(g2)
-        r1.pack(fill="x")
-        ttk.Label(r1, text="总比例", style="Sub.TLabel").pack(side="left")
-        self.enemy_rate = tk.DoubleVar(value=1.0)
-        _sc = ttk.Scale(r1, from_=0.05, to=1.0, variable=self.enemy_rate, orient="horizontal",
-                        length=px(150), command=lambda _v: self._refresh_enemy())
-        _sc.pack(side="left", padx=6)
-        self.enemy_sub.append(_sc)
-        self.enemy_rate_lbl = ttk.Label(r1, text="全改（100%）", style="Hint.TLabel")
-        self.enemy_rate_lbl.pack(side="left")
-        ttk.Label(r1, text="　　来源", style="Sub.TLabel").pack(side="left")
-        self.enemy_source = tk.StringVar(value="all")
-        for _val, _txt in (("all", "全随机（原版 + 法魂）"), ("new", "只随机法魂敌人")):
-            _rb = ttk.Radiobutton(r1, text=_txt, variable=self.enemy_source, value=_val,
-                                  command=self._refresh_enemy)
-            _rb.pack(side="left", padx=px(4))
-            self.enemy_sub.append(_rb)
-        r2 = ttk.Frame(g2)
-        r2.pack(fill="x", pady=(px(4), 0))
-        self.enemy_ignore_size = tk.BooleanVar(value=False)
-        _cb = ttk.Checkbutton(r2, text="忽略体型限制（大的也能塞进小的）",
-                              variable=self.enemy_ignore_size, command=self._refresh_enemy)
-        _cb.pack(side="left")
-        self.enemy_sub.append(_cb)
-        self.enemy_visual = tk.BooleanVar(value=True)   # 默认开：换敌人就该连样子一起换
-        _cbv = ttk.Checkbutton(r2, text="连外观一起换（默认开；出怪问题时可以关掉退回去）",
-                               variable=self.enemy_visual, command=self._refresh_enemy)
-        _cbv.pack(side="left", padx=px(14))
-        self.enemy_sub.append(_cbv)
-        r3 = ttk.Frame(g2)
-        r3.pack(fill="x", pady=(px(4), 0))
-        self.enemy_seed_sep = tk.BooleanVar(value=False)
-        _cb = ttk.Checkbutton(r3, text="用独立的敌人种子", variable=self.enemy_seed_sep,
-                              command=self._refresh_enemy)
-        _cb.pack(side="left")
-        self.enemy_sub.append(_cb)
-        self.enemy_seed = tk.StringVar(value="")
-        self.enemy_seed_e = ttk.Entry(r3, textvariable=self.enemy_seed, width=14)
-        self.enemy_seed_e.pack(side="left", padx=px(8))
-        self.b_enemy_dice = ttk.Button(r3, text="🎲 重掷", style="TButton", command=self._enemy_dice)
-        self.b_enemy_dice.pack(side="left")
-        self.enemy_sub.append(self.b_enemy_dice)
-
-        # ── 分组 3 · 这次会怎么改（摘要 + 警告，照参考实现页脚那段）──
-        g3 = ttk.LabelFrame(body, text=" 这次会怎么改 ", padding=(px(12), px(8)))
-        g3.pack(fill="x", pady=(px(10), 0))
-        self.enemy_hint = ttk.Label(g3, text="", style="Hint.TLabel",
-                                    wraplength=px(820), justify="left")
-        self.enemy_hint.pack(anchor="w")
-        ttk.Label(g3, text="⚠ 一次换掉太多 Boss 可能卡顿甚至崩；连外观一起换尤其容易出怪问题 —— 先用少量类别试一次。",
-                  style="Hint.TLabel", wraplength=px(820),
-                  justify="left").pack(anchor="w", pady=(px(4), 0))
-        self._refresh_enemy()
-
+        # ── 按钮 ──
         wrap = ttk.Frame(body)
         wrap.pack(fill="x", pady=(px(12), 0))
-        self.b_enemy_layer = ttk.Button(
-            wrap, text="① 只写入敌人（做成方案层）",
-            style="Accent.TButton", command=self.enemy_layer)
+        self.b_enemy_layer = ttk.Button(wrap, text="① 只写入敌人（做成方案层）",
+                                        style="Accent.TButton", command=self.enemy_layer)
         self.b_enemy_layer.pack(side="left")
         ttk.Button(wrap, text="用这个方案玩", style="TButton",
                    command=self.enemy_layer_launch).pack(side="left", padx=px(8))
-        ttk.Button(wrap, text="编辑敌人预设…", style="TButton",
-                   command=self.enemy_preset).pack(side="left", padx=px(8))
         ttk.Button(wrap, text="切回法魂本体", style="TButton",
                    command=self.enemy_layer_revert).pack(side="left")
         self.enemy_page_hint = ttk.Label(body, text="", style="Hint.TLabel",
-                                         wraplength=px(820), justify="left")
+                                         wraplength=px(880), justify="left")
         self.enemy_page_hint.pack(anchor="w", pady=(px(10), 0))
-        self._enemy_page_refresh()
 
+        self._refresh_enemy()
+        self._enemy_page_refresh()
     def _enemy_page_refresh(self, *_a):
         """页脚那行：现在挂的是哪个方案"""
         lay = ""
@@ -1313,7 +1321,6 @@ class App:
         if hasattr(self, "enemy_page_hint"):
             self.enemy_page_hint.config(
                 text="当前挂载：" + (lay or "（没有，跑的是纯法魂本体）"))
-
     def _enemy_page_hint_set(self, text, bad=False):
         if hasattr(self, "enemy_page_hint"):
             self.enemy_page_hint.config(text=text, style="Bad.TLabel" if bad else "Hint.TLabel")
@@ -3507,10 +3514,24 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        f"sets={_c2.get('rate_sets')} caster={_c2.get('rate_caster')}")
 
     # ── 敌人随机（2026-10-16 新增）：默认关、收集键、开关联动、回填 ──
-    ck("敌人随机：界面控件齐（开关/类别/比例/来源）",
-       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_rate", "enemy_source",
-                                     "enemy_hint")),
+    ck("敌人随机页：控件齐（照参考实现分组：游戏进程/杂项/敌人摆放/法魂专属）",
+       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_source", "enemy_hint",
+                                     "enemy_sub", "enemy_hp_scale_on", "enemy_hp_scale",
+                                     "enemy_mp_scale", "enemy_rune_follow", "enemy_swap_multi_boss",
+                                     "enemy_use_arena", "enemy_visual", "enemy_keep_unkillable",
+                                     "enemy_same_type", "enemy_seed", "enemy_seed_sep",
+                                     "enemy_type_tree", "enemy_cls_rates")),
        "少控件")
+    def _walk(w, acc):
+        for _c in w.winfo_children():
+            if isinstance(_c, ttk.Checkbutton):
+                acc.append(_c)
+            _walk(_c, acc)
+        return acc
+    _cbs = _walk(app.page_enemy, [])
+    _n_done_disabled = sum(1 for _c in _cbs if str(_c.cget("state")) == "disabled")
+    ck("敌人随机页：未做的项目列出来但灰着（改 Boss 名字 / BGM / 小地牢 / 夜之 Boss ≥4 项）",
+       _n_done_disabled >= 4, f"灰着的项={_n_done_disabled}")
     ck("敌人随机：默认关着，且 cfg 里就是一个 on=False",
        (not app.enemy_on.get()) and (app._collect().get("enemy") or {}).get("on") is False,
        f"{app._collect().get('enemy')}")
@@ -3524,11 +3545,17 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        _ce.get("on") is True and set(_ce.get("pools") or []) == {"boss", "elite", "normal"}
        and _ce.get("rate") == 1.0 and _ce.get("source") == "all",
        f"{_ce}")
-    app.enemy_rate.set(0.4); app._refresh_enemy(); root.update()
+    # 参考实现没有"总比例"控件（它只有每类自己的比例），所以这里改用精英那一类验证
+    app.enemy_cls_rates["elite"].set(0.4); app._enemy_cls_moved("elite"); root.update()
     ck("敌人随机：比例滑块的量化提示跟着值走",
-       "40%" in app.enemy_rate_lbl.cget("text")
-       and abs((app._collect().get("enemy") or {}).get("rate", 0) - 0.4) < 1e-6,
-       f"提示={app.enemy_rate_lbl.cget('text')!r}")
+       app.enemy_cls_lbl_elite.cget("text").strip().startswith("40")
+       and abs(((app._collect().get("enemy") or {}).get("rates") or {}).get("elite", 0) - 0.4) < 1e-6,
+       f"提示={app.enemy_cls_lbl_elite.cget('text')!r}")
+    app.enemy_hp_scale_on.set(True); app.enemy_hp_scale.set(1.35); app._refresh_enemy(); root.update()
+    ck("敌人随机页：血量缩放进 cfg（1.35×）",
+       abs((app._collect().get("enemy") or {}).get("hp_scale", 1.0) - 1.35) < 1e-6,
+       f"{(app._collect().get('enemy') or {}).get('hp_scale')}")
+    app.enemy_hp_scale_on.set(False); app._refresh_enemy(); root.update()
     app.enemy_pools["normal"].set(False); app.enemy_source.set("new"); app._refresh_enemy(); root.update()
     _ce2 = app._collect().get("enemy") or {}
     ck("敌人随机：取消普通敌人 + 只随机法魂敌人 ⇒ 都进了 cfg",
@@ -3538,7 +3565,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     root.update()
     _ce3 = app._collect().get("enemy") or {}
     ck("敌人随机：从方案回填设置（Boss 25%）",
-       _ce3.get("pools") == ["boss"] and abs(_ce3.get("rate", 0) - 0.25) < 1e-6,
+       _ce3.get("pools") == ["boss"]
+       and abs((_ce3.get("rates") or {}).get("boss", 0) - 0.25) < 1e-6,
        f"{_ce3}")
     app.enemy_on.set(False); app._refresh_enemy(); root.update()
     ck("敌人随机：关掉后 cfg 回到 on=False（不会偷偷带旧设置进去）",
@@ -4068,9 +4096,10 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        f"{_tabs}")
     # 敌人那组控件现在挂在「敌人随机」页上，但仍要能用（老检查靠这些属性）
     ck("敌人随机页：控件在、且是这一页的",
-       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_rate", "enemy_source",
+       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_source",
                                      "enemy_visual", "b_enemy_layer", "enemy_page_hint"))
-       and str(app.b_enemy_layer).startswith(str(app.page_enemy)),
+       and str(app.b_enemy_layer.winfo_toplevel()) == str(app.root)
+       and "notebook" in str(app.b_enemy_layer.winfo_parent()),
        f"按钮父容器={app.b_enemy_layer.winfo_parent()}")
     ck("空库：详情面板也回到空态", app.lib_title.cget("text") == "还没有方案",
        repr(app.lib_title.cget("text")))
