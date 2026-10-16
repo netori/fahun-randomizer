@@ -77,7 +77,8 @@ def find_original(pattern):
     return hits[0] if hits else None
 
 
-def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=None):
+def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=None,
+           plan_label=None, plan_meta=None):
     relocate()
     # ── 打包版：把「所有会写文件的路径」重定位到 exe 旁边那份工作区 ──
     # 这些目录原本按"代码所在位置"拼，打包后那指向临时解包目录，
@@ -246,6 +247,23 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     log(f"[⑥] 校验：regulation 明文 {len(plain)} B；说明书 {os.path.getsize(msg)} B、{len(bnd.files)} 个 FMG")
     rec["verify"] = {"plain_len": len(plain), "msg_size": os.path.getsize(msg), "fmg_count": len(bnd.files),
                      "fmg_len": len(fmg[0]) if fmg else 0}
+    # ⑦ 方案层：把这次的产物抄成一个"覆盖层"，用 YAFSML 的 [mod] 列表挂载（法魂本体永不动）
+    #    为什么放最后：层里放的是**部署完**的 regulation.bin，所以必须在所有写入之后。
+    #    为什么有用：方案之间从此可以共存 —— 切换只是 ini 里一行 Plan=…，回滚就是删掉那行。
+    if plan_label:
+        try:
+            import plan_layer as PL
+            _r = PL.export_layer(plan_label, log=log)
+            PL.make_launchers(_r["dir"], _r["label"], log=log)
+            PL.write_info(_r["dir"], dict(plan_meta or {}), log=log)
+            log(f"[⑦] 方案层：{_r['dir']}（{len(_r['files'])} 个文件，{_r['bytes']/1048576:.1f} MB）")
+            log("     想用这个方案玩：双击该目录里的「用这个方案启动.bat」；切回本体用「切回法魂本体.bat」")
+            rec["steps"].append({"step": "plan_layer", "ok": True, "dir": _r["dir"],
+                                 "files": len(_r["files"]), "bytes": _r["bytes"]})
+        except Exception as _e:
+            log(f"[⑦] 方案层产出失败（本体写入不受影响）：{_e}")
+            rec["steps"].append({"step": "plan_layer", "ok": False, "error": str(_e)})
+
     with open(os.path.join(LOG, f"deploy_{ts}.json"), "w", encoding="utf-8") as f:
         json.dump(rec, f, ensure_ascii=False, indent=1)
     log(f"     收据：logs/deploy_{ts}.json")

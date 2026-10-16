@@ -2253,9 +2253,26 @@ class App:
         try:
             sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
             import native_deploy
+            # 方案层标签与信息：让"这次随机"以后能作为一个可切换的覆盖层存在
+            _c = self.cfg or {}
+            _e = _c.get("enemy") or {}
+            _flags = ["敌人" if _e.get("on") else "物品"]
+            if _c.get("sync_guide"):
+                _flags.append("说明书")
+            _label = "%s_种子%s_%s" % (time.strftime("%Y%m%d_%H%M"), _c.get("seed", "?"),
+                                       "+".join(_flags))
+            _meta = {"种子": _c.get("seed"),
+                     "随机项目": "、".join(_c.get("domains") or []),
+                     "敌人随机": ("开（%s；比例 %.0f%%；来源 %s）" % (
+                         "、".join(_e.get("pools") or []), float(_e.get("rate", 1)) * 100,
+                         {"all": "全部敌人", "new": "只法魂"}.get(_e.get("source"), "?")))
+                     if _e.get("on") else "关",
+                     "说明书同步": "开" if _c.get("sync_guide") else "关",
+                     "指纹": (fingerprint or "")[:16]}
             rec = native_deploy.deploy(plan, sync_guide=sync_guide, log=self.log,
                                        fingerprint=fingerprint,
-                                       enemy_cfg=(self.cfg or {}).get("enemy"))
+                                       enemy_cfg=_e,
+                                       plan_label=_label, plan_meta=_meta)
             self.log("写入完成 [OK] " + str(rec.get("verify")))
             self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
             if lib:
