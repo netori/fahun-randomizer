@@ -2896,6 +2896,7 @@ class App:
         else:
             _lines.append("  · 敌人：**没开**（要想一起换，先去「敌人随机」页把总开关勾上）")
         _lines.append("  · 说明书文本：" + ("会同步" if self.cfg.get("sync_guide", True) else "不动"))
+        _lines.append("  · 写完后**自动挂载**这个方案层（不用再点别的；关掉游戏重进才生效）")
         _warn = "" if _e.get("on") else "\n\n⚠ 这次**不含敌人随机**。要一起换，请先到「敌人随机」页勾上总开关，再点这里。"
         if not messagebox.askyesno("确认写入游戏（这次会写这些）",
                                    "会把下面的内容写进游戏文件：\n" + "\n".join(_lines)
@@ -2905,6 +2906,7 @@ class App:
         sync = bool(self.cfg.get("sync_guide", True))
         self._deploying = True
         self.log(f"写入中…{'（含说明书）' if sync else '（不改说明书）'}")
+        self.log("写完后会**自动挂载**这次的方案层；挂载生效要关掉游戏重进（regulation 只在启动时读）")
         self.q.put(("status", "写入中…"))
         _fp = self._plan_fp()
         threading.Thread(target=self._deploy_worker, args=(plan, sync, False, _fp),

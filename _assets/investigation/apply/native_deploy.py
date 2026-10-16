@@ -280,7 +280,15 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
             PL.make_launchers(_r["dir"], _r["label"], log=log)
             PL.write_info(_r["dir"], dict(plan_meta or {}), log=log)
             log(f"[⑦] 方案层：{_r['dir']}（{len(_r['files'])} 个文件，{_r['bytes']/1048576:.1f} MB）")
-            log("     想用这个方案玩：双击该目录里的「用这个方案启动.bat」；切回本体用「切回法魂本体.bat」")
+            # 2026-10-17 加：**写完自动挂载** —— 以前只在日志里写“想用就双击 bat”，
+            # 作者没点 ⇒ 新层躺在磁盘上，游戏加载的还是旧层（“两个 Boss 没随机”就是这么来的）
+            try:
+                _m = PL.set_plan(_r["dir"])
+                log("     已**自动挂载**这个方案层（YAFSML.ini 里的 Plan= 已更新）—— 关掉程序重新进游戏就生效")
+                rec["steps"].append({"step": "plan_mount", "ok": True, "plan": _m})
+            except Exception as _me:
+                log(f"     自动挂载失败（可手动双击「用这个方案启动.bat」）：{_me}")
+                rec["steps"].append({"step": "plan_mount", "ok": False, "error": str(_me)})
             rec["steps"].append({"step": "plan_layer", "ok": True, "dir": _r["dir"],
                                  "files": len(_r["files"]), "bytes": _r["bytes"]})
         except Exception as _e:
