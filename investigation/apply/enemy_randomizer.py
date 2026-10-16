@@ -116,7 +116,8 @@ class Unit(object):
     """一种敌人 = NpcParam 的一行"""
 
     __slots__ = ("rid", "off", "row_size", "hp", "soul", "is_boss", "radius", "height",
-                 "npc_type", "team_type", "cls", "source", "sha", "name", "name_id")
+                 "npc_type", "team_type", "cls", "source", "sha", "name", "name_id",
+                 "boss_like_name")
 
     def __init__(self, rid, off, row_size, fields, plain):
         self.rid, self.off, self.row_size = rid, off, row_size
@@ -146,6 +147,7 @@ class Unit(object):
         self.npc_type = g("npcType")
         self.team_type = g("teamType")
         self.name_id = g("nameId") or 0
+        self.boss_like_name = False
         self.cls = "normal"
         self.source = "old"            # old = 原版 / new = 法魂新增（默认 unknown → old）
         self.name = ""
@@ -177,6 +179,26 @@ def load_units(plain, table="NpcParam"):
 
 
 # ────────────────────────── 分类与池 ──────────────────────────
+
+def load_healthbar_nameids(path=None):
+    """血条名单里的名字 id 集合（来自 EMEVD 的 DisplayBossHealthBar）。
+
+    用途：如果某行的 `nameId` 正好等于某个"有血条 Boss 的名字 id"，
+    那它就是**有确凿证据的 Boss**（不是靠 hp/名字猜的）→ 强制归入 Boss 池。
+    本机实测：血条名单 165 个唯一名字 id，其中 12 个能对上 53 行 NpcParam。
+    """
+    p = path or os.path.join(HERE, "..", "boss_healthbar.csv")
+    out = set()
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                nid = (r.get("name_id") or "").strip()
+                if nid.isdigit() and int(nid) > 0:
+                    out.add(int(nid))
+    except Exception:
+        return set()
+    return out
+
 
 def load_name_table(path=None):
     """敌人中文名表 {row_id: 文本}。
@@ -220,7 +242,7 @@ def infer_hostile_teams(units, cover=0.95):
     return out
 
 
-def classify(units, table=None, names=None):
+def classify(units, table=None, names=None, healthbar_ids=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
     可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
     if names:
@@ -231,9 +253,16 @@ def classify(units, table=None, names=None):
     hps = sorted(u.hp for u in units.values())
     hi = hps[int(len(hps) * 0.75)] if hps else 0
     hostile = infer_hostile_teams(units, cover=0.80)
+    _hb_ids = healthbar_ids if healthbar_ids is not None else load_healthbar_nameids()
     for rid, u in units.items():
         if u.is_boss:
             u.cls = "boss"                      # Boss 按游戏自己的标记（友好 NPC 不会有）
+        elif u.name_id and u.name_id in _hb_ids:
+            # 名字 id 命中血条名单 —— 只能当**标签**，不能当证据！
+            # 实测反例：帕奇（130900）是友好 NPC，他的名字 id 也出现在血条名单里
+            #（名字 id 在多行之间共享）→ 强行升成 boss 会把 NPC 拉进 Boss 池。
+            # 真正"这一行是不是有血条 Boss"要等 MSB 映射（实体 → NPCParamID）才能确定。
+            u.boss_like_name = True
         elif u.name:
             # 有中文名的行 ≈ 有名有姓的 NPC / 独特角色（实测 736 个有名字的行里只有 26 个是 Boss）
             # → 保守起见先不参与杂兵/精英池；想放开就用人工复核表逐行指定 cls
