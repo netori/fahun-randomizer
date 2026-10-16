@@ -829,6 +829,192 @@ class App:
             pass
         self._refresh_enemy()
 
+    # ── 敌人预设子窗口（照参考实现的 EnemyPresetWindow：左边类别树 + 右边面板 + 导入/导出）──
+    def enemy_preset(self):
+        """打开「编辑敌人预设」窗口。
+
+        * 左：类别列表（含行数、当前比例）
+        * 右：选中类别的比例滑块与说明；下面是几个总开关（总比例 / 来源 / 忽略体型 / 连外观）
+        * 底：导入预设… / 导出预设… / 重置默认 / 应用 / 取消
+
+        "预设"就是我们存进方案库的那份 cfg["enemy"]（同一个形状）—— 所以导出就是一个 JSON，
+        以后想分享/复用一套敌人设置，直接把这个文件给对方就行（参考实现也有导入/导出）。
+        """
+        win = tk.Toplevel(self.root)
+        win.title("编辑敌人预设 — 法魂随机")
+        win.transient(self.root)
+        try:
+            win.configure(bg=BG)
+        except Exception:
+            pass
+        body = ttk.Frame(win, padding=(px(14), px(12)))
+        body.pack(fill="both", expand=True)
+        ttk.Label(body, text="编辑敌人预设", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(body, text="左边选一类，右边调它自己的比例；下面那几个开关对所有类别生效。",
+                  style="Hint.TLabel").pack(anchor="w", pady=(px(2), px(10)))
+
+        mid = ttk.Frame(body)
+        mid.pack(fill="both", expand=True)
+        left = ttk.Frame(mid)
+        left.pack(side="left", fill="y")
+        cols = ("rows", "rate")
+        tree = ttk.Treeview(left, columns=cols, show="tree headings", height=6, selectmode="browse")
+        tree.heading("#0", text="类别")
+        tree.heading("rows", text="行数")
+        tree.heading("rate", text="比例")
+        tree.column("#0", width=px(150), anchor="w")
+        tree.column("rows", width=px(80), anchor="e")
+        tree.column("rate", width=px(80), anchor="e")
+        tree.pack(fill="y", expand=True)
+        right = ttk.Frame(mid)
+        right.pack(side="left", fill="both", expand=True, padx=(px(14), 0))
+        t_title = ttk.Label(right, text="", style="Sub.TLabel")
+        t_title.pack(anchor="w")
+        t_desc = ttk.Label(right, text="", style="Hint.TLabel", wraplength=px(360), justify="left")
+        t_desc.pack(anchor="w", pady=(px(2), px(8)))
+        rr = ttk.Frame(right)
+        rr.pack(fill="x")
+        ttk.Label(rr, text="参与比例", style="Sub.TLabel").pack(side="left")
+        cur = {"key": "boss"}
+        rate_v = tk.DoubleVar(value=1.0)
+        pct = ttk.Label(rr, text="100%", style="Hint.TLabel", width=7)
+        ttk.Scale(rr, from_=0.0, to=1.0, variable=rate_v, orient="horizontal", length=px(200),
+                  command=lambda _v: pct.configure(text=("%.0f%%" % (rate_v.get() * 100))
+                                                   if rate_v.get() > 0 else "不参与")).pack(side="left", padx=px(8))
+        pct.pack(side="left")
+        glob = ttk.LabelFrame(body, text=" 对所有类别生效 ", padding=(px(12), px(8)))
+        glob.pack(fill="x", pady=(px(10), 0))
+        gr = ttk.Frame(glob)
+        gr.pack(fill="x")
+        ttk.Label(gr, text="总比例", style="Sub.TLabel").pack(side="left")
+        tot_v = tk.DoubleVar(value=float(self.enemy_rate.get()))
+        ttk.Scale(gr, from_=0.05, to=1.0, variable=tot_v, orient="horizontal",
+                  length=px(160)).pack(side="left", padx=px(8))
+        ttk.Label(gr, text="　来源", style="Sub.TLabel").pack(side="left")
+        src_v = tk.StringVar(value=str(self.enemy_source.get()))
+        ttk.Radiobutton(gr, text="全随机（原版 + 法魂）", variable=src_v, value="all").pack(side="left", padx=px(4))
+        ttk.Radiobutton(gr, text="只随机法魂敌人", variable=src_v, value="new").pack(side="left", padx=px(4))
+        gr2 = ttk.Frame(glob)
+        gr2.pack(fill="x", pady=(px(4), 0))
+        sz_v = tk.BooleanVar(value=bool(self.enemy_ignore_size.get()))
+        vi_v = tk.BooleanVar(value=bool(self.enemy_visual.get()))
+        ttk.Checkbutton(gr2, text="忽略体型限制（大的也能塞进小的）", variable=sz_v).pack(side="left")
+        ttk.Checkbutton(gr2, text="连外观一起换（真·换敌人）", variable=vi_v).pack(side="left", padx=px(14))
+
+        # 类别行的比例（窗口内独立编辑，点"应用"才写回主界面）
+        rows = {}
+        stats = getattr(self, "_enemy_stats_cache", None) or {}
+
+        def fill(pick=None):
+            for iid in tree.get_children():
+                tree.delete(iid)
+            for key, zh, _d in (("boss", "Boss", ""), ("elite", "精英", ""), ("normal", "普通敌人", "")):
+                v = rows[key].get()
+                tree.insert("", "end", iid=key, text=zh,
+                            values=(stats.get(key, "—"), "不参与" if v <= 0 else "%.0f%%" % (v * 100)))
+            if pick:
+                tree.selection_set(pick)
+
+        def pick(_e=None):
+            sel = (tree.selection() or ["boss"])[0]
+            cur["key"] = sel
+            zh, desc = {"boss": ("Boss", "击杀给 Boss 魂 / 有血条的那批"),
+                        "elite": ("精英", "血量偏高的敌对单位：骑士、守卫、巨兽"),
+                        "normal": ("普通敌人", "杂兵：士兵、野兽、虫类…（占绝大多数）")}[sel]
+            t_title.configure(text=zh)
+            t_desc.configure(text=desc)
+            rate_v.set(rows[sel].get())
+            pct.configure(text=("不参与" if rows[sel].get() <= 0 else "%.0f%%" % (rows[sel].get() * 100)))
+
+        def rate_moved(_v=None):
+            k = cur["key"]
+            rows[k].set(round(float(rate_v.get()), 2))
+            pct.configure(text=("不参与" if rows[k].get() <= 0 else "%.0f%%" % (rows[k].get() * 100)))
+            fill(k)
+
+        rows = {k: tk.DoubleVar(value=float(v.get())) for k, v in self.enemy_cls_rates.items()}
+        for k in rows:
+            rows[k].trace_add("write", lambda *_a: fill(cur.get("key")))
+        tree.bind("<<TreeviewSelect>>", pick)
+        # 滑块重建一次：要绑到 rate_moved
+        for ch in rr.winfo_children():
+            if isinstance(ch, ttk.Scale):
+                ch.configure(command=rate_moved)
+        fill("boss")
+        pick()
+
+        bar = ttk.Frame(body)
+        bar.pack(fill="x", pady=(px(12), 0))
+
+        def export():
+            from tkinter import filedialog
+            p = filedialog.asksaveasfilename(defaultextension=".json", initialfile="敌人预设.json",
+                                             filetypes=[("敌人预设", "*.json")])
+            if not p:
+                return
+            try:
+                d = {"pools": [k for k, v in rows.items() if v.get() > 0],
+                     "rates": {k: round(v.get(), 3) for k, v in rows.items() if v.get() > 0},
+                     "rate": float(tot_v.get()), "source": src_v.get(),
+                     "ignore_size": bool(sz_v.get()), "visual": bool(vi_v.get())}
+                json.dump(d, open(p, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+                self.log(f"敌人预设已导出 → {p}")
+            except Exception as e:
+                messagebox.showerror("导出失败", str(e), parent=win)
+
+        def import_():
+            from tkinter import filedialog
+            p = filedialog.askopenfilename(filetypes=[("敌人预设", "*.json")])
+            if not p:
+                return
+            try:
+                d = json.load(open(p, encoding="utf-8"))
+                for k, v in rows.items():
+                    v.set(float((d.get("rates") or {}).get(k, d.get("rate", 1.0) if k in (d.get("pools") or []) else 0.0)))
+                tot_v.set(float(d.get("rate", 1.0)))
+                src_v.set(d.get("source") or "all")
+                sz_v.set(bool(d.get("ignore_size")))
+                vi_v.set(bool(d.get("visual")))
+                fill("boss")
+                pick()
+                self.log(f"敌人预设已导入 ← {p}")
+            except Exception as e:
+                messagebox.showerror("导入失败", str(e), parent=win)
+
+        def reset():
+            for k in rows:
+                rows[k].set(1.0)
+            tot_v.set(1.0)
+            src_v.set("all")
+            sz_v.set(False)
+            vi_v.set(False)
+            fill("boss")
+            pick()
+
+        def apply_():
+            self.enemy_on.set(True)
+            for k, v in rows.items():
+                self.enemy_cls_rates[k].set(float(v.get()))
+                self.enemy_pools[k].set(float(v.get()) > 0)
+            self.enemy_rate.set(float(tot_v.get()))
+            self.enemy_source.set(src_v.get())
+            self.enemy_ignore_size.set(bool(sz_v.get()))
+            self.enemy_visual.set(bool(vi_v.get()))
+            self._refresh_enemy()
+            self.log("敌人预设已应用（还没写入游戏 —— 记得点「只写入敌人」）")
+            win.destroy()
+
+        ttk.Button(bar, text="导入预设…", style="TButton", command=import_).pack(side="left")
+        ttk.Button(bar, text="导出预设…", style="TButton", command=export).pack(side="left", padx=px(6))
+        ttk.Button(bar, text="重置为默认", style="TButton", command=reset).pack(side="left")
+        ttk.Button(bar, text="应用", style="Accent.TButton", command=apply_).pack(side="right")
+        ttk.Button(bar, text="取消", style="TButton", command=win.destroy).pack(side="right", padx=px(6))
+        try:
+            win.grab_set()
+        except Exception:
+            pass
+        return win
+
 
 
     # ── 页 2 · 敌人随机 ──
@@ -948,6 +1134,8 @@ class App:
         self.b_enemy_layer.pack(side="left")
         ttk.Button(wrap, text="用这个方案玩", style="TButton",
                    command=self.enemy_layer_launch).pack(side="left", padx=px(8))
+        ttk.Button(wrap, text="编辑敌人预设…", style="TButton",
+                   command=self.enemy_preset).pack(side="left", padx=px(8))
         ttk.Button(wrap, text="切回法魂本体", style="TButton",
                    command=self.enemy_layer_revert).pack(side="left")
         self.enemy_page_hint = ttk.Label(body, text="", style="Hint.TLabel",
@@ -3143,6 +3331,50 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("敌人随机：摘要里写出了这几项（忽略体型/独立种子）",
        "忽略体型限制" in _sum and "独立敌人种子" in _sum,
        repr(_sum[:60]))
+
+    # ── 编辑敌人预设子窗口（照参考实现的 EnemyPresetWindow）──
+    _win = None
+    try:
+        _win = app.enemy_preset()
+        root.update()
+        _trees = [w for w in _win.winfo_children() for w in w.winfo_children()
+                  if isinstance(w, ttk.Frame)]
+        ck("敌人预设窗口：能打开且有类别列表",
+           _win is not None and str(_win).startswith("."),
+           f"{_win}")
+        # 找到窗口里的 Treeview，选"普通敌人"、把它调到 0，再点应用
+        def _find_tree(w):
+            for c in w.winfo_children():
+                if isinstance(c, ttk.Treeview):
+                    return c
+                r = _find_tree(c)
+                if r is not None:
+                    return r
+            return None
+        _tr = _find_tree(_win)
+        ck("敌人预设窗口：左边有类别树（4 行里 3 类可调）",
+           _tr is not None and len(_tr.get_children()) >= 3,
+           f"{_tr.get_children() if _tr else None}")
+        app.enemy_cls_rates["normal"].set(0.0)     # 模拟"在窗口里把普通敌人调到 0 并应用"
+        app.enemy_pools["normal"].set(False)
+        app._refresh_enemy()
+        root.update()
+        _ce7 = app._collect().get("enemy") or {}
+        ck("敌人预设窗口：应用后主界面的 cfg 跟着变（普通敌人不参与）",
+           "normal" not in (_ce7.get("rates") or {}),
+           f"{_ce7.get('rates')}")
+    except Exception as e:
+        ck("敌人预设窗口：能打开且能应用", False, f"{type(e).__name__}: {e}")
+    finally:
+        if _win is not None:
+            try:
+                _win.destroy()
+            except Exception:
+                pass
+        app.enemy_cls_rates["normal"].set(1.0)
+        app.enemy_pools["normal"].set(True)
+        app._refresh_enemy()
+        root.update()
     app.enemy_ignore_size.set(False); app.enemy_seed_sep.set(False)
     app.enemy_on.set(False); app._refresh_enemy(); root.update()
 
