@@ -180,6 +180,47 @@ def load_units(plain, table="NpcParam"):
 
 # ────────────────────────── 分类与池 ──────────────────────────
 
+def load_boss_names(path=None):
+    """Boss 行的显示名：{npc_id: 血条上的名字}（来自 boss_rows.csv）
+
+    为什么需要它：Boss 行在 NpcParam 里 nameId 基本是 0（实测 296 个 Boss 行里只有 29 个有名字），
+    真正的显示名在 EMEVD 的血条指令里 —— 所以名字要从那张表贴过来。
+    """
+    p = path or os.path.join(HERE, "..", "boss_rows.csv")
+    out = {}
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                nid = str(r.get("npc_id") or "").strip()
+                nm = (r.get("boss_name") or "").strip()
+                if nid.isdigit() and nm:
+                    out.setdefault(int(nid), nm)
+    except Exception:
+        return {}
+    return out
+
+
+def load_boss_rows(path=None):
+    """**有血条 Boss** 对应的 NpcParam 行集合（来自 enemy_map_atlas 的 boss_rows.csv）。
+
+    这是目前最强的 Boss 判据：地图实体（MSB）→ NPCParamID（行），
+    而实体是不是"有血条 Boss"由 EMEVD 的 DisplayBossHealthBar 决定 —— 两端都是解包实测。
+    本机实测：332 条血条调用 → 313 条能在地图里找到实体 → 228 个唯一 Boss 行。
+    """
+    p = path or os.path.join(HERE, "..", "boss_rows.csv")
+    out = set()
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                if str(r.get("in_regulation", "")).lower() in ("true", "1"):
+                    nid = str(r.get("npc_id") or "").strip()
+                    if nid.isdigit():
+                        out.add(int(nid))
+    except Exception:
+        return set()
+    return out
+
+
 def load_healthbar_nameids(path=None):
     """血条名单里的名字 id 集合（来自 EMEVD 的 DisplayBossHealthBar）。
 
@@ -242,7 +283,8 @@ def infer_hostile_teams(units, cover=0.95):
     return out
 
 
-def classify(units, table=None, names=None, healthbar_ids=None):
+def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
+             boss_names=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
     可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
     if names:
@@ -254,8 +296,14 @@ def classify(units, table=None, names=None, healthbar_ids=None):
     hi = hps[int(len(hps) * 0.75)] if hps else 0
     hostile = infer_hostile_teams(units, cover=0.80)
     _hb_ids = healthbar_ids if healthbar_ids is not None else load_healthbar_nameids()
+    _boss_rows = boss_rows if boss_rows is not None else load_boss_rows()
+    boss_names = boss_names if boss_names is not None else load_boss_names()
     for rid, u in units.items():
-        if u.is_boss:
+        if rid in _boss_rows:
+            # **解包实测**的 Boss：地图实体 → 行，且该实体有 Boss 血条（EMEVD）
+            # —— 这条比 isSoulGetByBoss 更准（那条只表示"击杀给 Boss 魂"），也比名字靠谱
+            u.cls = "boss"
+        elif u.is_boss:
             u.cls = "boss"                      # Boss 按游戏自己的标记（友好 NPC 不会有）
         elif u.name_id and u.name_id in _hb_ids:
             # 名字 id 命中血条名单 —— 只能当**标签**，不能当证据！
@@ -271,6 +319,10 @@ def classify(units, table=None, names=None, healthbar_ids=None):
             u.cls = "elite" if u.hp >= max(hi, 800) else "normal"
         else:
             u.cls = "skip"
+    if boss_names:
+        for rid, u in units.items():
+            if u.cls == "boss" and not u.name and rid in boss_names:
+                u.name = boss_names[rid]        # Boss 的名字来自血条名单
     if table:
         for rid, meta in table.items():
             u = units.get(int(rid))
