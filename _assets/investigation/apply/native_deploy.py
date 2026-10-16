@@ -77,7 +77,8 @@ def find_original(pattern):
     return hits[0] if hits else None
 
 
-def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=None):
+def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=None,
+           plan_label=None, plan_meta=None):
     relocate()
     # ── 打包版：把「所有会写文件的路径」重定位到 exe 旁边那份工作区 ──
     # 这些目录原本按"代码所在位置"拼，打包后那指向临时解包目录，
@@ -213,6 +214,7 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     #     所以"物品"和"敌人"两套改动必须在这一次里先后落盘，否则后者会把前者冲掉。
     #     两边写的是不同的表（物品=ItemLotParam*/ShopLineupParam；敌人=NpcParam），互不干扰。
     #     计划是**现场按 cfg 生成**的：同种子 ⇒ 同一份计划（可复现、也不用把大文件塞进方案库）。
+    _msb_files = []          # 二期：真换外观时，改好的地图（相对 game/ 的路径 + 绝对路径）
     if enemy_cfg and enemy_cfg.get("on"):
         import enemy_randomizer as er
         _u, _plan, _warn, _issues = er.plan_for_cfg(enemy_cfg)
@@ -227,6 +229,28 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
             f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
         rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],
                              "fingerprint": _res["fingerprint"], "plan": os.path.basename(_tmp)})
+
+        # ④b 真换外观（二期）：把地图上的模型/参数一起换掉 —— **只写进方案层，不动 mod 本体**
+        #     为什么放这里：替换关系就是敌人计划本身（{源行: 目标行}），一次算完两边都能用。
+        if enemy_cfg.get("visual"):
+            try:
+                import enemy_swapper as ES
+                _mdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
+                                     "map", "MapStudio")
+                _odir = os.path.join(LOG, f"msb_{ts}")
+                _sres = ES.plan_swaps(dict(_plan), map_dir=_mdir, out_dir=_odir, log=log)
+                _msb_files = [(os.path.join(_odir, f), os.path.join("map", "MapStudio", f))
+                              for f in _sres.get("files") or []]
+                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\uff1a{_sres.get('maps_changed')}/{_sres.get('maps_total')} "
+                    f"\u5f20\u56fe\u3001{_sres.get('parts_changed')} \u4e2a\u654c\u4eba\uff08\u8df3\u8fc7 {_sres.get('parts_skipped')}\uff09")
+                rec["steps"].append({"step": "enemy_visual", "ok": True, "maps": _sres.get("maps_changed"),
+                                     "parts": _sres.get("parts_changed"),
+                                     "skipped": _sres.get("parts_skipped")})
+            except ImportError:
+                log("[\u2463b] \u771f\u6362\u5916\u89c2\uff1a\u672c\u5b9d\u8fd8\u6ca1\u5c31\u7eea\uff08enemy_swapper.py \u4e0d\u5728\uff09\uff0c\u8fd9\u4e00\u6b21\u53ea\u6362\u6570\u503c")
+            except Exception as _e:
+                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\u5931\u8d25\uff08\u4e0d\u5f71\u54cd\u5176\u4ed6\u5199\u5165\uff09\uff1a{_e}")
+                rec["steps"].append({"step": "enemy_visual", "ok": False, "error": str(_e)})
     rec["steps"].append({"step": "regulation", "ok": not rep["skipped"], "stats": rep["stats"],
                          "skipped": rep["skipped"], "bytes_changed": rep["changed_bytes"]})
 
@@ -246,6 +270,23 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     log(f"[⑥] 校验：regulation 明文 {len(plain)} B；说明书 {os.path.getsize(msg)} B、{len(bnd.files)} 个 FMG")
     rec["verify"] = {"plain_len": len(plain), "msg_size": os.path.getsize(msg), "fmg_count": len(bnd.files),
                      "fmg_len": len(fmg[0]) if fmg else 0}
+    # ⑦ 方案层：把这次的产物抄成一个"覆盖层"，用 YAFSML 的 [mod] 列表挂载（法魂本体永不动）
+    #    为什么放最后：层里放的是**部署完**的 regulation.bin，所以必须在所有写入之后。
+    #    为什么有用：方案之间从此可以共存 —— 切换只是 ini 里一行 Plan=…，回滚就是删掉那行。
+    if plan_label:
+        try:
+            import plan_layer as PL
+            _r = PL.export_layer(plan_label, extra_files=_msb_files, log=log)
+            PL.make_launchers(_r["dir"], _r["label"], log=log)
+            PL.write_info(_r["dir"], dict(plan_meta or {}), log=log)
+            log(f"[⑦] 方案层：{_r['dir']}（{len(_r['files'])} 个文件，{_r['bytes']/1048576:.1f} MB）")
+            log("     想用这个方案玩：双击该目录里的「用这个方案启动.bat」；切回本体用「切回法魂本体.bat」")
+            rec["steps"].append({"step": "plan_layer", "ok": True, "dir": _r["dir"],
+                                 "files": len(_r["files"]), "bytes": _r["bytes"]})
+        except Exception as _e:
+            log(f"[⑦] 方案层产出失败（本体写入不受影响）：{_e}")
+            rec["steps"].append({"step": "plan_layer", "ok": False, "error": str(_e)})
+
     with open(os.path.join(LOG, f"deploy_{ts}.json"), "w", encoding="utf-8") as f:
         json.dump(rec, f, ensure_ascii=False, indent=1)
     log(f"     收据：logs/deploy_{ts}.json")
