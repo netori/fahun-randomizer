@@ -506,9 +506,11 @@ class App:
         self.nb = ttk.Notebook(self.root)
         self.nb.pack(fill="both", expand=True, padx=px(10), pady=(px(4), px(10)))
         self.page_set = ttk.Frame(self.nb)
+        self.page_enemy = ttk.Frame(self.nb)
         self.page_lib = ttk.Frame(self.nb, padding=(px(10), px(8), px(10), px(4)))
         self._deco_tabs = []
-        for page, label, icon in ((self.page_set, "随机设置", deco_image("tab_settings")),
+        for page, label, icon in ((self.page_set, "职业物品随机", deco_image("tab_settings")),
+                                  (self.page_enemy, "敌人随机", deco_image("tab_settings")),
                                   (self.page_lib, "方案库", deco_image("tab_library"))):
             if icon:
                 self._deco_tabs.append(icon)
@@ -516,6 +518,7 @@ class App:
             else:
                 self.nb.add(page, text=f"  {label}  ")
         self._build_settings(self._scrollable(self.page_set))
+        self._build_enemy_page(self._scrollable(self.page_enemy))
         self._build_library(self.page_lib)
         self.nb.bind("<<NotebookTabChanged>>", self._on_tab_changed)
 
@@ -543,7 +546,8 @@ class App:
         # 只在鼠标进这一页时接管滚轮，走了就还回去（否则会影响另一页的列表）
         outer.bind("<Enter>", lambda _e: canvas.bind_all("<MouseWheel>", wheel))
         outer.bind("<Leave>", lambda _e: canvas.unbind_all("<MouseWheel>"))
-        self.page_set_inner = inner
+        if not hasattr(self, "page_set_inner"):
+            self.page_set_inner = inner
         return inner
 
     # ── 页 1 · 随机设置 ──
@@ -717,55 +721,7 @@ class App:
                            highlightbackground=EDGE, highlightcolor=GOLD)
         self.txt.pack(fill="both", expand=True, pady=(px(8), 0))
 
-        # ── 敌人随机（2026-10-16 新增；与物品随机**互不干扰**，两者可同时开）──
-        #    口径见 docs/敌人随机_方案.md：池子照抄原版敌随（类别池 + 加权来源池），
-        #    法魂与原版的种类合并进同一个池；有「只随机法魂敌人」这个来源开关。
-        e1 = ttk.Frame(self.adv)
-        e1.pack(fill="x", pady=(10, 0))
-        self.enemy_on = tk.BooleanVar(value=False)
-        self.cb_enemy = ttk.Checkbutton(e1, text="敌人随机（换敌人的数值 / AI / 掉落）",
-                                        variable=self.enemy_on, command=self._refresh_enemy)
-        self.cb_enemy.pack(side="left")
-        ttk.Label(e1, text="· 与物品随机互不干扰，可以同时开；外观不变（这一期只换「灵魂」）",
-                  style="Hint.TLabel").pack(side="left", padx=8)
-        e2 = ttk.Frame(self.adv)
-        e2.pack(fill="x", pady=(4, 0))
-        ttk.Label(e2, text="参与类别", style="Sub.TLabel").pack(side="left")
-        self.enemy_pools = {}
-        for key, zh in (("boss", "Boss"), ("elite", "精英"), ("normal", "普通敌人")):
-            self.enemy_pools[key] = tk.BooleanVar(value=True)
-            ttk.Checkbutton(e2, text=zh, variable=self.enemy_pools[key],
-                            command=self._refresh_enemy).pack(side="left", padx=(8, 0))
-        ttk.Label(e2, text="比例", style="Sub.TLabel").pack(side="left", padx=(14, 0))
-        self.enemy_rate = tk.DoubleVar(value=1.0)
-        self.enemy_sub = []          # 关掉总开关时，这些子控件一起变灰
-        _sc = ttk.Scale(e2, from_=0.05, to=1.0, variable=self.enemy_rate, orient="horizontal",
-                        length=px(150), command=lambda _v: self._refresh_enemy())
-        _sc.pack(side="left", padx=6)
-        self.enemy_sub.append(_sc)
-        self.enemy_rate_lbl = ttk.Label(e2, text="全改（100%）", style="Hint.TLabel")
-        self.enemy_rate_lbl.pack(side="left")
-        e3 = ttk.Frame(self.adv)
-        e3.pack(fill="x", pady=(2, 0))
-        ttk.Label(e3, text="来源", style="Sub.TLabel").pack(side="left")
-        self.enemy_source = tk.StringVar(value="all")
-        for _val, _txt, _pad in (("all", "全随机（原版 + 法魂）", (8, 0)), ("new", "只随机法魂敌人", 8)):
-            _rb = ttk.Radiobutton(e3, text=_txt, variable=self.enemy_source, value=_val,
-                                  command=self._refresh_enemy)
-            _rb.pack(side="left", padx=_pad)
-            self.enemy_sub.append(_rb)
-        e4 = ttk.Frame(self.adv)
-        e4.pack(fill="x", pady=(4, 0))
-        self.enemy_visual = tk.BooleanVar(value=False)
-        _cbv = ttk.Checkbutton(e4, text="连外观一起换（真·换敌人）", variable=self.enemy_visual)
-        _cbv.pack(side="left")
-        self.enemy_sub.append(_cbv)
-        ttk.Label(e4, text="· 换的是地图上的模型与参数；只写进「方案层」，法魂本体一个字节都不动",
-                  style="Hint.TLabel").pack(side="left", padx=8)
-        self.enemy_hint = ttk.Label(self.adv, text="", style="Hint.TLabel",
-                                    wraplength=px(820), justify="left")
-        self.enemy_hint.pack(anchor="w", pady=(4, 0))
-        self._refresh_enemy()
+        # 敌人随机那组控件已经搬到「敌人随机」页 —— 见 _build_enemy_page()
 
     def _refresh_enemy(self, *_a):
         """敌人随机那一组的联动：开关控制可用性 + 实时写出量化提示（与合理度那组一个风格）"""
@@ -825,7 +781,159 @@ class App:
         self._refresh_enemy()
 
 
-    # ══════════ 页 2 · 方案库 ══════════
+
+    # ── 页 2 · 敌人随机 ──
+    def _build_enemy_page(self, body):
+        """敌人随机独立一页：设置 + 只写入敌人（做成方案层）+ 用这个方案玩。
+
+        为什么单独开一页：物品与敌人是两套独立的随机（写不同的表、独立的随机流），
+        混在「更多设置」里既不好找，也容易让人以为必须一起开。
+        但**写入**仍然建议合成一层 —— 两边的产物都落在 regulation.bin 里，
+        分两个方案层的话后挂的那个会把前一个顶掉（见 docs/方案层使用说明.md 第 4 节）。
+        """
+        ttk.Label(body, text="敌人随机", style="Title.TLabel").pack(anchor="w")
+        ttk.Label(body,
+                  text="换敌人的整行数据（血量/伤害/AI/掉落…）；勾上「连外观一起换」时还会改地图上的模型。\n"
+                       "下面那个按钮只写入敌人——产物只进方案层，法魂本体一个字节都不动。",
+                  style="Hint.TLabel", wraplength=px(820), justify="left").pack(anchor="w", pady=(px(4), px(8)))
+
+        # ── 敌人随机（2026-10-16 新增；与物品随机**互不干扰**，两者可同时开）──
+        #    口径见 docs/敌人随机_方案.md：池子照抄原版敌随（类别池 + 加权来源池），
+        #    法魂与原版的种类合并进同一个池；有「只随机法魂敌人」这个来源开关。
+        e1 = ttk.Frame(body)
+        e1.pack(fill="x", pady=(10, 0))
+        self.enemy_on = tk.BooleanVar(value=False)
+        self.cb_enemy = ttk.Checkbutton(e1, text="敌人随机（换敌人的数值 / AI / 掉落）",
+                                        variable=self.enemy_on, command=self._refresh_enemy)
+        self.cb_enemy.pack(side="left")
+        ttk.Label(e1, text="· 与物品随机互不干扰，可以同时开；外观不变（这一期只换「灵魂」）",
+                  style="Hint.TLabel").pack(side="left", padx=8)
+        e2 = ttk.Frame(body)
+        e2.pack(fill="x", pady=(4, 0))
+        ttk.Label(e2, text="参与类别", style="Sub.TLabel").pack(side="left")
+        self.enemy_pools = {}
+        for key, zh in (("boss", "Boss"), ("elite", "精英"), ("normal", "普通敌人")):
+            self.enemy_pools[key] = tk.BooleanVar(value=True)
+            ttk.Checkbutton(e2, text=zh, variable=self.enemy_pools[key],
+                            command=self._refresh_enemy).pack(side="left", padx=(8, 0))
+        ttk.Label(e2, text="比例", style="Sub.TLabel").pack(side="left", padx=(14, 0))
+        self.enemy_rate = tk.DoubleVar(value=1.0)
+        self.enemy_sub = []          # 关掉总开关时，这些子控件一起变灰
+        _sc = ttk.Scale(e2, from_=0.05, to=1.0, variable=self.enemy_rate, orient="horizontal",
+                        length=px(150), command=lambda _v: self._refresh_enemy())
+        _sc.pack(side="left", padx=6)
+        self.enemy_sub.append(_sc)
+        self.enemy_rate_lbl = ttk.Label(e2, text="全改（100%）", style="Hint.TLabel")
+        self.enemy_rate_lbl.pack(side="left")
+        e3 = ttk.Frame(body)
+        e3.pack(fill="x", pady=(2, 0))
+        ttk.Label(e3, text="来源", style="Sub.TLabel").pack(side="left")
+        self.enemy_source = tk.StringVar(value="all")
+        for _val, _txt, _pad in (("all", "全随机（原版 + 法魂）", (8, 0)), ("new", "只随机法魂敌人", 8)):
+            _rb = ttk.Radiobutton(e3, text=_txt, variable=self.enemy_source, value=_val,
+                                  command=self._refresh_enemy)
+            _rb.pack(side="left", padx=_pad)
+            self.enemy_sub.append(_rb)
+        e4 = ttk.Frame(body)
+        e4.pack(fill="x", pady=(4, 0))
+        self.enemy_visual = tk.BooleanVar(value=False)
+        _cbv = ttk.Checkbutton(e4, text="连外观一起换（真·换敌人）", variable=self.enemy_visual)
+        _cbv.pack(side="left")
+        self.enemy_sub.append(_cbv)
+        ttk.Label(e4, text="· 换的是地图上的模型与参数；只写进「方案层」，法魂本体一个字节都不动",
+                  style="Hint.TLabel").pack(side="left", padx=8)
+        self.enemy_hint = ttk.Label(body, text="", style="Hint.TLabel",
+                                    wraplength=px(820), justify="left")
+        self.enemy_hint.pack(anchor="w", pady=(4, 0))
+        self._refresh_enemy()
+
+        wrap = ttk.Frame(body)
+        wrap.pack(fill="x", pady=(px(12), 0))
+        self.b_enemy_layer = ttk.Button(
+            wrap, text="① 只写入敌人（做成方案层）",
+            style="Accent.TButton", command=self.enemy_layer)
+        self.b_enemy_layer.pack(side="left")
+        ttk.Button(wrap, text="用这个方案玩", style="TButton",
+                   command=self.enemy_layer_launch).pack(side="left", padx=px(8))
+        ttk.Button(wrap, text="切回法魂本体", style="TButton",
+                   command=self.enemy_layer_revert).pack(side="left")
+        self.enemy_page_hint = ttk.Label(body, text="", style="Hint.TLabel",
+                                         wraplength=px(820), justify="left")
+        self.enemy_page_hint.pack(anchor="w", pady=(px(10), 0))
+        self._enemy_page_refresh()
+
+    def _enemy_page_refresh(self, *_a):
+        """页脚那行：现在挂的是哪个方案"""
+        lay = ""
+        try:
+            sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+            import plan_layer as PL
+            lay = PL.current_plan_line() or ""
+        except Exception:
+            lay = ""
+        if hasattr(self, "enemy_page_hint"):
+            self.enemy_page_hint.config(
+                text="当前挂载：" + (lay or "（没有，跑的是纯法魂本体）"))
+
+    def _enemy_page_hint_set(self, text, bad=False):
+        if hasattr(self, "enemy_page_hint"):
+            self.enemy_page_hint.config(text=text, style="Bad.TLabel" if bad else "Hint.TLabel")
+
+    def enemy_layer(self):
+        """只写入敌人：以**原始** regulation 为底，只套敌人，产出一个方案层。"""
+        if getattr(self, "_enemy_busy", False):
+            return
+        cfg = self._enemy_cfg() or {"on": False}
+        if not cfg.get("on"):
+            messagebox.showinfo("还没开敌人随机",
+                                "先把上面的「敌人随机」勾上。")
+            return
+        self._enemy_busy = True
+        self.b_enemy_layer.config(state="disabled")
+        label = "敌人_%s_种子%d" % (time.strftime("%Y%m%d_%H%M"), int(self.seed.get()))
+        self.log("只写入敌人 → 方案层：" + label)
+        self._enemy_page_hint_set("正在做方案层…（要读一遍 regulation，稍等）")
+
+        def work():
+            try:
+                sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+                import plan_layer as PL
+                r = PL.make_enemy_layer(label, cfg, log=self.log)
+                self._last_enemy_layer = r["dir"]
+                self.q.put(("enemy_page", ("✓ 方案层已就绪：" + r["dir"], False)))
+            except Exception as e:
+                import traceback
+                self.log("只写入敌人失败：" + traceback.format_exc(limit=4))
+                self.q.put(("enemy_page", ("✗ 失败：" + str(e), True)))
+            finally:
+                self.q.put(("enemy_page_done", None))
+        threading.Thread(target=work, daemon=True).start()
+
+    def enemy_layer_launch(self):
+        self._enemy_layer_toggle(True)
+
+    def enemy_layer_revert(self):
+        self._enemy_layer_toggle(False)
+
+    def _enemy_layer_toggle(self, on):
+        try:
+            sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+            import plan_layer as PL
+            if on:
+                d = getattr(self, "_last_enemy_layer", "")
+                if not d or not os.path.isdir(os.path.join(d, "mod")):
+                    self._enemy_page_hint_set("还没有敌人方案层 —— 先点「只写入敌人」", bad=True)
+                    return
+                r = PL.set_plan(d)
+                self._enemy_page_hint_set("已挂载 ✓ 下一次启动就用它")
+                self.log("方案层已挂载：%s（备份 %s）" % (d, os.path.basename(r.get("backup", ""))))
+            else:
+                r = PL.clear_plan()
+                self._enemy_page_hint_set("已切回法魂本体" if r.get("changed") else "本来就没挂载方案")
+        except Exception as e:
+            self._enemy_page_hint_set("操作失败：" + str(e), bad=True)
+
+    # ══════════ 页 3 · 方案库 ══════════
     def _build_library(self, body):
         """方案库页：左边常驻列表 + 右边常驻详情面板。
 
@@ -891,9 +999,9 @@ class App:
         ttk.Label(self.lib_empty, text="还没有方案", style="Gold.TLabel").pack(anchor="w", pady=(0, 4))
         self.lib_empty_txt = ttk.Label(
             self.lib_empty, style="Hint.TLabel", justify="left", wraplength=px(380),
-            text="先到「随机设置」生成一套（点 ① 生成随机方案），\n再点那里的「💾 保存到方案库」，方案就会出现在这里。")
+            text="先到「职业物品随机」生成一套（点 ① 生成随机方案），\n再点那里的「💾 保存到方案库」，方案就会出现在这里。")
         self.lib_empty_txt.pack(anchor="w")
-        ttk.Button(self.lib_empty, text="去「随机设置」生成一套", style="Link.TButton",
+        ttk.Button(self.lib_empty, text="去「职业物品随机」生成一套", style="Link.TButton",
                    command=lambda: self.nb.select(self.page_set)).pack(anchor="w", pady=(8, 0))
 
         # ── 右：详情（常驻，取代弹窗）──
@@ -1068,7 +1176,7 @@ class App:
         if not kids:
             if total == 0:
                 self.lib_empty_txt.config(
-                    text="先到「随机设置」生成一套（点 ① 生成随机方案），\n"
+                    text="先到「职业物品随机」生成一套（点 ① 生成随机方案），\n"
                          "再点那里的「💾 保存到方案库」，方案就会出现在这里。")
             else:
                 self.lib_empty_txt.config(text=f"没有匹配「{kw}」的方案。\n换个词，或把搜索框清空。")
@@ -1125,7 +1233,7 @@ class App:
                 b.config(state="normal" if usable else "disabled")
         if not pid:
             self.lib_title.config(text="还没有方案")
-            self.lib_sub.config(text="先到「随机设置」生成一套，再点「保存到方案库」")
+            self.lib_sub.config(text="先到「职业物品随机」生成一套，再点「保存到方案库」")
             self._lib_set_field(self.lib_name_e, "")
             self._lib_set_field(self.lib_note_e, "")
             self._lib_tags_render([])
@@ -2576,9 +2684,10 @@ def uicheck():
     problems = []
     tabs = [str(app.nb.tab(t, "text")).strip() for t in app.nb.tabs()]
     print(f"   页签：{' ｜ '.join(tabs)}")
-    if len(tabs) != 2:
-        problems.append(f"页签不是两个：{tabs}")
-    for want, page in (("随机设置", app.page_set), ("方案库", app.page_lib)):
+    if len(tabs) != 3:
+        problems.append(f"页签不是三个（职业物品随机 / 敌人随机 / 方案库）：{tabs}")
+    for want, page in (("职业物品随机", app.page_set), ("敌人随机", app.page_enemy),
+                       ("方案库", app.page_lib)):
         if not any(want in t for t in tabs):
             problems.append(f"缺页签：{want}")
         if not str(page).startswith(str(app.nb)):
@@ -3281,9 +3390,21 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     app._lib_search_set("")
     ck("空库：换成引导文案", bool(app.lib_empty.winfo_manager()),
        f"empty={app.lib_empty.winfo_manager()!r}")
-    ck("空库：引导去随机设置生成",
-       "随机设置" in app.lib_empty_txt.cget("text") and "保存到方案库" in app.lib_empty_txt.cget("text"),
+    ck("空库：引导去「职业物品随机」页生成",
+       "职业物品随机" in app.lib_empty_txt.cget("text") and "保存到方案库" in app.lib_empty_txt.cget("text"),
        repr(app.lib_empty_txt.cget("text")[:40]))
+    # 三页签：物品 / 敌人 / 方案库（2026-10-16 拆页）
+    _tabs = [str(app.nb.tab(t, "text")).strip() for t in app.nb.tabs()]
+    ck("页签：物品·敌人·方案库三页",
+       len(_tabs) == 3 and all(any(w in t for t in _tabs)
+                               for w in ("职业物品随机", "敌人随机", "方案库")),
+       f"{_tabs}")
+    # 敌人那组控件现在挂在「敌人随机」页上，但仍要能用（老检查靠这些属性）
+    ck("敌人随机页：控件在、且是这一页的",
+       all(hasattr(app, a) for a in ("enemy_on", "enemy_pools", "enemy_rate", "enemy_source",
+                                     "enemy_visual", "b_enemy_layer", "enemy_page_hint"))
+       and str(app.b_enemy_layer).startswith(str(app.page_enemy)),
+       f"按钮父容器={app.b_enemy_layer.winfo_parent()}")
     ck("空库：详情面板也回到空态", app.lib_title.cget("text") == "还没有方案",
        repr(app.lib_title.cget("text")))
 

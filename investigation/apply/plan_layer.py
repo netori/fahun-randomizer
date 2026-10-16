@@ -166,7 +166,7 @@ def _sha(p, n=16):
     return hashlib.sha256(open(p, "rb").read()).hexdigest()[:n] if os.path.isfile(p) else ""
 
 
-def export_layer(label=None, extra_files=None, log=print):
+def export_layer(label=None, extra_files=None, log=print, reg_src=None):
     """把**当前已部署**的 mod 产物抄进一个方案层目录。
 
     extra_files：额外要进层的东西（二期换敌人的地图），给 [(源绝对路径, 层内相对路径), …]
@@ -180,8 +180,8 @@ def export_layer(label=None, extra_files=None, log=print):
     log(f"[方案层] 目录   = {dest}")
 
     got = []
-    # ① regulation.bin（部署完的那份）
-    src = os.path.join(mr, "regulation.bin")
+    # ① regulation.bin（默认是已部署的那份；只写入敌人时由调用方传入自己打好的一份）
+    src = reg_src or os.path.join(mr, "regulation.bin")
     if not os.path.isfile(src):
         raise RuntimeError(f"找不到 {src}")
     shutil.copy2(src, os.path.join(dest_mod, "regulation.bin"))
@@ -217,6 +217,78 @@ def export_layer(label=None, extra_files=None, log=print):
     total = sum(g[3] for g in got)
     log(f"[方案层] 共 {len(got)} 个文件、{total/1048576:.1f} MB")
     return {"dir": dest, "mod": dest_mod, "files": got, "bytes": total, "label": label}
+
+
+def find_pristine_reg():
+    """找一份**原始** regulation 备份（apply/backup/regulation.bin.orig_*）"""
+    bak = os.path.join(HERE, "backup")
+    if not os.path.isdir(bak):
+        return None
+    cand = sorted((os.path.join(bak, f) for f in os.listdir(bak)
+                   if f.startswith("regulation.bin.orig_")), reverse=True)
+    return cand[0] if cand else None
+
+
+def make_enemy_layer(label, enemy_cfg, log=print):
+    """**只写入敌人**：以原始 regulation 为底，只套一遍敌人随机，产出方案层。
+
+    返回 export_layer 的结果；失败时抛异常（调用方自己弹提示）。
+    """
+    import tempfile
+    import shutil
+    import enemy_randomizer as ER
+
+    src = find_pristine_reg()
+    if not src:
+        raise RuntimeError("找不到原始 regulation 备份（investigation/apply/backup/"
+                           "regulation.bin.orig_*）—— 先在主界面刷一遍「还原成原始」或做过一次写入")
+    tmpd = tempfile.mkdtemp(prefix="_enemylayer_")
+    tmpreg = os.path.join(tmpd, "regulation.bin")
+    shutil.copy2(src, tmpreg)
+    log("[\u53ea\u5199\u5165\u654c\u4eba] \u5e95\u5c42\uff1a" + os.path.basename(src))
+
+    units, plan, warn, issues = ER.plan_for_cfg(enemy_cfg, reg_path=tmpreg)
+    for w in warn:
+        log("[\u53ea\u5199\u5165\u654c\u4eba] \u8b66\u544a\uff1a" + str(w))
+    if issues:
+        raise RuntimeError("\u654c\u4eba\u968f\u673a\u81ea\u68c0\u672a\u901a\u8fc7\uff1a" + str(issues[:3]))
+    plan_csv = os.path.join(tmpd, "enemy_plan.csv")
+    ER.write_plan(plan, units, plan_csv)
+    res = ER.apply_plan(ER.read_plan(plan_csv), source=tmpreg, out_path=tmpreg,
+                        verify=True, quiet=True)
+    log("[\u53ea\u5199\u5165\u654c\u4eba] \u6574\u884c\u7f6e\u6362 %d \u884c\uff08%s\uff09"
+        % (res["rows"], ER.summarize(units, plan)))
+
+    extra = []
+    if (enemy_cfg or {}).get("visual"):
+        try:
+            import enemy_swapper as ES
+            mdir = os.path.join(mod_root(), "map", "MapStudio")
+            odir = os.path.join(tmpd, "msb")
+            sres = ES.plan_swaps(dict(plan), map_dir=mdir, out_dir=odir, log=log)
+            extra = [(os.path.join(odir, f), os.path.join("map", "MapStudio", f))
+                     for f in (sres.get("files") or [])]
+            log("[\u53ea\u5199\u5165\u654c\u4eba] \u771f\u6362\u5916\u89c2\uff1a%d \u5f20\u56fe\u3001%d \u4e2a\u654c\u4eba"
+                % (sres.get("maps_changed", 0), sres.get("parts_changed", 0)))
+        except ImportError:
+            log("[\u53ea\u5199\u5165\u654c\u4eba] enemy_swapper \u4e0d\u5728\uff0c\u8fd9\u4e00\u6b21\u53ea\u6362\u6570\u503c")
+        except Exception as e:
+            log("[\u53ea\u5199\u5165\u654c\u4eba] \u771f\u6362\u5916\u89c2\u5931\u8d25\uff1a" + str(e))
+
+    r = export_layer(label, extra_files=extra, log=log, reg_src=tmpreg)
+    make_launchers(r["dir"], r["label"], log=log)
+    write_info(r["dir"], {"\u7c7b\u578b": "\u53ea\u5199\u5165\u654c\u4eba\uff08\u7269\u54c1\u672a\u52a8\uff09",
+                          "\u79cd\u5b50": enemy_cfg.get("seed"),
+                          "\u53c2\u4e0e\u7c7b\u522b": "\u3001".join(enemy_cfg.get("pools") or []),
+                          "\u6bd4\u4f8b": enemy_cfg.get("rate"),
+                          "\u6765\u6e90": enemy_cfg.get("source"),
+                          "\u8fde\u5916\u89c2": "\u662f" if (enemy_cfg or {}).get("visual") else "\u5426",
+                          "\u6539\u5199\u884c\u6570": res["rows"]}, log=log)
+    try:
+        shutil.rmtree(tmpd, ignore_errors=True)
+    except Exception:
+        pass
+    return r
 
 
 def _newest_orig(name):
