@@ -117,7 +117,7 @@ class Unit(object):
 
     __slots__ = ("rid", "off", "row_size", "hp", "soul", "is_boss", "radius", "height",
                  "npc_type", "team_type", "cls", "source", "sha", "name", "name_id",
-                 "boss_like_name")
+                 "boss_like_name", "model", "enemy_type")
 
     def __init__(self, rid, off, row_size, fields, plain):
         self.rid, self.off, self.row_size = rid, off, row_size
@@ -148,6 +148,8 @@ class Unit(object):
         self.team_type = g("teamType")
         self.name_id = g("nameId") or 0
         self.boss_like_name = False
+        self.model = ""
+        self.enemy_type = ""
         self.cls = "normal"
         self.source = "old"            # old = 原版 / new = 法魂新增（默认 unknown → old）
         self.name = ""
@@ -179,6 +181,47 @@ def load_units(plain, table="NpcParam"):
 
 
 # ────────────────────────── 分类与池 ──────────────────────────
+
+def load_row_types(row_models=None, type_map=None):
+    """{row_id: 敌型} —— 走两层：行 →（实际被放置的）模型 → 敌型。
+
+    `row_models.csv` 来自地图实测（3807 个行在地图上被用到，其中 3788 个只对应 1 个模型）；
+    `enemy_type_map.csv` 来自子 agent 的归类（462 个模型 → 16 类 + 体型档 + 未分类）。
+    注意：只有 34.8% 的模型有权威名字（杂兵在 NpcParam 里 nameId=0），所以大部分行拿不到敌型 ——
+    这不是 bug，是数据上限；拿到的那部分当**画像标签**用，不要当池子的轴。
+    """
+    rm = row_models if row_models is not None else os.path.join(HERE, "..", "row_models.csv")
+    tm = type_map if type_map is not None else os.path.join(HERE, "..", "enemy_type_map.csv")
+    mod2type, row2model = {}, {}
+    try:
+        with open(tm, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                if r.get("model"):
+                    mod2type[r["model"]] = r.get("enemy_type") or ""
+        with open(rm, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                rid = str(r.get("npc_id") or "").strip()
+                if rid.isdigit() and int(rid) > 0 and r.get("model"):
+                    row2model[int(rid)] = r["model"]
+    except Exception:
+        return {}
+    return {rid: mod2type.get(m, "") for rid, m in row2model.items()}
+
+
+def load_row_models(path=None):
+    """{row_id: 主模型}（地图实测：某个行被放置时最常用的那个模型）"""
+    p = path or os.path.join(HERE, "..", "row_models.csv")
+    out = {}
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                rid = str(r.get("npc_id") or "").strip()
+                if rid.isdigit() and int(rid) > 0 and r.get("model"):   # 0 是占位，不是行
+                    out[int(rid)] = r["model"]
+    except Exception:
+        return {}
+    return out
+
 
 def load_boss_names(path=None):
     """Boss 行的显示名：{npc_id: 血条上的名字}（来自 boss_rows.csv）
@@ -292,7 +335,7 @@ def infer_hostile_teams(units, cover=0.95):
 
 
 def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
-             boss_names=None):
+             boss_names=None, row_types=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
     可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
     if names:
@@ -331,6 +374,13 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
         for rid, u in units.items():
             if u.cls == "boss" and not u.name and rid in boss_names:
                 u.name = boss_names[rid]        # Boss 的名字来自血条名单
+    if row_types is None:
+        row_types = load_row_types()
+    if row_types:
+        for rid, u in units.items():
+            t = row_types.get(rid)
+            if t:
+                u.enemy_type = t
     if table:
         for rid, meta in table.items():
             u = units.get(int(rid))
