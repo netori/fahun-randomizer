@@ -780,6 +780,8 @@ class App:
             _fl.append("忽略体型限制")
         if self.enemy_visual.get():
             _fl.append("连外观一起换")
+        if not self.enemy_keep_unkillable.get():
+            _fl.append("连打不死的也换")
         if self.enemy_same_type.get():
             _fl.append("只换同一种敌人")
         _ty = self._enemy_types_picked()
@@ -878,7 +880,9 @@ class App:
              "source": self.enemy_source.get(),
              "ignore_size": bool(self.enemy_ignore_size.get()),
              "visual": bool(self.enemy_visual.get()),
-             "same_type": bool(self.enemy_same_type.get())}
+             "same_type": bool(self.enemy_same_type.get()),
+             # 反向存：勾上「不动打不死的」= 不允许换它们（默认）
+             "allow_unkillable": not bool(self.enemy_keep_unkillable.get())}
         _ty = self._enemy_types_picked()
         if _ty:
             d["types"] = _ty
@@ -915,6 +919,7 @@ class App:
             self.enemy_source.set(e.get("source") or "all")
             self.enemy_visual.set(bool(e.get("visual")))
             self.enemy_same_type.set(bool(e.get("same_type")))
+            self.enemy_keep_unkillable.set(not bool(e.get("allow_unkillable")))
             try:
                 self.enemy_type_tree.selection_remove(*self.enemy_type_tree.selection())
                 for t in (e.get("types") or []):
@@ -1189,6 +1194,16 @@ class App:
                               variable=self.enemy_same_type, command=self._refresh_enemy)
         _cb.pack(side="left")
         self.enemy_sub.append(_cb)
+        srow2 = ttk.Frame(g1)
+        srow2.pack(fill="x", pady=(px(4), 0))
+        self.enemy_keep_unkillable = tk.BooleanVar(value=True)   # 默认勾上：更安全
+        _cb2 = ttk.Checkbutton(
+            srow2, text="不动「打不死的」敌人（参考实现标了 174 个模型 / 1910 行 —— 换掉可能卡剧情）",
+            variable=self.enemy_keep_unkillable, command=self._refresh_enemy)
+        _cb2.pack(side="left")
+        self.enemy_sub.append(_cb2)
+        ttk.Label(srow2, text="· 多阶段 Boss（98 个模型）已标记，整组换还没做",
+                  style="Hint.TLabel").pack(side="left", padx=px(10))
 
         # ── 分组 2 · 总体 ──
         g2 = ttk.LabelFrame(body, text=" 总体 ", padding=(px(12), px(8)))
@@ -3550,6 +3565,21 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        _ce9.get("same_type") is True and "types" not in _ce9,
        f"{_ce9}")
     app.enemy_same_type.set(False); app._refresh_enemy(); root.update()
+
+    # ── 参考实现的人工标注（不动打不死的 / 多阶段已标记）──
+    app.enemy_on.set(True); app._refresh_enemy(); root.update()
+    _ce10 = app._collect().get("enemy") or {}
+    ck("敌人随机页：默认「不动打不死的敌人」（allow_unkillable=False）",
+       app.enemy_keep_unkillable.get() is True and _ce10.get("allow_unkillable") is False,
+       f"{_ce10.get('allow_unkillable')}")
+    app.enemy_keep_unkillable.set(False); app._refresh_enemy(); root.update()
+    ck("敌人随机页：取消勾选后 cfg 里 allow_unkillable=True（并写进摘要）",
+       (app._collect().get("enemy") or {}).get("allow_unkillable") is True
+       and "连打不死的也换" in app.enemy_hint.cget("text"),
+       f"{(app._collect().get('enemy') or {}).get('allow_unkillable')}")
+    app.enemy_keep_unkillable.set(True); app._refresh_enemy(); root.update()
+    ck("敌人随机页：有 multi（多阶段）信息可查",
+       hasattr(app, "enemy_keep_unkillable"), "控件缺失")
 
     # ── 编辑敌人预设子窗口（照参考实现的 EnemyPresetWindow）──
     _win = None

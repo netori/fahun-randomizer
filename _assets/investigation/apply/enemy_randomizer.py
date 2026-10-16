@@ -126,10 +126,15 @@ class Unit(object):
 
     __slots__ = ("rid", "off", "row_size", "hp", "soul", "is_boss", "radius", "height",
                  "npc_type", "team_type", "cls", "source", "sha", "name", "name_id",
-                 "boss_like_name", "model", "enemy_type")
+                 "boss_like_name", "model", "enemy_type",
+                 # 参考实现（thefifthmatt）的模型级人工标注
+                 "ref_class", "multi", "unkillable", "ref_names", "ref_size")
 
     def __init__(self, rid, off, row_size, fields, plain):
         self.rid, self.off, self.row_size = rid, off, row_size
+        # 参考实现的模型级标注（后面 classify 时填）
+        self.ref_class, self.multi, self.unkillable = "", False, False
+        self.ref_names, self.ref_size = "", ""
         p = off
 
         def g(k):
@@ -253,6 +258,40 @@ def load_new_rows(path=None):
     return out
 
 
+def load_ref(path=None):
+    """参考实现（thefifthmatt ER Randomizer）的**模型级**人工标注 → {模型: dict}。
+
+    来源：它自带 Base/enemy.txt（23173 条），我们只把它转成自己的表（enemy_ref.csv，随包发）。
+    比我们自研分类强的地方：
+      * ref_class：人工档位（Basic / Miniboss / Boss / Miniboss / Wildlife / Scarab / Helper / None…）
+      * multi：**多阶段 Boss**（98 个模型）—— "整组换"要用的名单
+      * unkillable：打不死的（174 个模型）—— 换掉它们可能卡剧情，默认跳过
+      * size / arena / perceptive / names（101 个模型带真名，如 c2030=Rennala 1、c2110=Beast Clergyman/Maliketh）
+    """
+    p = path or os.path.join(HERE, "..", "enemy_ref.csv")
+    out = {}
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                m = (r.get("model") or "").strip()
+                if not m:
+                    continue
+                out[m] = {
+                    "class": (r.get("ref_class_top") or "").strip(),
+                    "classes": (r.get("ref_class") or "").strip(),
+                    "multi": r.get("multi") == "1",
+                    "unkillable": r.get("unkillable") == "1",
+                    "size": (r.get("size") or "").strip(),
+                    "arena": (r.get("arena") or "").strip(),
+                    "perceptive": r.get("perceptive") == "1",
+                    "names": (r.get("extra_names") or "").strip(),
+                    "n": int(r.get("n_entries") or 0),
+                }
+    except Exception:
+        return {}
+    return out
+
+
 def load_boss_names(path=None):
     """Boss 行的显示名：{npc_id: 血条上的名字}（来自 boss_rows.csv）
 
@@ -365,7 +404,7 @@ def infer_hostile_teams(units, cover=0.95):
 
 
 def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
-             boss_names=None, row_types=None, new_rows=None):
+             boss_names=None, row_types=None, new_rows=None, ref=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
     可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
     if names:
@@ -404,6 +443,15 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
         for rid, u in units.items():
             if u.cls == "boss" and not u.name and rid in boss_names:
                 u.name = boss_names[rid]        # Boss 的名字来自血条名单
+    _ref = ref if ref is not None else load_ref()
+    _r2m = {}                                  # 行 → 模型（用于接上模型级标注）
+    try:
+        with open(os.path.join(HERE, "..", "row_models.csv"), encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                if r.get("model") and str(r.get("npc_id", "")).isdigit():
+                    _r2m[int(r["npc_id"])] = r["model"]
+    except Exception:
+        pass
     _new = new_rows if new_rows is not None else load_new_rows()
     if _new:
         # 法魂新增 / 原版就有 —— 这是「只随机法魂敌人」的依据
@@ -416,6 +464,26 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
             t = row_types.get(rid)
             if t:
                 u.enemy_type = t
+    # ── 接上参考实现的**模型级人工标注**（比我们自己靠血量/名字关键词推的准）──
+    if _ref and _r2m:
+        for rid, u in units.items():
+            r = _ref.get(_r2m.get(rid, ""))
+            if not r:
+                continue
+            u.ref_class = r["class"]
+            u.multi = bool(r["multi"])
+            u.unkillable = bool(r["unkillable"])
+            u.ref_names = r["names"]
+            u.ref_size = r["size"]
+            _c = r["class"]
+            # 只有它明确标了档位才覆盖；"None/Helper" 这类我们不动（保留自己的判断）
+            if _c in ("Basic", "Wildlife", "Scarab"):
+                u.cls = "normal" if u.cls != "boss" else u.cls
+            elif _c in ("Miniboss", "MinorBoss", "NightMiniboss", "DragonMiniboss"):
+                u.cls = "elite" if u.cls != "boss" else u.cls
+            elif _c == "Boss":
+                u.cls = "boss"
+
     if table:
         for rid, meta in table.items():
             u = units.get(int(rid))
@@ -449,7 +517,12 @@ def load_class_table(path):
 def build_pools(units, cfg):
     """按类别分池；再按"来源标签"过滤候选（只随机法魂敌人 / 全随机）"""
     pools = {c: [] for c in CLASS_ORDER}
+    keep_unk = bool(cfg.get("allow_unkillable"))     # 默认 False：打不死的先别动
+    n_unk = 0
     for u in units.values():
+        if u.unkillable and not keep_unk:
+            n_unk += 1
+            continue                        # 打不死的（174 个模型的 1910 行）：换掉可能卡剧情
         if u.cls in pools:                      # skip（友好 NPC/场景物）直接不进任何池
             pools[u.cls].append(u.rid)
     wanted = cfg.get("enemy_pools") or CLASS_ORDER
@@ -474,6 +547,9 @@ def build_pools(units, cfg):
             keep = rids
         if len(keep) >= 2:
             out[c] = keep
+    if n_unk:
+        out.setdefault("_warn", []).append(
+            "有 %d 行是参考实现标注的「打不死」，默认没动它们（想一起换就开 allow_unkillable）" % n_unk)
     return out
 
 
@@ -724,6 +800,8 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
         cfg["ignore_size"] = True
     if enemy_cfg.get("same_type"):
         cfg["same_type"] = True
+    if enemy_cfg.get("allow_unkillable"):
+        cfg["allow_unkillable"] = True
     if enemy_cfg.get("types"):
         cfg["types"] = list(enemy_cfg["types"])
     plan, warn = make_plan(units, cfg)

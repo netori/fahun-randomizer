@@ -1,0 +1,18 @@
+接上参考实现的人工标注：档位校准 + 多阶段标记 + 打不死的不动（默认）
+
+把 thefifthmatt 那份 23173 条名单转成我们自己的模型级表（enemy_ref.csv，随包发，
+运行时不依赖它那边任何文件）：
+* ref_class：Basic 252 / Wildlife 27 / Scarab 4 / Miniboss 12 / MinorBoss 6 /
+  NightMiniboss 3 / DragonMiniboss 5 / Boss 24 / Helper 26 / None 34 个模型
+  —— 接进我们的分类（它的档位优先，我们兜底）。实测接上后：
+  boss 296→304 行、elite 525、normal 5506、skip 1464
+* multi：98 个模型 / 1312 行是多阶段 Boss（整组换要用的名单；计划里现有 328 行属于多阶段）
+* exclude:unkillable：174 个模型 / 1910 行是打不死的 → 新增开关，默认不动它们（换掉可能卡剧情）；
+  界面上是「不动打不死的敌人（推荐）」勾选框，取消勾选才一起换
+* 真名：101 个模型带名字（c2030=Rennala 1、c2031=Rennala 2、c2110=Beast Clergyman/Maliketh…），
+  938 行因此有了可读名字 —— 这也顺手给出了多阶段的配对信息
+* size:（79 个模型）、arena:（52 个）、perceptive（148 个）先存着，给后面的场地/警戒留接口
+
+实测：默认计划 4724 行，并如实提示「有 1910 行打不死、默认没动」；开 allow_unkillable 后 6335 行。
+回归：敌人自检 PASS、共存写盘 10/10、矩阵 PASS、四道 GUI 闸门 exit 0、
+打包 18.16 MB 且隔离自检四道全过。
