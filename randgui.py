@@ -2867,10 +2867,39 @@ class App:
             return
         if self._deploy_busy():
             return
-        if not messagebox.askyesno("确认写入游戏",
-                                   "会把这次的随机结果写进游戏文件：\n"
-                                   "  · 物品与掉落\n  · 说明书文本\n\n"
-                                   "写入前会自动备份，随时可以点「还原成原始」。开始？"):
+        # 确认框的清单**按当前配置现算**（2026-10-17 改）：
+        # 以前是写死的"物品与掉落 / 说明书文本"，于是"敌人随机没开"这件事
+        # 在点写入的那一刻完全看不出来 —— 作者就这么白跑了一趟。
+        _e = self._enemy_cfg() or {}
+        _lines = []
+        _dom = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
+        _items = "、".join(_dom.get(d, d) for d in self._picked_doms())
+        _lines.append("  · 物品与掉落：" + (_items or "（没选）") + ("（含商店）" if self.shops.get() else ""))
+        if _e.get("on"):
+            _rates = _e.get("rates") or {}
+            _zh = {"boss": "Boss", "elite": "精英", "normal": "普通"}
+            _en = "、".join("%s %.0f%%" % (_zh.get(k, k), float(v) * 100) for k, v in _rates.items())
+            _extra = []
+            if _e.get("types"):
+                _extra.append("限定 %d 个敌型" % len(_e["types"]))
+            if _e.get("same_type"):
+                _extra.append("只换同种")
+            if _e.get("visual"):
+                _extra.append("连外观")
+            if not _e.get("use_arena", True):
+                _extra.append("不看场地档")
+            if _e.get("allow_unkillable"):
+                _extra.append("连打不死的也换")
+            if _e.get("source") == "new":
+                _extra.append("只法魂")
+            _lines.append("  · 敌人：" + (_en or "（没给比例）") + ("（" + "·".join(_extra) + "）" if _extra else ""))
+        else:
+            _lines.append("  · 敌人：**没开**（要想一起换，先去「敌人随机」页把总开关勾上）")
+        _lines.append("  · 说明书文本：" + ("会同步" if self.cfg.get("sync_guide", True) else "不动"))
+        _warn = "" if _e.get("on") else "\n\n⚠ 这次**不含敌人随机**。要一起换，请先到「敌人随机」页勾上总开关，再点这里。"
+        if not messagebox.askyesno("确认写入游戏（这次会写这些）",
+                                   "会把下面的内容写进游戏文件：\n" + "\n".join(_lines)
+                                   + _warn + "\n\n写入前会自动备份，随时可以点「还原成原始」。开始？"):
             return
         plan = self.export()
         sync = bool(self.cfg.get("sync_guide", True))
