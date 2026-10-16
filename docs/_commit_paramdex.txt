@@ -1,0 +1,18 @@
+修复打包版「写入失败：读不到 Paramdex 定义：NpcParam」
+
+作者在 GUI 里点「写入游戏」时报的错。根因是**打包缺口**，不是数据或引擎问题：
+* enemy_randomizer 运行时要读 Paramdex 的 ER paramdef XML，用来解析 NpcParam 行表
+  （字段名 / 偏移 / 行长 726 字节都由它算出来）；物品侧没事，是因为 param_patch 用的是硬编码偏移
+* 那份 XML 在仓库 tools/witchybnd…/Assets/Paramdex/ER/Defs 下，从没进过包
+* 更隐蔽的：spec 其实把 _assets 整个打进去了，但**首运行释放**只拷 _assets/investigation，
+  于是 _assets/tools 永远到不了磁盘
+
+四处修：
+① enemy_randomizer.PARAMDEX 加兜底链（_assets 那份 → 仓库 tools 那份），开发期与打包后都能跑
+② build_exe 的 DATA 加进整套 ER/Defs（194 个 XML；同步数 47 → 241）
+③ materialize_assets 改成释放整个 _assets 的顶层目录（investigation + tools）
+④ --selftest 新增硬检查：paramdef_fields("NpcParam") 必须读得出字段与行长
+   —— 这条以前只在真去写入时才暴露；本轮正是它先把问题抓住的
+
+验证：开发期 --selftest 打印「NpcParam 字段 315 个、行 726 字节」；
+打包版在空目录隔离自检四道全过（--selftest / --planlib / --uicheck / --uitest）；包 18.49 MB。

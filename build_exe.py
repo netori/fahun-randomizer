@@ -62,7 +62,13 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         # 参考实现（thefifthmatt）的人工标注转成我们自己的表：模型 → 档位/multi/打不死/真名
         "investigation/enemy_ref.csv",
         # 行级场地画像（来自 634 张图摆放台账）：npc_id → arena_min 等
-        "investigation/row_arena.csv"]      # 27780 条地图放置（真换敌人要用）
+        "investigation/row_arena.csv"] + [
+        # Paramdex 的 ER paramdef（enemy_randomizer 运行时要读 XML 解析行表；
+        # 以前漏了它 ⇒ exe 里"写入失败：读不到 Paramdex 定义：NpcParam"）
+        os.path.join("tools", "witchybnd-3.0.1.0", "Assets", "Paramdex", "ER", "Defs", f)
+        for f in sorted(os.listdir(os.path.join(WS, "tools", "witchybnd-3.0.1.0",
+                                                "Assets", "Paramdex", "ER", "Defs")))
+        if f.endswith(".xml")]      # 27780 条地图放置（真换敌人要用）
 BASELINE = ["GoodsCaption.fmg.xml", "PlaceName.fmg.xml", "PlaceName_dlc01.fmg.xml", "PlaceName_dlc02.fmg.xml"]
 
 

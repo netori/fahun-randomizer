@@ -24,8 +24,28 @@ import sys
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 
-PARAMDEX = os.path.abspath(os.path.join(HERE, "..", "..", "tools", "witchybnd-3.0.1.0",
-                                       "Assets", "Paramdex", "ER", "Defs"))
+def _find_paramdex():
+    """Paramdex 目录（ER 的 paramdef XML）。
+
+    两个来源都要留：打包后 exe 旁边只有 _assets 那份（relocate() 也会指到这里），
+    开发期直接读仓库 tools 里的那份更省事 —— 少一个就会重演
+    「写入失败：读不到 Paramdex 定义：NpcParam」。
+    """
+    here = os.path.dirname(os.path.abspath(__file__))
+    cands = [
+        os.path.join(here, "..", "..", "_assets", "tools", "witchybnd-3.0.1.0",
+                     "Assets", "Paramdex", "ER", "Defs"),                       # 打包/发布
+        os.path.join(here, "..", "..", "tools", "witchybnd-3.0.1.0",
+                     "Assets", "Paramdex", "ER", "Defs"),                       # 开发期
+    ]
+    for c in cands:
+        c = os.path.abspath(c)
+        if os.path.isfile(os.path.join(c, "NpcParam.xml")):
+            return c
+    return os.path.abspath(cands[-1])          # 都没有就返回老路径（错误信息里能看到找过哪）
+
+
+PARAMDEX = _find_paramdex()
 SIZE = {"u8": 1, "i8": 1, "s8": 1, "dummy8": 1, "u16": 2, "i16": 2, "s16": 2, "dummy16": 2,
         "u32": 4, "i32": 4, "s32": 4, "f32": 4, "angle32": 4,
         "u64": 8, "i64": 8, "s64": 8, "f64": 8}

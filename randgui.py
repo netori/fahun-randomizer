@@ -37,28 +37,36 @@ def materialize_assets():
 
     幂等：已存在且大小、时间戳一致的文件不重复写。
     """
-    src = os.path.join(BUNDLE, "_assets", "investigation")
-    if not os.path.isdir(src):
+    # 2026-10-17 修：以前只释放 _assets/investigation，于是 _assets/tools 下的
+    # Paramdex（enemy_randomizer 解析 NpcParam 行表要读的 XML）永远不会落到磁盘上 ——
+    # 表现就是打包版点「写入游戏」报「写入失败：读不到 Paramdex 定义：NpcParam」。
+    # 改成释放整个 _assets（它本来就被定义为"运行时最小集"），顶层目录逐个走一遍。
+    base = os.path.join(BUNDLE, "_assets")
+    tops = [d for d in ("investigation", "tools") if os.path.isdir(os.path.join(base, d))]
+    if not tops:
         return False            # 开发模式：本来就有，什么都不用做
     dst = os.path.join(HERE, "investigation")
     n_new = n_skip = 0
-    for dp, _dn, fn in os.walk(src):
-        rel = os.path.relpath(dp, src)
-        target = dst if rel == "." else os.path.join(dst, rel)
-        os.makedirs(target, exist_ok=True)
-        for f in fn:
-            s, t = os.path.join(dp, f), os.path.join(target, f)
-            try:
-                if os.path.exists(t) and os.path.getsize(t) == os.path.getsize(s) and os.path.getmtime(t) >= os.path.getmtime(s):
-                    n_skip += 1
-                    continue
-            except OSError:
-                pass
-            try:
-                shutil.copy2(s, t)
-                n_new += 1
-            except OSError as e:
-                print(f"  释放资源失败：{f}（{e}）")
+    for top in tops:
+        src = os.path.join(base, top)
+        out = dst if top == "investigation" else os.path.join(HERE, top)
+        for dp, _dn, fn in os.walk(src):
+            rel = os.path.relpath(dp, src)
+            target = out if rel == "." else os.path.join(out, rel)
+            os.makedirs(target, exist_ok=True)
+            for f in fn:
+                s2, t = os.path.join(dp, f), os.path.join(target, f)
+                try:
+                    if os.path.exists(t) and os.path.getsize(t) == os.path.getsize(s2) and os.path.getmtime(t) >= os.path.getmtime(s2):
+                        n_skip += 1
+                        continue
+                except OSError:
+                    pass
+                try:
+                    shutil.copy2(s2, t)
+                    n_new += 1
+                except OSError as e:
+                    print(f"  释放资源失败：{f}（{e}）")
     # 写入过程中要用的目录先建好
     for d in ("apply/backup", "apply/out", "apply/logs", "apply/work/msg/zh"):
         os.makedirs(os.path.join(dst, d), exist_ok=True)
@@ -4040,6 +4048,21 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
 def selftest(seed=20261010):
     """不需要开窗口：验证引擎可用 + 同种子可复现 + 不同种子不同"""
     print(f"工作区: {WORKSPACE}")
+    # Paramdex 硬检查（2026-10-17 加）：打包漏了 paramdef 就是"写入失败：读不到 Paramdex 定义"，
+    # 而这条以前只有真去写入时才会暴露 —— 现在 --selftest 就会亮红灯。
+    try:
+        _ap = os.path.join(WORKSPACE, "investigation", "apply")
+        if _ap not in sys.path:
+            sys.path.insert(0, _ap)          # 模块是后面才 import 的，这里自己先挂上路径
+        import enemy_randomizer as _ER
+        _f, _rs = _ER.paramdef_fields("NpcParam")
+        if not _f or _rs <= 0:
+            print("SELFTEST FAIL: Paramdex 里读不出 NpcParam 定义（找的目录：%s）" % _ER.PARAMDEX)
+            return 1
+        print(f"Paramdex: {_ER.PARAMDEX} ｜ NpcParam 字段 {len(_f)} 个、行 {_rs} 字节")
+    except Exception as _e:
+        print("SELFTEST FAIL: Paramdex 检查异常 %s: %s" % (type(_e).__name__, _e))
+        return 1
     if not WORKSPACE:
         print("SELFTEST FAIL: 找不到工作区"); return 1
     # ① 运行时模块必须真的 import 得动（打包漏文件时，隔离自检就会在这里红掉）
