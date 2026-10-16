@@ -74,25 +74,27 @@ def paramdef_fields(name):
 
 
 def scan_rows(raw, base, size):
-    """扫 param 行表（{id, data, name} 三元组，0x18 字节一条）→ {row_id: 相对本 param 的偏移}"""
+    """扫 param 行表（{id, data, name} 三元组，0x18 字节一条）→ {row_id: 相对本 param 的偏移}
+
+    ⚠️ 2026-10-16 修正：以前只保留**最长的一段连续行**，会漏掉后面那些同样合法的段
+    （实测：GA 那边漏 12 行、法魂这边漏 ~24 行）。现在取**所有段的并集** —— 子 agent 在 MSB 对账时发现的。
+    """
     region = raw[base:base + size]
-    best, o = {}, 0
+    out, o = {}, 0
     while o + 0x18 <= len(region):
         rid, data, nm = struct.unpack_from("<QQQ", region, o)
         if 0 < rid < 0x7FFFFFFF and 0 < data < nm < len(region):
-            run, r = {}, o
+            r = o
             while r + 0x18 <= len(region):
                 _id, _d, _n = struct.unpack_from("<QQQ", region, r)
                 if not (0 < _id < 0x7FFFFFFF and 0 < _d < _n < len(region)):
                     break
-                run[_id] = _d
+                out[_id] = _d
                 r += 0x18
-            if len(run) > len(best):
-                best = run
             o = r
         else:
             o += 1
-    return best
+    return out
 
 
 def read_u32(buf, off):

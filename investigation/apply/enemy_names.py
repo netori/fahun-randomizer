@@ -52,7 +52,9 @@ if WS not in sys.path:
     sys.path.insert(0, WS)
 
 import erio                      # noqa: E402
-import _boss_taxonomy as bt      # noqa: E402
+# 2026-10-16: 不再依赖研究脚本 _boss_taxonomy（它不在打包清单里，打包版会 ModuleNotFoundError）；
+# 改用引擎自带的同名函数（实现一致，而且 scan_rows 已修成“取所有段并集”）。
+import enemy_randomizer as bt     # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(WS, os.pardir, os.pardir, os.pardir))
 DEFAULT_MOD = "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"
