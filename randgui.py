@@ -760,6 +760,11 @@ class App:
             _fl.append("忽略体型限制")
         if self.enemy_visual.get():
             _fl.append("连外观一起换")
+        if self.enemy_same_type.get():
+            _fl.append("只换同一种敌人")
+        _ty = self._enemy_types_picked()
+        if _ty:
+            _fl.append("限定 %d 个敌型" % len(_ty))
         if self.enemy_seed_sep.get():
             _fl.append("独立敌人种子 " + (self.enemy_seed.get() or "（还没填）"))
         self.enemy_hint.configure(
@@ -778,6 +783,62 @@ class App:
         self.enemy_seed_sep.set(True)
         self._refresh_enemy()
 
+    def enemy_stats(self):
+        """读一次真实统计（要解一遍 regulation，几秒）——回填类别与敌型的行数"""
+        if getattr(self, "_enemy_stats_busy", False):
+            return
+        self._enemy_stats_busy = True
+        self._enemy_type_hint_set("正在读敌人统计…（几秒）")
+
+        def work():
+            try:
+                sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+                import enemy_randomizer as ER
+                import collections
+                u = ER.load_units(ER.load_plain())
+                ER.classify(u, names=ER.load_name_table(), healthbar_ids=ER.load_healthbar_nameids())
+                cls = collections.Counter(x.cls for x in u.values())
+                types = collections.Counter(x.enemy_type for x in u.values() if x.enemy_type)
+                self._enemy_stats_cache = {"cls": dict(cls), "types": dict(types)}
+                self.q.put(("enemy_stats", None))
+            except Exception as e:
+                self.q.put(("enemy_page", ("读统计失败：" + str(e), True)))
+            finally:
+                self.q.put(("enemy_stats_done", None))
+        threading.Thread(target=work, daemon=True).start()
+
+    def _enemy_type_hint_set(self, text, bad=False):
+        if hasattr(self, "enemy_type_hint"):
+            self.enemy_type_hint.config(text=text, style="Bad.TLabel" if bad else "Hint.TLabel")
+
+    def _enemy_types_fill(self):
+        """把敌型列表填上（行数来自统计缓存；没读统计就只列名字）"""
+        if not hasattr(self, "enemy_type_tree"):
+            return
+        st = (getattr(self, "_enemy_stats_cache", None) or {}).get("types") or {}
+        keep = set(self.enemy_type_tree.selection())
+        for iid in self.enemy_type_tree.get_children():
+            self.enemy_type_tree.delete(iid)
+        if not st:
+            for name in ("骑士/重甲", "野兽/动物", "士兵/守军", "不死/腐败", "魔像/人造", "虫/花/菌",
+                         "龙/龙裔", "巨人/巨兽", "施法者/祭司", "人形/平民", "坐骑/驮兽",
+                         "Boss/领主", "亚人/混种", "神皮/教会", "法魂新增", "非战斗/NPC",
+                         "体型·大/巨", "未分类"):
+                self.enemy_type_tree.insert("", "end", iid=name, text=name, values=("—",))
+        else:
+            for name, n in sorted(st.items(), key=lambda x: -x[1]):
+                self.enemy_type_tree.insert("", "end", iid=name, text=name, values=(n,))
+        for iid in keep:
+            if self.enemy_type_tree.exists(iid):
+                self.enemy_type_tree.selection_add(iid)
+
+    def _enemy_types_picked(self):
+        """选中的敌型（一个不选 = 不限制）"""
+        try:
+            return list(self.enemy_type_tree.selection())
+        except Exception:
+            return []
+
     def _enemy_cfg(self):
         """把界面上的敌人设置收成一个 dict（放进主 cfg 的 enemy 键 —— 方案库会一起存下来）"""
         try:
@@ -792,7 +853,11 @@ class App:
              "rates": rates, "rate": float(self.enemy_rate.get()),
              "source": self.enemy_source.get(),
              "ignore_size": bool(self.enemy_ignore_size.get()),
-             "visual": bool(self.enemy_visual.get())}
+             "visual": bool(self.enemy_visual.get()),
+             "same_type": bool(self.enemy_same_type.get())}
+        _ty = self._enemy_types_picked()
+        if _ty:
+            d["types"] = _ty
         if self.enemy_seed_sep.get():
             try:
                 d["seed"] = int(str(self.enemy_seed.get()).strip())
@@ -825,6 +890,14 @@ class App:
                 self.enemy_seed_sep.set(False)
             self.enemy_source.set(e.get("source") or "all")
             self.enemy_visual.set(bool(e.get("visual")))
+            self.enemy_same_type.set(bool(e.get("same_type")))
+            try:
+                self.enemy_type_tree.selection_remove(*self.enemy_type_tree.selection())
+                for t in (e.get("types") or []):
+                    if self.enemy_type_tree.exists(t):
+                        self.enemy_type_tree.selection_add(t)
+            except Exception:
+                pass
         except Exception:
             pass
         self._refresh_enemy()
@@ -1068,6 +1141,30 @@ class App:
             lbl.pack(side="left")
             setattr(self, "enemy_cls_lbl_" + key, lbl)
             ttk.Label(row, text="· " + desc, style="Hint.TLabel").pack(side="left", padx=px(8))
+        # 敌型（模型层）—— 上面三类是"池"，这里是"同一种敌人"的粒度
+        trow = ttk.Frame(g1)
+        trow.pack(fill="x", pady=(px(6), 0))
+        ttk.Label(trow, text="敌型（可多选；一个不选 = 全部参与）", style="Sub.TLabel").pack(side="left")
+        ttk.Button(trow, text="读一次统计", style="Link.TButton",
+                   command=self.enemy_stats).pack(side="left", padx=px(8))
+        self.enemy_type_hint = ttk.Label(trow, text="", style="Hint.TLabel")
+        self.enemy_type_hint.pack(side="left")
+        self.enemy_type_tree = ttk.Treeview(g1, columns=("rows",), show="tree headings",
+                                            height=6, selectmode="extended")
+        self.enemy_type_tree.heading("#0", text="敌型（模型层）")
+        self.enemy_type_tree.heading("rows", text="行数")
+        self.enemy_type_tree.column("#0", width=px(150), anchor="w")
+        self.enemy_type_tree.column("rows", width=px(70), anchor="e")
+        self.enemy_type_tree.pack(fill="x", pady=(px(2), 0))
+        self.enemy_type_tree.bind("<<TreeviewSelect>>", lambda _e: self._refresh_enemy())
+        self._enemy_types_fill()
+        srow = ttk.Frame(g1)
+        srow.pack(fill="x", pady=(px(4), 0))
+        self.enemy_same_type = tk.BooleanVar(value=False)
+        _cb = ttk.Checkbutton(srow, text="只换同一种敌人（骑对骑、龙对龙 —— 换数值但不打乱种类）",
+                              variable=self.enemy_same_type, command=self._refresh_enemy)
+        _cb.pack(side="left")
+        self.enemy_sub.append(_cb)
 
         # ── 分组 2 · 总体 ──
         g2 = ttk.LabelFrame(body, text=" 总体 ", padding=(px(12), px(8)))
@@ -2143,6 +2240,23 @@ class App:
                     # 写入完成后库里会多出"覆盖层目录"这一项 → 刷新一下，好让「用这个方案玩」亮起来
                     try:
                         self._lib_refresh(keep=getattr(self, "_lib_cur", None))
+                    except Exception:
+                        pass
+                elif kind == "enemy_stats":
+                    self._enemy_types_fill()
+                    _st = (getattr(self, "_enemy_stats_cache", None) or {}).get("cls") or {}
+                    self._enemy_type_hint_set("统计：Boss %d ｜ 精英 %d ｜ 普通 %d ｜ 非敌人 %d"
+                                              % (_st.get("boss", 0), _st.get("elite", 0),
+                                                 _st.get("normal", 0), _st.get("skip", 0)))
+                elif kind == "enemy_stats_done":
+                    self._enemy_stats_busy = False
+                elif kind == "enemy_page":
+                    _t, _b = payload
+                    self._enemy_page_hint_set(str(_t), bad=bool(_b))
+                elif kind == "enemy_page_done":
+                    self._enemy_busy = False
+                    try:
+                        self.b_enemy_layer.config(state="normal")
                     except Exception:
                         pass
                 elif kind == "deploying":
@@ -3331,6 +3445,32 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("敌人随机：摘要里写出了这几项（忽略体型/独立种子）",
        "忽略体型限制" in _sum and "独立敌人种子" in _sum,
        repr(_sum[:60]))
+
+    # ── 敌型（模型层）：可多选限制、只换同类 ──
+    ck("敌人随机页：有敌型列表（模型层，18 行）",
+       hasattr(app, "enemy_type_tree") and len(app.enemy_type_tree.get_children()) >= 15,
+       f"{len(getattr(app, 'enemy_type_tree', app).get_children()) if hasattr(app, 'enemy_type_tree') else '无'}")
+    app.enemy_on.set(True); app._refresh_enemy(); root.update()
+    app.enemy_type_tree.selection_set("骑士/重甲")
+    app._refresh_enemy(); root.update()
+    _ce8 = app._collect().get("enemy") or {}
+    ck("敌人随机页：选中敌型 → cfg.types 只含它",
+       _ce8.get("types") == ["骑士/重甲"],
+       f"{_ce8.get('types')}")
+    app.enemy_type_tree.selection_set(["骑士/重甲", "龙/龙裔"])
+    app._refresh_enemy(); root.update()
+    ck("敌人随机页：多选敌型（两个）",
+       sorted((app._collect().get("enemy") or {}).get("types") or []) == sorted(["骑士/重甲", "龙/龙裔"]),
+       f"{(app._collect().get('enemy') or {}).get('types')}")
+    ck("敌人随机页：摘要里写出限定敌型数", "限定 2 个敌型" in app.enemy_hint.cget("text"),
+       repr(app.enemy_hint.cget("text")[:70]))
+    app.enemy_type_tree.selection_remove(*app.enemy_type_tree.selection())
+    app.enemy_same_type.set(True); app._refresh_enemy(); root.update()
+    _ce9 = app._collect().get("enemy") or {}
+    ck("敌人随机页：只换同一种敌人进了 cfg（且不选敌型 = 不限）",
+       _ce9.get("same_type") is True and "types" not in _ce9,
+       f"{_ce9}")
+    app.enemy_same_type.set(False); app._refresh_enemy(); root.update()
 
     # ── 编辑敌人预设子窗口（照参考实现的 EnemyPresetWindow）──
     _win = None

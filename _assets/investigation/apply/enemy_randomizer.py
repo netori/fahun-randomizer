@@ -428,6 +428,10 @@ def build_pools(units, cfg):
             pools[u.cls].append(u.rid)
     wanted = cfg.get("enemy_pools") or CLASS_ORDER
     src = cfg.get("enemy_source") or "all"
+    types = cfg.get("types")            # 空 = 不限；否则只出现在这些敌型里
+    if types:
+        types = set(types)
+        pools = {c: [r for r in v if units[r].enemy_type in types] for c, v in pools.items()}
     out = {}
     for c in CLASS_ORDER:
         if c not in wanted:
@@ -486,11 +490,13 @@ def make_plan(units, cfg):
         for rid in rids:
             u = units[rid]
             b = 0 if ignore_size else size_bucket(u.radius, u.height)
+            if cfg.get("same_type"):        # 只换同一种敌人（骑对骑、龙对龙）
+                b = (u.enemy_type or "?", b)
             buckets.setdefault(b, []).append(rid)
         for bucket, members in sorted(buckets.items()):
             if len(members) < 2:
                 continue
-            rng = random.Random(f"{seed}|enemy|{cls}|{bucket}|{ignore_size}")
+            rng = random.Random(f"{seed}|enemy|{cls}|{bucket}|{ignore_size}|{bool(cfg.get('same_type'))}")
             k = len(members) if rate >= 1 else max(2, int(round(len(members) * rate)))
             pool = members[:]
             rng.shuffle(pool)
@@ -630,6 +636,8 @@ def verify_plan(units, plan, cfg):
         elif cls_members := pools.get(ct):
             if tgt not in cls_members or src not in cls_members:
                 issues.append(f"池外成员：{tgt} 或 {src} 不在 {ct} 池里")
+        if cfg.get("same_type") and (units[tgt].enemy_type or "?") != (units[src].enemy_type or "?"):
+            issues.append(f"\u8de8\u654c\u578b\uff1a{tgt}({units[tgt].enemy_type or '?'}) \u2190 ({units[src].enemy_type or '?'})")
         if not cfg.get("ignore_size"):
             # 人为放开体型时不检这条（对应参考实现的 Ignore arena size）
             b_t = size_bucket(units[tgt].radius, units[tgt].height)
@@ -688,6 +696,10 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
         cfg["enemy_rates"] = enemy_cfg["rates"]
     if enemy_cfg.get("ignore_size"):
         cfg["ignore_size"] = True
+    if enemy_cfg.get("same_type"):
+        cfg["same_type"] = True
+    if enemy_cfg.get("types"):
+        cfg["types"] = list(enemy_cfg["types"])
     plan, warn = make_plan(units, cfg)
     if not names and not class_table:
         # 少了名字表就分不出"友好 NPC"，可能把它们也换掉 —— 必须说出来，不静默
