@@ -1,0 +1,51 @@
+==============================================================================
+msb_write 验收   地图目录: F:\game\studygame\elden ring\THE_COVERAGE-随机开发\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\mod\map\MapStudio
+==============================================================================
+
+【验收 A】全量往返：读 -> patch(空 edits) -> 重封装(dflt) -> 再读
+  [ 50/634] m30_14_00_00.msb.dcx       DFLT parts=1893/1893 plain_same=True fields_same=True rmsb=True -> DFLT 77976 B
+  [100/634] m40_02_00_00.msb.dcx       KRAK parts=4031/4031 plain_same=True fields_same=True rmsb=True -> DFLT 156054 B
+  [150/634] m60_18_27_01.msb.dcx       DFLT parts=419/419 plain_same=True fields_same=True rmsb=True -> DFLT 27451 B
+  [200/634] m60_33_44_00.msb.dcx       DFLT parts=581/581 plain_same=True fields_same=True rmsb=True -> DFLT 33121 B
+  [250/634] m60_37_48_00.msb.dcx       DFLT parts=944/944 plain_same=True fields_same=True rmsb=True -> DFLT 51703 B
+  [300/634] m60_41_32_00.msb.dcx       DFLT parts=720/720 plain_same=True fields_same=True rmsb=True -> DFLT 39138 B
+  [350/634] m60_44_34_00.msb.dcx       DFLT parts=974/974 plain_same=True fields_same=True rmsb=True -> DFLT 58114 B
+  [400/634] m60_47_55_00.msb.dcx       DFLT parts=707/707 plain_same=True fields_same=True rmsb=True -> DFLT 35230 B
+  [450/634] m60_51_43_00.msb.dcx       DFLT parts=413/413 plain_same=True fields_same=True rmsb=True -> DFLT 24643 B
+  [500/634] m61_24_21_01.msb.dcx       DFLT parts=23/23 plain_same=True fields_same=True rmsb=True -> DFLT 1921 B
+  [550/634] m61_47_39_00.msb.dcx       DFLT parts=1804/1804 plain_same=True fields_same=True rmsb=True -> DFLT 95953 B
+  [600/634] m61_50_45_00.msb.dcx       DFLT parts=1092/1092 plain_same=True fields_same=True rmsb=True -> DFLT 62991 B
+  [634/634] m61_54_48_00.msb.dcx       KRAK parts=63/63 plain_same=True fields_same=True rmsb=True -> DFLT 4673 B
+
+[验收 A / out_kind=dflt] 通过 634 / 634   （失败 0）
+    输入 kind 分布: {'DFLT': 529, 'KRAK': 105}
+
+【验收 A2】同上，但 out_kind="same"（DFLT 保持 DFLT / KRAK 用 Oodle 保持 KRAK）
+  [ 50/634] m30_14_00_00.msb.dcx       DFLT parts=1893/1893 plain_same=True fields_same=True rmsb=True -> DFLT 77976 B
+  [100/634] m40_02_00_00.msb.dcx       KRAK parts=4031/4031 plain_same=True fields_same=True rmsb=True -> KRAK 93122 B
+  [150/634] m60_18_27_01.msb.dcx       DFLT parts=419/419 plain_same=True fields_same=True rmsb=True -> DFLT 27451 B
+  [200/634] m60_33_44_00.msb.dcx       DFLT parts=581/581 plain_same=True fields_same=True rmsb=True -> DFLT 33121 B
+  [250/634] m60_37_48_00.msb.dcx       DFLT parts=944/944 plain_same=True fields_same=True rmsb=True -> DFLT 51703 B
+  [300/634] m60_41_32_00.msb.dcx       DFLT parts=720/720 plain_same=True fields_same=True rmsb=True -> DFLT 39138 B
+  [350/634] m60_44_34_00.msb.dcx       DFLT parts=974/974 plain_same=True fields_same=True rmsb=True -> DFLT 58114 B
+  [400/634] m60_47_55_00.msb.dcx       DFLT parts=707/707 plain_same=True fields_same=True rmsb=True -> DFLT 35230 B
+  [450/634] m60_51_43_00.msb.dcx       DFLT parts=413/413 plain_same=True fields_same=True rmsb=True -> DFLT 24643 B
+  [500/634] m61_24_21_01.msb.dcx       DFLT parts=23/23 plain_same=True fields_same=True rmsb=True -> DFLT 1921 B
+  [550/634] m61_47_39_00.msb.dcx       DFLT parts=1804/1804 plain_same=True fields_same=True rmsb=True -> DFLT 95953 B
+  [600/634] m61_50_45_00.msb.dcx       DFLT parts=1092/1092 plain_same=True fields_same=True rmsb=True -> DFLT 62991 B
+  [634/634] m61_54_48_00.msb.dcx       KRAK parts=63/63 plain_same=True fields_same=True rmsb=True -> KRAK 3568 B
+
+[验收 A / out_kind=same] 通过 634 / 634   （失败 0）
+    输入 kind 分布: {'DFLT': 529, 'KRAK': 105}
+
+【验收 B】真换一个敌人（m10_00_00_00：两个实体 npc_id 互换）
+[验收 B] 候选（EntityID 唯一 + npc_id 是 NpcParam 真行）: 160 个
+  A: entity_id=10000715     part=c0000_9026     npc_id=523250114  -> 523250214
+  B: entity_id=10000740     part=c0000_9027     npc_id=523250214  -> 523250114
+  互换生效: True   逐字段只变了 npc_id 的 part: 2   其它字段变动: 0
+  逐字节差异: 4 个字节，范围 [984156, 985117]（期望落在 [984156, 985119] 内 = 两个 npc_id 字段）
+  part 数 9015 -> 9015   产物: F:\game\studygame\elden ring\THE_COVERAGE-随机开发\随机mod\investigation\msb_write_probe\m10_00_00_00_patched.msb.dcx (480978 B, DFLT)
+  验收 B: 通过
+
+==============================================================================
+汇总: A 634/634 通过  A2(same) 634/634 ; B 通过
