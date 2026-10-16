@@ -241,8 +241,16 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
         if enemy_cfg.get("visual"):
             try:
                 import enemy_swapper as ES
-                _mdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
-                                     "map", "MapStudio")
+                # reg = <mod根>/mod/regulation.bin ⇒ 地图就在同级的 map/MapStudio
+                # （2026-10-17 修：以前多 dirname 了一层，指到 <mod根>/map/MapStudio 去了，
+                #   于是"地图目录不存在"，外观替换永远静默不跑 —— 作者看到的"敌人没变"就是这个）
+                _mdir = os.path.join(os.path.dirname(os.path.abspath(reg)), "map", "MapStudio")
+                if not os.path.isdir(_mdir):
+                    for _c in (os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
+                                            "map", "MapStudio"),):
+                        if os.path.isdir(_c):
+                            _mdir = _c
+                            break
                 _odir = os.path.join(LOG, f"msb_{ts}")
                 _sres = ES.plan_swaps(dict(_plan), map_dir=_mdir, out_dir=_odir, log=log)
                 _msb_files = [(os.path.join(_odir, f), os.path.join("map", "MapStudio", f))
