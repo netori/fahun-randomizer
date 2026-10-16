@@ -224,7 +224,8 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
             raise RuntimeError(f"敌人随机自检未通过（{len(_issues)} 项）：{_issues[:3]}")
         _tmp = os.path.join(LOG, f"enemy_plan_{ts}.csv")
         er.write_plan(_plan, _u, _tmp)
-        _res = er.apply_plan(er.read_plan(_tmp), source=reg, out_path=reg, verify=True, quiet=True)
+        _res = er.apply_plan(er.read_plan(_tmp), source=reg, out_path=reg, verify=True, quiet=True,
+                             keep_rune=bool((enemy_cfg or {}).get("keep_rune")))
         log(f"[④a] 敌人随机：整行置换 {_res['rows']} 行"
             f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
         rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],

@@ -52,6 +52,8 @@ SIZE = {"u8": 1, "i8": 1, "s8": 1, "dummy8": 1, "u16": 2, "i16": 2, "s16": 2, "d
 
 # 交换整行之后要"恢复成原值"的字段（阵营 / 生成类型 —— 不跟着敌人身份走）
 KEEP_FIELDS = ("teamType", "npcType")
+# 另外可选保留的字段：换 Boss 时"卢恩跟不跟新 Boss 走"（参考实现的 Change boss runes…）
+KEEP_FIELDS_KEEP_RUNE = ("teamType", "npcType", "getSoul")
 
 # 类别划分的默认口径（纯字段，不依赖名字；名字表可用 CSV 补充）
 CLASS_ORDER = ["boss", "elite", "normal"]
@@ -750,8 +752,13 @@ class EnemyPlanError(RuntimeError):
     """写前复核失败：现状与计划不符 → 立即中止（与物品侧的 H12 同一种纪律）"""
 
 
-def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table="NpcParam"):
-    """把计划应用到 regulation：整行内容按计划置换（等长就地改写）"""
+def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table="NpcParam",
+               keep_rune=False):
+    """把计划应用到 regulation：整行内容按计划置换（等长就地改写）
+
+    keep_rune=True 时额外保留**原行的 getSoul**（卢恩不跟新 Boss 走）—— 对应界面上的
+    「换 Boss 时一并换卢恩」取消勾选（参考实现里那条 Change boss runes when the boss changes）。
+    """
     import erio
     import native_apply as na
     out_path = out_path or source
@@ -787,7 +794,7 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         base = _off + rows[rid]
         newb = bytearray(before_rows[nid])          # 源行的原始内容
-        for k in KEEP_FIELDS:
+        for k in (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS):
             if k in fmap:
                 o, t, sz = fmap[k]
                 newb[o:o + sz] = before_rows[rid][o:o + sz]   # 保留字段取**原行**的值
@@ -797,7 +804,7 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         changed += 1
 
     if verify:
-        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows)
+        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows, keep_rune=keep_rune)
     # 回压：与现有工具完全相同的封装顺序（沿用原文件的 DCX 模板，保证帧参数不变）
     dcx = erio.dcx_compress(bytes(plain), getattr(na.erio_bnd_template(source), "dcx_template", None), 12)
     erio.regulation_encrypt(dcx, out_path)
@@ -807,13 +814,13 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         {int(r["row_id"]): int(r["new_row_id"]) for r in plan_rows})}
 
 
-def _verify_plan_applied(plain, plan_rows, rows, off0, row_size, fmap, before_rows):
+def _verify_plan_applied(plain, plan_rows, rows, off0, row_size, fmap, before_rows, keep_rune=False):
     """应用后自检：每行现在的内容 == **源行的原始内容**（保留字段除外），且长度不变"""
     for r in plan_rows:
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         a = bytes(plain[off0 + rows[rid]:off0 + rows[rid] + row_size])
         want = bytearray(before_rows[nid])
-        for k in KEEP_FIELDS:
+        for k in (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS):
             if k in fmap:
                 o, _t, sz = fmap[k]
                 want[o:o + sz] = before_rows[rid][o:o + sz]

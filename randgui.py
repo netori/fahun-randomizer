@@ -795,6 +795,8 @@ class App:
             _fl.append("连打不死的也换")
         if not self.enemy_use_arena.get():
             _fl.append("不看场地档")
+        if not getattr(self, "enemy_rune_follow", tk.BooleanVar(value=True)).get():
+            _fl.append("卢恩不跟着换")
         if self.enemy_same_type.get():
             _fl.append("只换同一种敌人")
         _ty = self._enemy_types_picked()
@@ -897,7 +899,9 @@ class App:
              "same_type": bool(self.enemy_same_type.get()),
              # 反向存：勾上「不动打不死的」= 不允许换它们（默认）
              "allow_unkillable": not bool(self.enemy_keep_unkillable.get()),
-             "use_arena": bool(self.enemy_use_arena.get())}
+             "use_arena": bool(self.enemy_use_arena.get()),
+             # 勾着 = 卢恩跟新 Boss 走（默认）；取消 = 保留原 Boss 的卢恩值
+             "keep_rune": not bool(getattr(self, "enemy_rune_follow", tk.BooleanVar(value=True)).get())}
         _ty = self._enemy_types_picked()
         if _ty:
             d["types"] = _ty
@@ -945,6 +949,8 @@ class App:
             self.enemy_same_type.set(bool(e.get("same_type")))
             self.enemy_keep_unkillable.set(not bool(e.get("allow_unkillable")))
             self.enemy_use_arena.set(bool(e.get("use_arena", True)))
+            if hasattr(self, "enemy_rune_follow"):
+                self.enemy_rune_follow.set(not bool(e.get("keep_rune")))
             try:
                 self.enemy_type_tree.selection_remove(*self.enemy_type_tree.selection())
                 for t in (e.get("types") or []):
@@ -1197,7 +1203,8 @@ class App:
         self.enemy_rune_follow = tk.BooleanVar(value=True)
         _chk(g2, self.enemy_rune_follow, "换 Boss 时一并换卢恩", "跟着新 Boss 的卢恩值走；关掉则保留原来那份")
         self.enemy_swap_multi_boss = tk.BooleanVar(value=True)
-        _chk(g2, self.enemy_swap_multi_boss, "多 Boss 战之间互换", "靠「只与同场地档互换」实现")
+        _chk(g2, self.enemy_swap_multi_boss, "多 Boss 战之间互换",
+             "要按「同一场战斗」分组 —— 还没做（现在靠 arena 场地档近似）", done=False)
         for _t, _tip in (("只对小地牢 Boss 生效", "需要地牢类型判别 —— 还没做"),
                          ("夜之 Boss 全天出现", "要动生成条件与脚本 —— 还没做")):
             _chk(g2, tk.BooleanVar(value=False), _t, _tip, done=False)
