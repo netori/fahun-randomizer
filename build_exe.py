@@ -56,7 +56,9 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/boss_healthbar.csv",   # 血条名单（Boss 显示名的权威来源）
         "investigation/row_models.csv",       # 行 → 地图上实际用的模型
         "investigation/enemy_type_map.csv",   # 模型 → 敌型（16 类）
-        "investigation/map_enemies.csv"]      # 27780 条地图放置（真换敌人要用）
+        "investigation/map_enemies.csv",
+        # 法魂新增行（原版 vs 法魂 的行级 diff 产物，786 行）——「只随机法魂敌人」的依据
+        "investigation/convergence_new_rows.csv"]      # 27780 条地图放置（真换敌人要用）
 BASELINE = ["GoodsCaption.fmg.xml", "PlaceName.fmg.xml", "PlaceName_dlc01.fmg.xml", "PlaceName_dlc02.fmg.xml"]
 
 

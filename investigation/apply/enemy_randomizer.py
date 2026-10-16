@@ -232,6 +232,27 @@ def load_row_models(path=None):
     return out
 
 
+def load_new_rows(path=None):
+    """**法魂新增**的 NpcParam 行集合（{row_id}）。
+
+    来源：拿**游戏本体的原版 regulation.bin** 与法魂那份做行级 diff —— 只在法魂里出现的行就是新增的。
+    实测：原版 7037 行 vs 法魂 7823 行 → 只在法魂 **786** 行（其中 727 行连名字都没有）。
+    这就是界面上「只随机法魂敌人」的依据 —— 以前只能靠名字猜，现在有据可依。
+    数据表随包一起发（investigation/convergence_new_rows.csv），所以玩家机器上不需要有原版 regulation。
+    """
+    p = path or os.path.join(HERE, "..", "convergence_new_rows.csv")
+    out = set()
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                rid = str(r.get("row_id") or "").strip()
+                if rid.isdigit():
+                    out.add(int(rid))
+    except Exception:
+        return set()
+    return out
+
+
 def load_boss_names(path=None):
     """Boss 行的显示名：{npc_id: 血条上的名字}（来自 boss_rows.csv）
 
@@ -344,7 +365,7 @@ def infer_hostile_teams(units, cover=0.95):
 
 
 def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
-             boss_names=None, row_types=None):
+             boss_names=None, row_types=None, new_rows=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
     可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
     if names:
@@ -383,6 +404,11 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
         for rid, u in units.items():
             if u.cls == "boss" and not u.name and rid in boss_names:
                 u.name = boss_names[rid]        # Boss 的名字来自血条名单
+    _new = new_rows if new_rows is not None else load_new_rows()
+    if _new:
+        # 法魂新增 / 原版就有 —— 这是「只随机法魂敌人」的依据
+        for rid, u in units.items():
+            u.source = "new" if rid in _new else "old"
     if row_types is None:
         row_types = load_row_types()
     if row_types:
