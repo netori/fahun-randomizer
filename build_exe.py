@@ -32,7 +32,12 @@ SPEC = "ConvergenceClassItemRandomizer.spec"
 PIPELINE = ["erio.py", "param_layout.py", "param_patch.py", "fmg.py", "oodle.py",
             "native_apply.py", "native_deploy.py", "native_guide.py",
             "fix_guide.py", "_guide_rebuild.py", "_guide_fit.py", "_guide_audit.py",
-            "planlib.py", "stale_cells.json"]   # 陈旧格子清单：引擎 load_world 要读（缺了写前复核会中止写入）
+            "planlib.py", "stale_cells.json",   # 陈旧格子清单：引擎 load_world 要读（缺了写前复核会中止写入）
+            # 敌人随机（2026-10-16）+ 方案层：这几个是**运行时真的会被 import** 的，
+            # 漏掉任何一个，打包版就会在"生成/写入"那一步炸（隔离自检不跑生成，抓不到）。
+            "enemy_randomizer.py", "enemy_names.py", "enemy_types.py",
+            "msb_read.py", "msb_write.py", "enemy_swapper.py", "plan_layer.py",
+            "enemy_map_atlas.py", "boss_healthbar.py"]
 ENGINE = "investigation/randomization-dryrun/scripts/randomizer.py"
 DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/randomization-catalog/manifest.json",
@@ -45,7 +50,13 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/randomization-dryrun/guide_candidate_draft.csv",
         "investigation/randomization-dryrun/class_candidate_draft.csv",
         # 敌人随机要用：它不只是名字表 —— 友好 NPC 的排除规则依赖它（缺了会把 NPC 也换掉）
-        "investigation/enemy_table.csv"]
+        "investigation/enemy_table.csv",
+        # 敌人随机的其余运行时数据（都是从法魂本体解包实测出来的表）
+        "investigation/boss_rows.csv",        # 有血条 Boss ↔ NpcParam 行（228 个唯一行）
+        "investigation/boss_healthbar.csv",   # 血条名单（Boss 显示名的权威来源）
+        "investigation/row_models.csv",       # 行 → 地图上实际用的模型
+        "investigation/enemy_type_map.csv",   # 模型 → 敌型（16 类）
+        "investigation/map_enemies.csv"]      # 27780 条地图放置（真换敌人要用）
 BASELINE = ["GoodsCaption.fmg.xml", "PlaceName.fmg.xml", "PlaceName_dlc01.fmg.xml", "PlaceName_dlc02.fmg.xml"]
 
 

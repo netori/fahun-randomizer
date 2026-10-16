@@ -105,6 +105,7 @@ def _meta(doc):
         "fingerprint": doc.get("fingerprint"),
         "engine_version": doc.get("engine_version"),
         "cfg": doc.get("cfg") or {},
+        "layer_dir": doc.get("layer_dir") or "",
         "broken": doc.get("_broken", False),
         "error": doc.get("_error", ""),
     }
@@ -181,7 +182,7 @@ def rename_plan(pid, new_name, ws=None):
     return _meta(doc)
 
 
-def set_meta(pid, star=None, note=None, tags=None, ws=None):
+def set_meta(pid, star=None, note=None, tags=None, layer_dir=None, ws=None):
     doc = get_plan(pid, ws)
     if star is not None:
         doc["star"] = bool(star)
@@ -189,6 +190,9 @@ def set_meta(pid, star=None, note=None, tags=None, ws=None):
         doc["note"] = note
     if tags is not None:
         doc["tags"] = list(tags)
+    if layer_dir is not None:
+        # 这个方案对应的"覆盖层"目录（YAFSML 用；由部署时产出并回写到这里）
+        doc["layer_dir"] = layer_dir or ""
     doc["modified"] = time.time()
     _atomic_write(_path(pid, ws), json.dumps(doc, ensure_ascii=False, indent=1))
     return _meta(doc)

@@ -754,6 +754,14 @@ class App:
                                   command=self._refresh_enemy)
             _rb.pack(side="left", padx=_pad)
             self.enemy_sub.append(_rb)
+        e4 = ttk.Frame(self.adv)
+        e4.pack(fill="x", pady=(4, 0))
+        self.enemy_visual = tk.BooleanVar(value=False)
+        _cbv = ttk.Checkbutton(e4, text="连外观一起换（真·换敌人）", variable=self.enemy_visual)
+        _cbv.pack(side="left")
+        self.enemy_sub.append(_cbv)
+        ttk.Label(e4, text="· 换的是地图上的模型与参数；只写进「方案层」，法魂本体一个字节都不动",
+                  style="Hint.TLabel").pack(side="left", padx=8)
         self.enemy_hint = ttk.Label(self.adv, text="", style="Hint.TLabel",
                                     wraplength=px(820), justify="left")
         self.enemy_hint.pack(anchor="w", pady=(4, 0))
@@ -798,7 +806,8 @@ class App:
         return {"on": True,
                 "pools": [k for k, v in self.enemy_pools.items() if v.get()] or ["boss", "elite", "normal"],
                 "rate": float(self.enemy_rate.get()),
-                "source": self.enemy_source.get()}
+                "source": self.enemy_source.get(),
+                "visual": bool(self.enemy_visual.get())}
 
     def _enemy_restore(self, cfg):
         """把方案里的敌人设置填回界面（载入到设置时用）"""
@@ -810,6 +819,7 @@ class App:
                 v.set(k in pools)
             self.enemy_rate.set(float(e.get("rate", 1.0)))
             self.enemy_source.set(e.get("source") or "all")
+            self.enemy_visual.set(bool(e.get("visual")))
         except Exception:
             pass
         self._refresh_enemy()
@@ -906,6 +916,7 @@ class App:
         self.lib_btns = {}
         for i, (key, text, cmd, sty) in enumerate((
                 ("write", "写入游戏", self._lib_write, "Accent.TButton"),
+                ("launch", "用这个方案玩", self._lib_launch, "Accent.TButton"),
                 ("dup", "复制一份", self._lib_dup, "TButton"),
                 ("load", "载入到设置", self._lib_apply_cfg, "TButton"),
                 ("star", "收藏 ★", self._lib_star, "TButton"),
@@ -1103,9 +1114,13 @@ class App:
         self._lib_cur = pid
         self.lib_tag_entry.pack_forget()          # 换方案时把"加标签"的输入框收回去
         usable = bool(pid) and not (self._lib_metas.get(pid) or {}).get("broken")
+        _has_layer = bool(((self._lib_metas.get(pid) or {}).get("layer_dir") or "").strip())
         for key, b in getattr(self, "lib_btns", {}).items():
             if key == "delete":
                 b.config(state="normal" if pid else "disabled")
+            elif key == "launch":
+                # 只有已经生成过覆盖层的方案才能"用这个方案玩"
+                b.config(state="normal" if (usable and _has_layer) else "disabled")
             else:
                 b.config(state="normal" if usable else "disabled")
         if not pid:
@@ -1526,6 +1541,34 @@ class App:
         except Exception as e:
             self._lib_toast(f"打不开文件夹：{e}", bad=True)
 
+    def _lib_launch(self):
+        """把这个方案的「覆盖层」挂进 YAFSML.ini —— 下一次启动游戏就用它玩。
+
+        为什么要这么绕：法魂本体那层不动（`Convergence=../mod`），我们只往 [mod] 段**后面**加一行
+        `Plan=…`；YAFSML 的规矩是后声明的覆盖先声明的，所以这正是"方案覆盖在法魂之上"。
+        回滚也是一行 —— 点「切回法魂本体」（或在方案目录里双击同名 bat）。
+        """
+        pid = self._lib_need()
+        pl = self._lib_mod()
+        if not pid or not pl:
+            return
+        d = pl.get_plan(pid)
+        ld = (d.get("layer_dir") or "").strip()
+        if not ld or not os.path.isdir(os.path.join(ld, "mod")):
+            self._lib_toast("这个方案还没有覆盖层 —— 先点「写入游戏」生成一次（每次写入都会顺手生成）",
+                            bad=True)
+            return
+        try:
+            sys.path.insert(0, os.path.join(WORKSPACE, "investigation", "apply"))
+            import plan_layer as PL
+            r = PL.set_plan(ld)
+        except Exception as e:
+            self._lib_toast(f"挂载失败：{e}", bad=True)
+            return
+        self.log(f"方案层已挂载：{ld}")
+        self.log(f"  → 写进 {r['ini']}（备份 {os.path.basename(r['backup'])}）")
+        self._lib_toast("已挂载 ✓ 下一次启动游戏就用这个方案（回本体点「切回法魂本体.bat」）")
+
     def _lib_write(self):
         """把选中的方案写进游戏（走的是和主界面同一个写入流程）"""
         pid = self._lib_need()
@@ -1559,7 +1602,7 @@ class App:
         self.cfg["enemy"] = (d.get("cfg") or {}).get("enemy")   # 方案里存的敌人设置优先
         threading.Thread(target=self._deploy_worker,
                          args=(csvp, bool((d.get("cfg") or {}).get("sync_guide", True)), True,
-                               d.get("fingerprint")),
+                               d.get("fingerprint"), pid),
                          daemon=True).start()
 
     def _lib_save_current(self):
@@ -1708,6 +1751,11 @@ class App:
                     _text, _bad = payload
                     self._lib_writing = False
                     self._lib_toast(str(_text), bad=bool(_bad))
+                    # 写入完成后库里会多出"覆盖层目录"这一项 → 刷新一下，好让「用这个方案玩」亮起来
+                    try:
+                        self._lib_refresh(keep=getattr(self, "_lib_cur", None))
+                    except Exception:
+                        pass
                 elif kind == "deploying":
                     self._deploying = False
                 elif kind == "done":
@@ -2243,7 +2291,7 @@ class App:
         except Exception:
             return None
 
-    def _deploy_worker(self, plan, sync_guide, lib=False, fingerprint=None):
+    def _deploy_worker(self, plan, sync_guide, lib=False, fingerprint=None, pid=None):
         """lib=True 时（从方案库写入）额外把进度/结果送回方案库那扇窗口。
 
         为什么要有这个参数：方案库窗口盖在主界面上，而进度本来只写主界面的
@@ -2274,9 +2322,22 @@ class App:
                                        enemy_cfg=_e,
                                        plan_label=_label, plan_meta=_meta)
             self.log("写入完成 [OK] " + str(rec.get("verify")))
-            self.q.put(("status", "写入完成 ✓ 可以进游戏了"))
+            # 方案层：把这次生成的覆盖层目录记进方案库 —— 之后就能"用这个方案玩"（一行 ini 切换）
+            _lay = next((s for s in (rec.get("steps") or [])
+                         if s.get("step") == "plan_layer" and s.get("ok")), None)
+            _lay_msg = ""
+            if _lay and lib and pid:
+                try:
+                    import planlib
+                    planlib.set_meta(pid, layer_dir=_lay.get("dir"))
+                    _lay_msg = "　覆盖层已就绪 ✓"
+                except Exception as e:
+                    self.log("方案层目录没能记进方案库：" + str(e))
+            elif _lay:
+                _lay_msg = "　覆盖层：" + os.path.basename(_lay.get("dir") or "")
+            self.q.put(("status", "写入完成 ✓ 可以进游戏了" + _lay_msg))
             if lib:
-                self.q.put(("lib", ("写入完成 ✓ 可以进游戏了", False)))
+                self.q.put(("lib", ("写入完成 ✓ 可以进游戏了" + _lay_msg, False)))
         except Exception as e:
             import traceback
             self.log("写入出错：" + traceback.format_exc(limit=4))
@@ -2853,6 +2914,29 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        (app._collect().get("enemy") or {}).get("on") is False,
        f"{app._collect().get('enemy')}")
 
+    # ── 方案层：库里的「用这个方案玩」按钮（只有生成过覆盖层的方案才亮）──
+    ck("方案层：详情面板有这个按钮",
+       "launch" in getattr(app, "lib_btns", {}),
+       f"{sorted(getattr(app, 'lib_btns', {}))}")
+    _pid_t = b["id"]
+    planlib.set_meta(_pid_t, layer_dir="")           # 先清成"没有覆盖层"
+    app._lib_refresh(keep=_pid_t)
+    app.lib_tree.selection_set(_pid_t)
+    app._lib_on_select()
+    root.update()
+    _no_layer = str(app.lib_btns["launch"].cget("state"))
+    _fake_layer = os.path.join(tmp, "假方案层")
+    os.makedirs(os.path.join(_fake_layer, "mod"), exist_ok=True)
+    planlib.set_meta(_pid_t, layer_dir=_fake_layer)
+    app._lib_refresh(keep=_pid_t)
+    app.lib_tree.selection_set(_pid_t)
+    app._lib_on_select()
+    root.update()
+    _has_layer = str(app.lib_btns["launch"].cget("state"))
+    ck("方案层：没有覆盖层时按钮是灰的、有了就亮",
+       _no_layer == "disabled" and _has_layer == "normal",
+       f"没层={_no_layer!r}｜有层={_has_layer!r}")
+
     # ── 动态：只跟着"勾了哪些类别 / 商店开没开"增减 ──
     app.shops.set(True)
     app._rate_set("caster", True, 0.4)
@@ -3047,7 +3131,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     called = {}
     real_worker = App._deploy_worker
 
-    def _fake_worker(self, plan, sync, lib=False, fingerprint=None):
+    def _fake_worker(self, plan, sync, lib=False, fingerprint=None, pid=None):
         called.update(plan=plan, sync=sync, lib=lib)
         self.q.put(("log", "[③a] 假进度：说明书地点重写 12 处"))
 
@@ -3174,7 +3258,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     # 注意：Tk 不让 event_generate 造 Double-1（双击由系统认），所以这里查"绑没绑" +
     # 直接跑它所绑的那一个动作 —— 两件事合起来才是"双击一行 = 写入游戏"
     called.clear()
-    App._deploy_worker = (lambda self, plan, sync, lib=False, fingerprint=None:
+    App._deploy_worker = (lambda self, plan, sync, lib=False, fingerprint=None, pid=None:
                           called.update(plan=plan, sync=sync, lib=lib, fp=fingerprint))
     try:
         kids = app.lib_tree.get_children()
@@ -3209,6 +3293,38 @@ def selftest(seed=20261010):
     print(f"工作区: {WORKSPACE}")
     if not WORKSPACE:
         print("SELFTEST FAIL: 找不到工作区"); return 1
+    # ① 运行时模块必须真的 import 得动（打包漏文件时，隔离自检就会在这里红掉）
+    #    2026-10-16 加：敌人随机 + 方案层这几个模块漏进包时，前面几道闸门都看不出来
+    #    （它们不跑"生成/写入"），只有打包版真去生成时才炸。
+    import importlib
+    _ap = os.path.join(WORKSPACE, "investigation", "apply")
+    if _ap not in sys.path:
+        sys.path.insert(0, _ap)
+    _need = [("item 管线", ["erio", "param_patch", "native_apply", "native_deploy", "planlib"]),
+             ("敌人随机", ["enemy_randomizer", "enemy_names", "enemy_types"]),
+             ("地图", ["msb_read", "msb_write", "enemy_map_atlas"]),
+             ("方案层", ["plan_layer"])]
+    _miss = []
+    for _grp, _mods in _need:
+        for _mn in _mods:
+            try:
+                importlib.import_module(_mn)
+            except Exception as _e:
+                _miss.append(f"{_grp}/{_mn}: {type(_e).__name__}: {_e}")
+    if _miss:
+        print("SELFTEST FAIL: 运行时模块没打进来 ——")
+        for _m in _miss:
+            print("   ✗ " + _m)
+        return 1
+    print("  运行时模块 import 检查：全部就位 ✓")
+    # ② 敌人侧的数据表也要在（缺了会静默降级：Boss 池变小、友好 NPC 不排除）
+    _data = ["enemy_table.csv", "boss_rows.csv", "boss_healthbar.csv",
+             "row_models.csv", "enemy_type_map.csv"]
+    _dm = [f for f in _data if not os.path.isfile(os.path.join(WORKSPACE, "investigation", f))]
+    if _dm:
+        print("SELFTEST FAIL: 敌人侧数据表缺失 —— " + "、".join(_dm))
+        return 1
+    print("  敌人侧数据表：全部就位 ✓")
     m = load_engine()
     cfg = {"domains": ["rune", "armor", "weapon"], "joins": [], "basis": "guide",
            "shops": True, "sets": True, "seed": seed}

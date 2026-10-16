@@ -214,6 +214,7 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     #     所以"物品"和"敌人"两套改动必须在这一次里先后落盘，否则后者会把前者冲掉。
     #     两边写的是不同的表（物品=ItemLotParam*/ShopLineupParam；敌人=NpcParam），互不干扰。
     #     计划是**现场按 cfg 生成**的：同种子 ⇒ 同一份计划（可复现、也不用把大文件塞进方案库）。
+    _msb_files = []          # 二期：真换外观时，改好的地图（相对 game/ 的路径 + 绝对路径）
     if enemy_cfg and enemy_cfg.get("on"):
         import enemy_randomizer as er
         _u, _plan, _warn, _issues = er.plan_for_cfg(enemy_cfg)
@@ -228,6 +229,28 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
             f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
         rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],
                              "fingerprint": _res["fingerprint"], "plan": os.path.basename(_tmp)})
+
+        # ④b 真换外观（二期）：把地图上的模型/参数一起换掉 —— **只写进方案层，不动 mod 本体**
+        #     为什么放这里：替换关系就是敌人计划本身（{源行: 目标行}），一次算完两边都能用。
+        if enemy_cfg.get("visual"):
+            try:
+                import enemy_swapper as ES
+                _mdir = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
+                                     "map", "MapStudio")
+                _odir = os.path.join(LOG, f"msb_{ts}")
+                _sres = ES.plan_swaps(dict(_plan), map_dir=_mdir, out_dir=_odir, log=log)
+                _msb_files = [(os.path.join(_odir, f), os.path.join("map", "MapStudio", f))
+                              for f in _sres.get("files") or []]
+                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\uff1a{_sres.get('maps_changed')}/{_sres.get('maps_total')} "
+                    f"\u5f20\u56fe\u3001{_sres.get('parts_changed')} \u4e2a\u654c\u4eba\uff08\u8df3\u8fc7 {_sres.get('parts_skipped')}\uff09")
+                rec["steps"].append({"step": "enemy_visual", "ok": True, "maps": _sres.get("maps_changed"),
+                                     "parts": _sres.get("parts_changed"),
+                                     "skipped": _sres.get("parts_skipped")})
+            except ImportError:
+                log("[\u2463b] \u771f\u6362\u5916\u89c2\uff1a\u672c\u5b9d\u8fd8\u6ca1\u5c31\u7eea\uff08enemy_swapper.py \u4e0d\u5728\uff09\uff0c\u8fd9\u4e00\u6b21\u53ea\u6362\u6570\u503c")
+            except Exception as _e:
+                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\u5931\u8d25\uff08\u4e0d\u5f71\u54cd\u5176\u4ed6\u5199\u5165\uff09\uff1a{_e}")
+                rec["steps"].append({"step": "enemy_visual", "ok": False, "error": str(_e)})
     rec["steps"].append({"step": "regulation", "ok": not rep["skipped"], "stats": rep["stats"],
                          "skipped": rep["skipped"], "bytes_changed": rep["changed_bytes"]})
 
@@ -253,7 +276,7 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     if plan_label:
         try:
             import plan_layer as PL
-            _r = PL.export_layer(plan_label, log=log)
+            _r = PL.export_layer(plan_label, extra_files=_msb_files, log=log)
             PL.make_launchers(_r["dir"], _r["label"], log=log)
             PL.write_info(_r["dir"], dict(plan_meta or {}), log=log)
             log(f"[⑦] 方案层：{_r['dir']}（{len(_r['files'])} 个文件，{_r['bytes']/1048576:.1f} MB）")
