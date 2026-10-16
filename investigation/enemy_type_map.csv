@@ -123,7 +123,7 @@ c5530,Man-Bat,野兽/动物,high,10,59,,126,英文名 `Man-Bat`：名字含 wolf
 c5750,Living Jar Warrior,魔像/人造,high,10,10,,449,英文名 `Living Jar Warrior`：名字含 Jar（壶/罐造物）；名字来源=ref:ModelName；ref Class=Basic:10；ref info=26x in Regular Enemies,ref:ModelName,Basic:10,,\bjar\b|\bgreatjar\b,v2,,
 c4354,Redmane Knight,骑士/重甲,high,10,29,,576,英文名 `Redmane Knight`：名字含 knight/cavalry/sentinel/duelist/commander/hero（重甲）；名字来源=ref:ModelName；ref Class=Basic:13；ref info=13x in Regular Enemies,ref:ModelName,Basic:13,,\bknight\b|\bcavalry\b|\bsentinel\b|\bduelist\b|\bcommander\b|\bchampion\b|\bveteran\b|\bcrucible\b|\bhero\b|\bguardian\b|\bhunter\b|\blord\b,v2,,
 c4980,Death Rite Bird,不死/腐败,high,10,11,死之鸟|死亡仪式鸟,2079,英文名 `Death Rite Bird`：名字含 death rite bird/deathbird/gravebird/mariner（死系）；名字来源=ref:ModelName；ref Class=NightMiniboss:7/None:1/Miniboss:1；ref Group=nonunique；ref info=5x in Night Minibosses + World Minibosses,ref:ModelName,NightMiniboss:7/None:1/Miniboss:1,yes,\bdeath rite bird\b|\bdeathbird\b|\bgravebird\b|\btibia mariner\b|\bmariner\b,v2,,
-c2300,,未分类,low,9,11,,800,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=3.00 不构成判据；名字来源=none,none,,,,v2,c2780,
+c2300,,非战斗/NPC,low,9,11,,800,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=3.00 不构成判据；名字来源=none｜原身 c2780；11 张图各 1 个、血量 800 —— 按“到处只放一个”的形态归非战斗,none,,,,v2,c2780,
 c3701,Perfumer,施法者/祭司,high,9,37,调香师托莉夏,184,英文名 `Perfumer`：名字含 sorcerer/battlemage/perfumer/starcaller/envoy/inquisitor/shaman（施法）；名字来源=ref:ModelName；ref Class=Basic:20/Helper:1/None:1；ref info=36x in Regular Enemies,ref:ModelName,Basic:20/Helper:1/None:1,yes,\bsorcerer\b|\bbattlemage\b|\bperfumer\b|\bstarcaller\b|\bazur\b|\blusat\b|\bgraven school\b|\benvoy\b|\binquisitor\b|\bshaman\b|\bpriest\b|\bwitch\b,v2,,
 c3160,Night's Cavalry Horse,坐骑/驮兽,high,9,11,,1089,英文名 `Night's Cavalry Horse`：名字含 horse；名字来源=ref:ModelName；ref Class=Helper:8；ref Group=nosouls,ref:ModelName,Helper:8,,\bhorse\b,v2,,
 c3600,Onyx Lord,骑士/重甲,high,9,14,石肤黑王,755,英文名 `Onyx Lord`：名字含 knight/cavalry/sentinel/duelist/commander/hero（重甲）；名字来源=ref:ModelName；ref Class=Basic:6/MinorBoss:1/Evergaol:1；ref info=8x in Regular Enemies + Minor Bosses + Evergaol Minibosses,ref:ModelName,Basic:6/MinorBoss:1/Evergaol:1,yes,\bknight\b|\bcavalry\b|\bsentinel\b|\bduelist\b|\bcommander\b|\bchampion\b|\bveteran\b|\bcrucible\b|\bhero\b|\bguardian\b|\bhunter\b|\blord\b,v2,,
@@ -345,14 +345,14 @@ c2501,,骑士/重甲,medium,1,1,“背叛熔炉者”斯卡德,1209,无 ModelNam
 c4721,Hoarah Loux,Boss/领主,high,1,1,“初始之王”葛孚雷|战士荷莱·露,4396,独特具名 Boss：ModelName `Hoarah Loux` 命中参考实现 boss_names（戰士荷萊‧露）；名字来源=unique-boss；ref Class=Boss:1,unique-boss,Boss:1,yes,,v2,,
 c2060,The Two Fingers,非战斗/NPC,high,1,1,双指,5818,英文名 `The Two Fingers`：名字是具名非战斗 NPC（商人/任务角色）；名字来源=ref:ModelName；ref Class=None:1,ref:ModelName,None:1,,\bmerchant\b|\bgoldmask\b|\branni\b|\bmelina\b|\biji\b|\bgostoc\b|\bfinger reader\b|\benia\b|\btwo fingers\b|\bst\. trina\b|\bgrandam\b|\bgatekeeper\b,v2,,
 c2170,Finger Reader Enia,非战斗/NPC,high,1,1,“解指”恩雅,902,英文名 `Finger Reader Enia`：名字是具名非战斗 NPC（商人/任务角色）；名字来源=ref:ModelName；ref Class=None:1,ref:ModelName,None:1,,\bmerchant\b|\bgoldmask\b|\branni\b|\bmelina\b|\biji\b|\bgostoc\b|\bfinger reader\b|\benia\b|\btwo fingers\b|\bst\. trina\b|\bgrandam\b|\bgatekeeper\b,v2,,
-c8099,,未分类,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c8000,
+c8099,,坐骑/驮兽,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none｜原身 c8000 = Torrent（灵马）,none,,,,v2,c8000,
 c8006,,骑士/重甲,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c3150,骑士/重甲
-c8005,,未分类,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c8000,
+c8005,,坐骑/驮兽,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none｜脚本注释 Funereal Night Steed,none,,,,v2,c8000,
 c8007,,骑士/重甲,low,1,2,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c3251,骑士/重甲
-c8003,,未分类,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c8000,
+c8003,,坐骑/驮兽,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none｜脚本注释 Tree Sentinel Steed（法魂 p11 里的坐骑）,none,,,,v2,c8000,
 c8008,,骑士/重甲,low,1,2,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c3150,骑士/重甲
 c8009,,Boss/领主,low,1,2,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c3252,Boss/领主
-c8004,,未分类,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none,none,,,,v2,c8000,
+c8004,,坐骑/驮兽,low,1,1,,1939,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.60 h=1.80 不构成判据；名字来源=none｜脚本注释 Carian Silver Steed,none,,,,v2,c8000,
 c3371,,施法者/祭司,low,1,4,,450,无名字（ModelName.txt / boss_names / 血条名 / 行名四路全无）；体型 r=0.80 h=3.20 不构成判据；名字来源=none,none,,,,v2,c3370,施法者/祭司
 c4135,,不死/腐败,medium,1,1,腐败容器,2500,无 ModelName 条目，退用中文名 `腐败容器`：中文名含 骷髅/尸/腐/死/亡；名字来源=ours:boss_healthbar,ours:boss_healthbar,,yes,骷髅|骸骨|尸|腐|死|亡|幽魂|亡灵|墓地|骨,v2,,
 c4850,,施法者/祭司,medium,1,1,“塑灵者”凯玛,3200,无 ModelName 条目，退用中文名 `“塑灵者”凯玛`：中文名含 法师/祭司/萨满/拷问/呼召/塑灵（施法）；名字来源=ours:boss_healthbar,ours:boss_healthbar,,yes,法师|术士|魔法|祭司|萨满|拷问|调香|祈祷|僧|巫|学者|贤者|呼召|敕令|塑灵|唤星,v2,,
