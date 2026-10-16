@@ -209,62 +209,65 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
     rep = native_apply.apply_native(plan_csv, source=reg, out_path=reg, verify=True, quiet=True)
     log(f"[④] regulation：写入 {sum(v['applied'] for v in rep['stats'].values())} 格，跳过 {len(rep['skipped'])}；回读校验通过")
 
+    # ④b 先做：真换外观（模型 + AI 的 think/chara 一起换，只写进方案层，不动 mod 本体）
+    #     为什么放在 ④a **之前**：④a 写入时要根据"外观那步到底产出了没有"来决定保留哪些字段
+    #     （见下）。先跑外观才知道答案，否则只能猜。
+    _msb_files = []
+    _plan_for_visual = None
+    if enemy_cfg and enemy_cfg.get("on") and enemy_cfg.get("visual"):
+        try:
+            import enemy_randomizer as _er0
+            import enemy_swapper as ES
+            _u0, _plan_for_visual, _w0, _i0 = _er0.plan_for_cfg(enemy_cfg)
+            # reg = <mod根>/mod/regulation.bin ⇒ 地图就在同级的 map/MapStudio
+            # （2026-10-17 修：以前多 dirname 了一层，指到 <mod根>/map/MapStudio ⇒ 静默不跑）
+            _mdir = os.path.join(os.path.dirname(os.path.abspath(reg)), "map", "MapStudio")
+            if not os.path.isdir(_mdir):
+                _alt = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
+                                    "map", "MapStudio")
+                if os.path.isdir(_alt):
+                    _mdir = _alt
+            _odir = os.path.join(LOG, "msb_" + ts)
+            _sres = ES.plan_swaps(dict(_plan_for_visual), map_dir=_mdir, out_dir=_odir, log=log)
+            # plan_swaps 的 files 是 [{map, out, parts, ...}] —— 取里面的文件名
+            _maps = [d["map"] if isinstance(d, dict) else str(d) for d in (_sres.get("files") or [])]
+            _msb_files = [(os.path.join(_odir, m), os.path.join("map", "MapStudio", m))
+                          for m in _maps]
+            log("[④b] 真换外观：%s/%s 张图、%s 个敌人（跳过 %s）"
+                % (_sres.get("maps_changed"), _sres.get("maps_total"),
+                   _sres.get("parts_changed"), _sres.get("parts_skipped")))
+            rec["steps"].append({"step": "enemy_visual", "ok": True, "maps": _sres.get("maps_changed"),
+                                 "parts": _sres.get("parts_changed"),
+                                 "skipped": _sres.get("parts_skipped")})
+        except ImportError:
+            log("[④b] 真换外观：引擎还没就绪（enemy_swapper.py 不在），这一次只换数值")
+        except Exception as _e:                                       # noqa: BLE001
+            log("[④b] 真换外观失败（不影响其他写入）：%s" % _e)
+            rec["steps"].append({"step": "enemy_visual", "ok": False, "error": str(_e)})
+
     # ④a 敌人随机（与物品随机**同一次部署**写入）
-    #     为什么必须在一起：本函数开头会先把 regulation 复原成原始版，
-    #     所以"物品"和"敌人"两套改动必须在这一次里先后落盘，否则后者会把前者冲掉。
-    #     两边写的是不同的表（物品=ItemLotParam*/ShopLineupParam；敌人=NpcParam），互不干扰。
-    #     计划是**现场按 cfg 生成**的：同种子 ⇒ 同一份计划（可复现、也不用把大文件塞进方案库）。
-    _msb_files = []          # 二期：真换外观时，改好的地图（相对 game/ 的路径 + 绝对路径）
     if enemy_cfg and enemy_cfg.get("on"):
         import enemy_randomizer as er
         _u, _plan, _warn, _issues = er.plan_for_cfg(enemy_cfg)
         for _w in _warn:
-            log(f"[④a] 警告：{_w}")
+            log("[④a] 警告：%s" % _w)
         if _issues:
-            raise RuntimeError(f"敌人随机自检未通过（{len(_issues)} 项）：{_issues[:3]}")
-        _tmp = os.path.join(LOG, f"enemy_plan_{ts}.csv")
+            raise RuntimeError("敌人随机自检未通过（%d 项）：%s" % (len(_issues), _issues[:3]))
+        _tmp = os.path.join(LOG, "enemy_plan_" + ts + ".csv")
         er.write_plan(_plan, _u, _tmp)
-        # 没换外观时，**必须**保留与模型绑定的字段（动作 id / 判定框 / 部位伤害 / 状态特效……）——
-        # 否则"模型还是老的、动作却是新行的"，Boss 的 AI/动作就会看起来坏掉（作者实测就是这样）。
-        # 换了外观时这些字段要跟着新行走（新模型的 anibnd 里才有那些动作），所以反过来不能保留。
-        _keep_model = not bool((enemy_cfg or {}).get("visual"))
+        # 只有"外观那步真的产出了地图"时，模型绑定字段才可以跟着新行走；
+        # 否则一律保留原值 —— 绝不允许"模型是老的、动作是别人的"这种半换状态。
+        _keep_model = not (bool(enemy_cfg.get("visual")) and bool(_msb_files))
         _res = er.apply_plan(er.read_plan(_tmp), source=reg, out_path=reg, verify=True, quiet=True,
                              keep_rune=bool((enemy_cfg or {}).get("keep_rune")),
                              keep_model_fields=_keep_model)
-        log(f"[④a] 敌人随机：整行置换 {_res['rows']} 行"
-            f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
+        log("[④a] 敌人随机：整行置换 %s 行（%s，指纹 %s%s）"
+            % (_res["rows"], er.summarize(_u, _plan), _res["fingerprint"][:16],
+               "，已保留与模型绑定的字段" if _keep_model else "，模型绑定字段随新行走"))
         rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],
-                             "fingerprint": _res["fingerprint"], "plan": os.path.basename(_tmp)})
+                             "fingerprint": _res["fingerprint"], "plan": os.path.basename(_tmp),
+                             "keep_model_fields": _keep_model})
 
-        # ④b 真换外观（二期）：把地图上的模型/参数一起换掉 —— **只写进方案层，不动 mod 本体**
-        #     为什么放这里：替换关系就是敌人计划本身（{源行: 目标行}），一次算完两边都能用。
-        if enemy_cfg.get("visual"):
-            try:
-                import enemy_swapper as ES
-                # reg = <mod根>/mod/regulation.bin ⇒ 地图就在同级的 map/MapStudio
-                # （2026-10-17 修：以前多 dirname 了一层，指到 <mod根>/map/MapStudio 去了，
-                #   于是"地图目录不存在"，外观替换永远静默不跑 —— 作者看到的"敌人没变"就是这个）
-                _mdir = os.path.join(os.path.dirname(os.path.abspath(reg)), "map", "MapStudio")
-                if not os.path.isdir(_mdir):
-                    for _c in (os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(reg))),
-                                            "map", "MapStudio"),):
-                        if os.path.isdir(_c):
-                            _mdir = _c
-                            break
-                _odir = os.path.join(LOG, f"msb_{ts}")
-                _sres = ES.plan_swaps(dict(_plan), map_dir=_mdir, out_dir=_odir, log=log)
-                _msb_files = [(os.path.join(_odir, f), os.path.join("map", "MapStudio", f))
-                              for f in _sres.get("files") or []]
-                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\uff1a{_sres.get('maps_changed')}/{_sres.get('maps_total')} "
-                    f"\u5f20\u56fe\u3001{_sres.get('parts_changed')} \u4e2a\u654c\u4eba\uff08\u8df3\u8fc7 {_sres.get('parts_skipped')}\uff09")
-                rec["steps"].append({"step": "enemy_visual", "ok": True, "maps": _sres.get("maps_changed"),
-                                     "parts": _sres.get("parts_changed"),
-                                     "skipped": _sres.get("parts_skipped")})
-            except ImportError:
-                log("[\u2463b] \u771f\u6362\u5916\u89c2\uff1a\u672c\u5b9d\u8fd8\u6ca1\u5c31\u7eea\uff08enemy_swapper.py \u4e0d\u5728\uff09\uff0c\u8fd9\u4e00\u6b21\u53ea\u6362\u6570\u503c")
-            except Exception as _e:
-                log(f"[\u2463b] \u771f\u6362\u5916\u89c2\u5931\u8d25\uff08\u4e0d\u5f71\u54cd\u5176\u4ed6\u5199\u5165\uff09\uff1a{_e}")
-                rec["steps"].append({"step": "enemy_visual", "ok": False, "error": str(_e)})
     rec["steps"].append({"step": "regulation", "ok": not rep["skipped"], "stats": rep["stats"],
                          "skipped": rep["skipped"], "bytes_changed": rep["changed_bytes"]})
 
