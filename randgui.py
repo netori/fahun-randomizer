@@ -928,7 +928,7 @@ class App:
             else:
                 self.enemy_seed_sep.set(False)
             self.enemy_source.set(e.get("source") or "all")
-            self.enemy_visual.set(bool(e.get("visual")))
+            self.enemy_visual.set(bool(e.get("visual", True)))
             self.enemy_same_type.set(bool(e.get("same_type")))
             self.enemy_keep_unkillable.set(not bool(e.get("allow_unkillable")))
             self.enemy_use_arena.set(bool(e.get("use_arena", True)))
@@ -1254,9 +1254,9 @@ class App:
                               variable=self.enemy_ignore_size, command=self._refresh_enemy)
         _cb.pack(side="left")
         self.enemy_sub.append(_cb)
-        self.enemy_visual = tk.BooleanVar(value=False)
-        _cbv = ttk.Checkbutton(r2, text="连外观一起换（真·换敌人）", variable=self.enemy_visual,
-                              command=self._refresh_enemy)
+        self.enemy_visual = tk.BooleanVar(value=True)   # 默认开：换敌人就该连样子一起换
+        _cbv = ttk.Checkbutton(r2, text="连外观一起换（默认开；出怪问题时可以关掉退回去）",
+                               variable=self.enemy_visual, command=self._refresh_enemy)
         _cbv.pack(side="left", padx=px(14))
         self.enemy_sub.append(_cbv)
         r3 = ttk.Frame(g2)
