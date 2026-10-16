@@ -73,6 +73,9 @@ def paramdef_fields(name):
     return out, (bit_off + 7) // 8
 
 
+MIN_RUN = 100        # 一个"段"至少多大才算真 param 表（见 scan_rows 注释）
+
+
 def scan_rows(raw, base, size):
     """扫 param 行表（{id, data, name} 三元组，0x18 字节一条）→ {row_id: 相对本 param 的偏移}
 
@@ -80,21 +83,25 @@ def scan_rows(raw, base, size):
     （实测：GA 那边漏 12 行、法魂这边漏 ~24 行）。现在取**所有段的并集** —— 子 agent 在 MSB 对账时发现的。
     """
     region = raw[base:base + size]
-    out, o = {}, 0
+    runs, o = [], 0
     while o + 0x18 <= len(region):
         rid, data, nm = struct.unpack_from("<QQQ", region, o)
         if 0 < rid < 0x7FFFFFFF and 0 < data < nm < len(region):
-            r = o
+            run, r = {}, o
             while r + 0x18 <= len(region):
                 _id, _d, _n = struct.unpack_from("<QQQ", region, r)
                 if not (0 < _id < 0x7FFFFFFF and 0 < _d < _n < len(region)):
                     break
-                out[_id] = _d
+                run[_id] = _d
                 r += 0x18
+            runs.append(run)
             o = r
         else:
             o += 1
-    return out
+    # 只认**够大的段**（真 param 表是几千行；那堆 1~7 行的"段"是扫出来的垃圾：
+    # 实测法魂 NpcParam 有 55 段，最长那段 7823 行 = 真表，其余 54 段全是重复 id 的假行，
+    # 把它们当行用会直接把置换搞成非双射 —— 2026-10-16 回归当场抓到过）。
+    return {k: v for run in runs if len(run) >= MIN_RUN for k, v in run.items()}
 
 
 def read_u32(buf, off):

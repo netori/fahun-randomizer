@@ -1,0 +1,203 @@
+{
+ "any_full": {
+  "cut": 100.0,
+  "delta_pp": 81.76,
+  "kind": "all",
+  "maps": 634,
+  "new": {
+   "changed": 3108,
+   "elapsed": 4.9,
+   "matched": 3109,
+   "reasons": {},
+   "skip_rate": 0.0,
+   "skipped": 0,
+   "sub_tiers": {
+    "sub-any+bucket": 37,
+    "sub-cls+bucket": 2057,
+    "sub-cls+near": 278,
+    "sub-no-dst-class": 170
+   },
+   "substituted": 2541
+  },
+  "old": {
+   "changed": 567,
+   "elapsed": 4.36,
+   "matched": 3109,
+   "reasons": {
+    "target-model-not-in-map": 2542
+   },
+   "skip_rate": 81.76,
+   "skipped": 2542,
+   "sub_tiers": {},
+   "substituted": 0
+  },
+  "pairs": 383
+ },
+ "any_head": {
+  "cut": 100.0,
+  "delta_pp": 74.72,
+  "kind": "all",
+  "maps": 40,
+  "new": {
+   "changed": 617,
+   "elapsed": 1.31,
+   "matched": 617,
+   "reasons": {},
+   "skip_rate": 0.0,
+   "skipped": 0,
+   "sub_tiers": {
+    "sub-cls+bucket": 435,
+    "sub-cls+near": 7,
+    "sub-no-dst-class": 19
+   },
+   "substituted": 461
+  },
+  "old": {
+   "changed": 156,
+   "elapsed": 1.22,
+   "matched": 617,
+   "reasons": {
+    "target-model-not-in-map": 461
+   },
+   "skip_rate": 74.72,
+   "skipped": 461,
+   "sub_tiers": {},
+   "substituted": 0
+  },
+  "pairs": 383
+ },
+ "blind_seed": 20261016,
+ "boss_head": {
+  "cut": 100.0,
+  "delta_pp": 74.19,
+  "kind": "boss",
+  "maps": 40,
+  "new": {
+   "changed": 62,
+   "elapsed": 1.21,
+   "matched": 62,
+   "reasons": {},
+   "skip_rate": 0.0,
+   "skipped": 0,
+   "sub_tiers": {
+    "sub-cls+bucket": 44,
+    "sub-cls+near": 2
+   },
+   "substituted": 46
+  },
+  "old": {
+   "changed": 16,
+   "elapsed": 1.17,
+   "matched": 62,
+   "reasons": {
+    "target-model-not-in-map": 46
+   },
+   "skip_rate": 74.19,
+   "skipped": 46,
+   "sub_tiers": {},
+   "substituted": 0
+  },
+  "pairs": 189
+ },
+ "determinism_full": {
+  "diff": [],
+  "identical_maps": 634,
+  "maps": 634,
+  "ok": true,
+  "parts": 3108,
+  "substituted": 2541
+ },
+ "elapsed": 28.83,
+ "head_maps": 40,
+ "maps_dir": "F:\\game\\studygame\\elden ring\\THE_COVERAGE-随机开发\\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\\mod\\map\\MapStudio",
+ "normal_head": {
+  "cut": 100.0,
+  "delta_pp": 82.98,
+  "kind": "normal",
+  "maps": 40,
+  "new": {
+   "changed": 805,
+   "elapsed": 1.26,
+   "matched": 805,
+   "reasons": {},
+   "skip_rate": 0.0,
+   "skipped": 0,
+   "sub_tiers": {
+    "sub-cls+bucket": 614,
+    "sub-cls+near": 5,
+    "sub-no-dst-class": 49
+   },
+   "substituted": 668
+  },
+  "old": {
+   "changed": 137,
+   "elapsed": 1.17,
+   "matched": 805,
+   "reasons": {
+    "target-model-not-in-map": 668
+   },
+   "skip_rate": 82.98,
+   "skipped": 668,
+   "sub_tiers": {},
+   "substituted": 0
+  },
+  "pairs": 375
+ },
+ "permap": {
+  "changed": 3301,
+  "maps": 20,
+  "parts": 3311,
+  "skipped": 0
+ },
+ "row_cls_rows": 6392,
+ "sub_bounds": {
+  "asked": 245,
+  "maps": 12,
+  "nondeterministic": 0,
+  "not_in_map_model": 0,
+  "ok": true,
+  "sample": [
+   {
+    "map": "m10_00_00_00.msb.dcx",
+    "model": "c4311",
+    "picked": 43111210,
+    "preferred": 0,
+    "src": 1000000,
+    "tier": "sub-no-dst-class"
+   },
+   {
+    "map": "m10_00_00_00.msb.dcx",
+    "model": "c2270",
+    "picked": 22700032,
+    "preferred": 37300152,
+    "src": 1000000,
+    "tier": "sub-cls+bucket"
+   },
+   {
+    "map": "m10_00_00_00.msb.dcx",
+    "model": "c3000",
+    "picked": 30000114,
+    "preferred": 43211152,
+    "src": 1000000,
+    "tier": "sub-cls+bucket"
+   },
+   {
+    "map": "m10_00_00_00.msb.dcx",
+    "model": "c3000",
+    "picked": 30001314,
+    "preferred": 53300087,
+    "src": 1000000,
+    "tier": "sub-cls+bucket"
+   },
+   {
+    "map": "m10_00_00_00.msb.dcx",
+    "model": "c0000",
+    "picked": 524200090,
+    "preferred": 523460030,
+    "src": 1000000,
+    "tier": "sub-cls+bucket"
+   }
+  ]
+ },
+ "when": "2026-10-16 14:55:42"
+}

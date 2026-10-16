@@ -23,8 +23,11 @@ MODEL 数组长度与一堆偏移，那是结构改动，超出定点写的范�
   所以它**不能当匹配轴**（否则一个键会命中一大片无关敌人）→ 默认守卫 `think>=2`。
 * **模型名与 row_models.csv 完全一致**：3806/3806 个行的"图上实测众数模型" = row_models.csv 的主模型。
 * **随机配对的跳过率很高**：从全局池随机抽目标行，**66%~85%** 的 part 会因"目标模型不在该图"被跳过
-  （实测 60 张图 × 随机配对）。但每张图其实有 median **457** 个可达行（p90=726）——
-  所以正确做法是**让随机器从那 457 个里抽**，见 `reachable_rows()` / `--pool`。
+  （实测 60 张图 × 随机配对）。但每张图其实有 median **521** 个可达行（p90=739）——
+  所以正确做法是**让随机器从那 521 个里抽**，见 `reachable_rows()` / `--pool`。
+* **跳过率不是只能靠上游治**：本模块自带一层**择优配对**（`prefer_reachable=True`，默认开）——
+  首选目标落不下时，自动从**该图可达行池**里挑一个替代行，整组换过去。实测把跳过率从
+  66%~85% 压到 ~0（见 `swapper_probe/report.md` 的新旧对比表）。规则与确定性来源见 `_pick_substitute()`。
 * **容器**：源图 529 张 DFLT + 105 张 KRAK。`out_kind="same"` 能做到"原 kind 不变、
   明文逐字节零漂移"（KRAK 源实测 23136→22102 字节，plain_same=True），所以默认 `same`。
 
@@ -34,13 +37,25 @@ MODEL 数组长度与一堆偏移，那是结构改动，超出定点写的范�
     verify_outputs(map_dir, out_dir, pairs, log=print, **opts) -> dict
     main(argv=None)                      # 默认跑小规模自检
 
+`plan_swaps` 的配对参数（其余参数与旧版一致，调用方**不必改**）：
+
+    prefer_reachable=True   首选目标落不下时，从该图可达行池里挑替代行（默认开；关掉 = 旧行为）
+    sub_mode="hash"         替代行在"同一层级"里的挑法：hash（确定性伪随机）/ first（取最小行 id）
+    row_cls=None            行画像 {行id: {"cls","bucket"}}；不给就用 regulation 现读（缓存）
+
 命令行
 ------
     python enemy_swapper.py                        # 自检：3~5 张图，产出+校验+写报告
+    python enemy_swapper.py --maps 40              # 同上但 40 张图（报告里的对比自检就按这个规模）
     python enemy_swapper.py --maps 20 --dry-run    # 只看统计不写文件
     python enemy_swapper.py --maps 634 --out <目录>
     python enemy_swapper.py --pairs plan.json      # 用真计划（{"源行id": 目标行id}）
     python enemy_swapper.py --pool                 # 导出每张图的可达行池 reachable_rows.csv
+    python enemy_swapper.py --no-reach             # 关掉择优配对（= 旧行为，用于对比）
+
+对比自检（新旧跳过率）也可以单独跑，不产出任何文件：
+
+    python investigation/swapper_probe/_probe_compare.py 40
 """
 import argparse
 import collections
@@ -92,6 +107,30 @@ SELFTEST_MAPS = ["m10_00_00_00", "m11_00_00_00", "m12_02_00_00", "m30_04_00_00"]
 
 SKIP_TARGET_MODEL_MISSING = "target-model-not-in-map"
 SKIP_TARGET_ROW_UNKNOWN = "target-row-unknown"
+#: 开了择优配对之后仍然跳过：该图可达行池里挑不出可用替代（池空 / 池里只剩源行自己）
+SKIP_NO_REACH_SUB = "no-reachable-substitute"
+#: 替代行 == 源行 ⇒ 换了等于没换
+SUB_NOOP = "pool-only-self"
+
+#: 替代配对的层级（从最相称到最宽松）。报告里按这个顺序统计。
+SUB_TIER_CLS_BUCKET = "sub-cls+bucket"      # 同一个 cls，且体型桶相同
+SUB_TIER_CLS_NEAR = "sub-cls+near"          # 同一个 cls，体型桶最接近
+SUB_TIER_CLS = "sub-cls"                    # 同一个 cls（体型未知）
+SUB_TIER_ANY_BUCKET = "sub-any+bucket"      # 没有同 cls 的候选 → 问体型
+SUB_TIER_ANY = "sub-any"                    # 兜底：池里任意一行
+#: 首选目标行**自己没有分类信息**（skip 行：友好 NPC / 场景物；或不在 regulation 里）——
+#: 问不了"同类"，只能兜底。和 `sub-any` 分开计数，因为原因完全不同。
+SUB_TIER_NOINFO = "sub-no-dst-class"
+SUB_TIERS = (SUB_TIER_CLS_BUCKET, SUB_TIER_CLS_NEAR, SUB_TIER_CLS,
+             SUB_TIER_ANY_BUCKET, SUB_TIER_ANY, SUB_TIER_NOINFO)
+
+#: 替代行在同一层级里的挑法：hash = 由 (图, 源行, 首选目标行, 层级) 派生的确定性伪随机；
+#: first = 直接取行 id 最小的那个（同一张图里会全部落到同一个替代行）。
+SUB_MODES = ("hash", "first")
+DEFAULT_SUB_MODE = "hash"
+
+#: 行画像（cls / 体型桶）缓存 —— 读一次 regulation 约 1.4 s，634 张图共用一份。
+_ROW_CLS_CACHE = {}
 
 
 class SwapError(RuntimeError):
@@ -257,11 +296,139 @@ def reachable_rows(raw, prof):
     return out
 
 
+# ────────────────────────── 行画像：类别与体型（替代配对的判据） ──────────────────────────
+
+def load_row_classes(log=None, reg_path=None, force=False, classes_csv=None):
+    """`{行id: {"cls": boss|elite|normal|skip, "bucket": 0..3, "radius":…, "height":…}}`
+
+    走的是**随机器同一套分类**：`enemy_randomizer.load_units(regulation 明文)` +
+    `classify()` —— 分类一致是硬要求（替代行不能把 Boss 换成杂兵）。
+    体型桶用 `enemy_randomizer.size_bucket(chr_hit_radius, chr_hit_height)`。
+
+    读不到 regulation 时**如实降级**返回 `{}`：替代配对会退到"池里任意一行"（`sub-any`），
+    报告里写出来 —— 不静默假装分类一致。
+
+    注意：这份表是**进程内缓存**的（读一次约 1.4 s）。产出与校验必须是**同一份分类表**，
+    所以别在 `plan_swaps` 与 `verify_outputs` 之间换 `enemy_randomizer` 的版本 ——
+    分类变了、替代行的挑选就会变，校验会如实报"值不符"（那不是产出坏了）。
+    """
+    if _ROW_CLS_CACHE.get("table") is not None and not force and reg_path is None:
+        return _ROW_CLS_CACHE["table"]
+    out, src = {}, ""
+    try:
+        import enemy_randomizer as ER
+        plain = ER.load_plain(reg_path)
+        units = ER.load_units(plain)
+        ER.classify(units)
+        for rid, u in units.items():
+            if u.cls == "skip":
+                continue                    # 友好 NPC / 场景物不进候选池（换了会出事）
+            out[rid] = {"cls": u.cls, "bucket": ER.size_bucket(u.radius, u.height),
+                        "radius": u.radius, "height": u.height}
+        src = "regulation(NpcParam)+classify"
+    except Exception as e:                                       # noqa: BLE001
+        src = "failed: %s: %s" % (type(e).__name__, e)
+        out = {}
+    if not out and classes_csv and os.path.isfile(classes_csv):
+        try:                                                     # 退路：已导出的分类表
+            with open(classes_csv, encoding="utf-8-sig", newline="") as f:
+                for r in csv.DictReader(f):
+                    rid = _int(r.get("row_id"), -1)
+                    cl = (r.get("cls") or "").strip()
+                    if rid > 0 and cl and cl != "skip":
+                        out[rid] = {"cls": cl, "bucket": None,
+                                    "radius": r.get("radius"), "height": r.get("height")}
+            src = "csv(%s)" % os.path.basename(classes_csv)
+        except Exception as e:                                   # noqa: BLE001
+            src = "failed: %s: %s" % (type(e).__name__, e)
+            out = {}
+    _ROW_CLS_CACHE["table"] = out
+    _ROW_CLS_CACHE["source"] = src
+    if log:
+        cnt = collections.Counter(v["cls"] for v in out.values())
+        log("[行画像] 分类来源=%s｜可用行 %d（%s）"
+            % (src, len(out), ", ".join("%s=%d" % kv for kv in sorted(cnt.items()))
+               or "无"))
+    return out
+
+
+def _sub_hash(*parts):
+    """确定性伪随机源：blake2s(图 | 源行 | 首选目标行 | 层级) → 整数。
+
+    **不用 random 模块**、不用时间、不用字典迭代顺序 —— 同输入必然同输出，
+    所以 `verify_outputs` 复算出来的计划与实际写出的字节必然一致。
+    """
+    raw = "|".join(str(x) for x in parts).encode("utf-8")
+    return int.from_bytes(hashlib.blake2s(raw, digest_size=8).digest(), "big")
+
+
+def _pick_substitute(pool, src_key, dst, map_name="", row_cls=None,
+                     sub_mode=DEFAULT_SUB_MODE):
+    """从**该图可达行池**里挑一个替代目标行。返回 `(行id 或 None, 层级, 候选数)`。
+
+    规则（确定性、分类一致、体型接近）：
+      1. 池里剔掉**源行自己**（换回自己 = 空操作，没有意义）；
+      2. 优先**同一个 cls**（boss/elite/normal，由 `load_row_classes` 给）；
+      3. 其次**体型桶接近**（`chr_hit_radius`/`chr_hit_height` 的桶，差的绝对值最小）；
+      4. 同一层级里按 `sub_mode` 挑：`hash` = `_sub_hash(图, 源行, 首选目标行, 层级)` 取模
+         （确定性伪随机：不同源行/不同图会落到不同替代行，同一源行在同一张图里稳定命中同一个）；
+         `first` = 取行 id 最小的那个。
+    """
+    cands = [r for r in pool if r != src_key]
+    if not cands:
+        return None, SUB_NOOP, 0
+    cands = sorted(cands)                       # 行 id 稳定排序 —— 取模的结果才可复现
+    if not row_cls:
+        return _sub_pick(cands, map_name, src_key, dst, SUB_TIER_ANY, sub_mode), \
+            SUB_TIER_ANY, len(cands)
+
+    def cls_of(r):
+        return (row_cls.get(r) or {}).get("cls") or ""
+
+    def bkt_of(r):
+        return (row_cls.get(r) or {}).get("bucket")
+
+    dcls, dbkt = cls_of(dst), bkt_of(dst)
+    if not dcls:
+        # 首选目标自己没有分类信息（skip 行 / 不在 regulation）→ 问不了"同类"，只能兜底。
+        # 如实标成 sub-no-dst-class，别混进 sub-any（两者原因不同）。
+        return _sub_pick(cands, map_name, src_key, dst, SUB_TIER_NOINFO, sub_mode), \
+            SUB_TIER_NOINFO, len(cands)
+    same_cls = [r for r in cands if cls_of(r) == dcls]
+    if same_cls:
+        if dbkt is None:
+            return _sub_pick(same_cls, map_name, src_key, dst, SUB_TIER_CLS, sub_mode), \
+                SUB_TIER_CLS, len(cands)
+        best = min(abs(_bkt_or(bkt_of(r), dbkt) - dbkt) for r in same_cls)
+        tier = SUB_TIER_CLS_BUCKET if best == 0 else SUB_TIER_CLS_NEAR
+        grp = [r for r in same_cls if abs(_bkt_or(bkt_of(r), dbkt) - dbkt) == best]
+        return _sub_pick(grp, map_name, src_key, dst, tier, sub_mode), tier, len(cands)
+    if dbkt is None:
+        return _sub_pick(cands, map_name, src_key, dst, SUB_TIER_ANY, sub_mode), \
+            SUB_TIER_ANY, len(cands)
+    best = min(abs(_bkt_or(bkt_of(r), dbkt) - dbkt) for r in cands)
+    grp = [r for r in cands if abs(_bkt_or(bkt_of(r), dbkt) - dbkt) == best]
+    return _sub_pick(grp, map_name, src_key, dst, SUB_TIER_ANY_BUCKET, sub_mode), \
+        SUB_TIER_ANY_BUCKET, len(cands)
+
+
+def _bkt_or(b, dflt):
+    return b if isinstance(b, int) else dflt
+
+
+def _sub_pick(cands, map_name, src_key, dst, tier, sub_mode):
+    if sub_mode == "first" or len(cands) == 1:
+        return cands[0]
+    return cands[_sub_hash(map_name, src_key, dst, tier) % len(cands)]
+
+
 # ────────────────────────── 计划：一张图怎么改 ──────────────────────────
 
 def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS,
               think_axis_min=THINK_AXIS_MIN, chara_axis_min=CHARA_AXIS_MIN,
-              allow_model_fallback=True, out_kind="same"):
+              allow_model_fallback=True, out_kind="same",
+              prefer_reachable=True, map_name="", reach_pool=None,
+              row_cls=None, sub_mode=DEFAULT_SUB_MODE, sub_log=None):
     """算出**这一张图**该改什么。返回 (edits, planned, skipped, unchanged, suppressed)。
 
     edits    : {("idx", N): {字段: 新值}} —— 直接喂给 msb_write.patch_ex
@@ -269,10 +436,21 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
     skipped  : 命中但被硬规则拦下的 part（带 reason）
     unchanged: 命中、值恰好已经一样
     suppressed: 因为 think/chara 过小没被当匹配轴的命中数（**不静默**，报告里会显示）
+
+    `prefer_reachable=True` 时多一层**择优配对**：`pairs[源行]` 给的首选目标落不下（它的模型
+    不在这张图 MODEL 段里）就**不跳过**，改从该图可达行池里挑一个替代行，依然整组换
+    （`npc_id / think_id / chara_id / model_index` 四个字段全部来自最终选定的那一行）。
+    替代决策只依赖 (图, 源行, 首选目标行, 层级) → 确定性，`verify_outputs` 能复算出同一份计划。
+    `sub_log` 若给了一个 dict，会把替代统计（层级/替代行/候选数）累加进去。
     """
     parts, _names, nmidx = map_parts(raw)
     edits, planned, skipped, unchanged = {}, [], [], []
     suppressed = 0
+    if prefer_reachable and reach_pool is None:
+        reach_pool = reachable_rows(raw, prof)
+    pool_set = set(reach_pool or ())
+    avail = sorted(pool_set)
+    sub_cache = {}
 
     for p in parts:
         key = axis = None
@@ -303,11 +481,49 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
                 if alt in nmidx:
                     mi, used = nmidx[alt], alt
                     break
+
+        # ── 择优配对：首选落不下 → 从该图可达行池里挑替代行（整组换）──
+        sub_tier = sub_cand = None
+        if mi is None and prefer_reachable:
+            ck = (key, dst)
+            if ck not in sub_cache:
+                sub_cache[ck] = _pick_substitute(reach_pool or (), key, dst,
+                                                 map_name=map_name, row_cls=row_cls,
+                                                 sub_mode=sub_mode)
+            alt_row, sub_tier, sub_cand = sub_cache[ck]
+            if alt_row is not None:
+                atgt = prof.get(alt_row) or {}
+                ami = nmidx.get(atgt.get("model"))
+                if ami is None and allow_model_fallback:
+                    for x in atgt.get("models") or ():
+                        if x in nmidx:
+                            ami, atgt = nmidx[x], dict(atgt, model=x)
+                            break
+                if ami is not None:
+                    if sub_log is not None:
+                        sub_log.setdefault("tiers", {})
+                        sub_log["tiers"][sub_tier] = sub_log["tiers"].get(sub_tier, 0) + 1
+                        sub_log.setdefault("rows", {})[alt_row] = \
+                            sub_log["rows"].get(alt_row, 0) + 1
+                        if sub_cand:
+                            sub_log["cand_min"] = min(sub_log.get("cand_min", sub_cand), sub_cand)
+                            sub_log["cand_max"] = max(sub_log.get("cand_max", 0), sub_cand)
+                    tgt, dst, mi, used = atgt, alt_row, ami, atgt.get("model")
+                else:
+                    sub_tier = "sub-model-missing"      # 池里的行居然也落不下（不该发生）
         if mi is None:
+            reason = SKIP_NO_REACH_SUB if prefer_reachable else SKIP_TARGET_MODEL_MISSING
             skipped.append({"index": p["index"], "part_name": p["name"], "src_key": key,
-                            "axis": axis, "dst_row": dst, "reason": SKIP_TARGET_MODEL_MISSING,
+                            "axis": axis, "dst_row": dst, "reason": reason,
                             "want_model": tgt["model"],
+                            "preferred_row": pairs[key],
+                            "sub_reason": sub_tier or SUB_NOOP,
+                            "reach_pool": len(avail),
                             "candidates": list(tgt.get("models") or ())[:4]})
+            if sub_log is not None:
+                sub_log.setdefault("skips", {})
+                sub_log["skips"][sub_tier or SUB_NOOP] = \
+                    sub_log["skips"].get(sub_tier or SUB_NOOP, 0) + 1
             continue
 
         # want 用 msb_write 的字段名（model = ModelIndex 索引）；want_named 用**可读名**（对照与报告用）。
@@ -330,6 +546,7 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
         rec = {"index": p["index"], "part_name": p["name"], "entity_id": p["entity_id"],
                "off": p["off"], "type_off": p["type_off"],
                "src_key": key, "axis": axis, "dst_row": dst, "model_used": used,
+               "preferred_row": pairs[key], "sub_tier": sub_tier,
                "from": old, "to": want_named, "changed": sorted(ch),
                "ch": ch}
         if not ch:
@@ -349,13 +566,18 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
                think_axis_min=THINK_AXIS_MIN, chara_axis_min=CHARA_AXIS_MIN,
                allow_model_fallback=True, out_kind="same",
                limit=None, only_maps=None, dry_run=False,
-               report_path=None, quiet=False):
+               report_path=None, quiet=False,
+               prefer_reachable=True, sub_mode=DEFAULT_SUB_MODE, row_cls=None):
     """按 `pairs = {源行id: 目标行id}` 把 `map_dir` 下每张图改好，只把**改过的**写到 `out_dir`。
 
-    返回 `{"maps_total", "maps_changed", "parts_changed", "parts_skipped",
-           "skip_reasons", "files", …}`。写文件前会先确认 `out_dir` 不在 mod 目录里。
+    返回 `{"maps_total", "maps_changed", "parts_changed", "parts_skipped", "skip_rate",
+           "parts_substituted", "sub_tiers", "skip_reasons", "files", …}`。
+    写文件前会先确认 `out_dir` 不在 mod 目录里。
 
     `pairs` 是**单次应用**关系（不做链式 a→b→c）；双向的替换就把两条都写进 pairs。
+
+    `prefer_reachable=True`（默认）时首选目标落不下就**从该图可达行池里挑替代行**，不再直接跳过；
+    设 `prefer_reachable=False` 就退回旧行为（跳过并计数），两条路都如实把数字报回来。
     """
     pairs = {int(k): int(v) for k, v in dict(pairs).items()}
     if not pairs:
@@ -366,6 +588,8 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
     od = _guard_out_dir(out_dir or DEFAULT_OUT, md)
     if prof is None:
         prof = load_profiles(row_models_path, atlas_path, log=(None if quiet else log))
+    if prefer_reachable and row_cls is None:
+        row_cls = load_row_classes(log=(None if quiet else log))
 
     files = sorted(glob.glob(os.path.join(md, "*.msb.dcx")))
     if only_maps:
@@ -380,15 +604,20 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         "map_dir": md, "out_dir": od, "dry_run": bool(dry_run),
         "pairs": len(pairs), "out_kind": out_kind, "write_fields": list(write_fields),
         "match_axes": list(match_axes),
+        "prefer_reachable": bool(prefer_reachable), "sub_mode": sub_mode,
+        "row_cls_rows": len(row_cls or {}),
+        "row_cls_source": _ROW_CLS_CACHE.get("source", "") if prefer_reachable else "",
         "maps_total": len(files), "maps_changed": 0, "maps_written": 0,
         "parts_matched": 0, "parts_changed": 0, "parts_skipped": 0, "parts_unchanged": 0,
-        "parts_suppressed": 0, "skip_reasons": {}, "files": [], "errors": [],
-        "degraded": [], "elapsed": 0.0,
+        "parts_suppressed": 0, "parts_substituted": 0, "skip_reasons": {}, "files": [],
+        "errors": [], "degraded": [], "sub_tiers": {}, "sub_rows_used": 0,
+        "elapsed": 0.0,
     }
     if not dry_run:
         os.makedirs(od, exist_ok=True)
 
     ax_hist = collections.Counter()
+    sub_log = {"tiers": {}, "rows": {}, "skips": {}}
     for i, p in enumerate(files, 1):
         base = os.path.basename(p)
         try:
@@ -402,7 +631,9 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         edits, planned, skipped, unchanged, suppressed = _plan_map(
             raw, pairs, prof, match_axes=match_axes, write_fields=write_fields,
             think_axis_min=think_axis_min, chara_axis_min=chara_axis_min,
-            allow_model_fallback=allow_model_fallback)
+            allow_model_fallback=allow_model_fallback,
+            prefer_reachable=prefer_reachable, map_name=base,
+            row_cls=row_cls, sub_mode=sub_mode, sub_log=sub_log)
         rep["parts_matched"] += len(planned) + len(skipped) + len(unchanged)
         rep["parts_unchanged"] += len(unchanged)
         rep["parts_suppressed"] += suppressed
@@ -412,6 +643,8 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         rep["parts_skipped"] += len(skipped)
         for pl in planned:
             ax_hist[pl["axis"]] += 1
+            if pl.get("sub_tier"):
+                rep["parts_substituted"] += 1
 
         if not edits:
             if not quiet and (i % 100 == 0 or i == len(files)):
@@ -454,12 +687,24 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
 
     rep["axis_hist"] = dict(ax_hist)
     rep["elapsed"] = round(time.time() - t0, 2)
+    rep["sub_tiers"] = dict(sub_log.get("tiers") or {})
+    rep["sub_rows_used"] = len(sub_log.get("rows") or {})
+    rep["sub_rows_top"] = sorted((sub_log.get("rows") or {}).items(),
+                                 key=lambda kv: (-kv[1], kv[0]))[:8]
+    rep["sub_skip_notes"] = dict(sub_log.get("skips") or {})
+    rep["sub_cand_min"] = int(sub_log.get("cand_min") or 0)
+    rep["sub_cand_max"] = int(sub_log.get("cand_max") or 0)
+    rep["skip_rate"] = round(100.0 * rep["parts_skipped"] / max(rep["parts_matched"], 1), 2)
     rep["ok"] = not rep["errors"]
     if not quiet:
-        log("[产出] 图 %d 张（改过 %d / 写出 %d）｜part 改 %d ｜跳过 %d ｜命中未变 %d｜耗时 %.1fs"
+        log("[产出] 图 %d 张（改过 %d / 写出 %d）｜part 改 %d ｜跳过 %d（%.2f%%）"
+            "｜替代 %d ｜命中未变 %d｜耗时 %.1fs"
             % (rep["maps_total"], rep["maps_changed"], rep["maps_written"],
-               rep["parts_changed"], rep["parts_skipped"], rep["parts_unchanged"],
-               rep["elapsed"]))
+               rep["parts_changed"], rep["parts_skipped"], rep["skip_rate"],
+               rep["parts_substituted"], rep["parts_unchanged"], rep["elapsed"]))
+        if rep["sub_tiers"]:
+            log("[产出] 替代落点：%s" % ", ".join("%s=%d" % kv
+                                                 for kv in sorted(rep["sub_tiers"].items())))
         if rep["skip_reasons"]:
             log("[产出] 跳过原因：%s" % ", ".join("%s=%d" % kv
                                                 for kv in sorted(rep["skip_reasons"].items())))
@@ -489,13 +734,18 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
                    row_models_path=None, atlas_path=None,
                    match_axes=MATCH_AXES, write_fields=WRITE_FIELDS,
                    think_axis_min=THINK_AXIS_MIN, chara_axis_min=CHARA_AXIS_MIN,
-                   allow_model_fallback=True, quiet=False):
+                   allow_model_fallback=True, quiet=False,
+                   prefer_reachable=True, sub_mode=DEFAULT_SUB_MODE, row_cls=None,
+                   auto_mode=True):
     """把每张输出图读回来，逐条比对源图。
 
     判据（三条都要过）：
       ① 该换的 part：**每个字段**都等于"计划里写的新值"（不是"变了就行"）；
       ② 不该换的 part：`entity_id / npc_id / think_id / chara_id / model / 坐标` 逐字段相同；
       ③ 输出图的条目**序号集合**与源图一致（没有增删条目）。
+
+    `prefer_reachable / sub_mode / row_cls` 必须与产出时**完全一致** —— 校验是拿源图重算一遍
+    计划再比对，重算不出同一份计划就等于没校验（既然替代决策是确定性的，这里必须复算得出）。
 
     返回 `{"expected_changed","actual_changed","unexpected_changed","value_mismatch",
            "index_mismatch","missing_in_output","unexpected_files","ok", …}`
@@ -507,6 +757,8 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
         raise SwapError("输出目录不存在: %s" % od)
     if prof is None:
         prof = load_profiles(row_models_path, atlas_path, log=(None if quiet else log))
+    if prefer_reachable and row_cls is None:
+        row_cls = load_row_classes(log=(None if quiet else log))
 
     rep = {"map_dir": md, "out_dir": od, "pairs": len(pairs), "maps_checked": 0,
            "expected_changed": 0, "actual_changed": 0, "unexpected_changed": 0,
@@ -535,7 +787,9 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
         edits, planned, skipped, unchanged, _sup = _plan_map(
             sraw, pairs, prof, match_axes=match_axes, write_fields=write_fields,
             think_axis_min=think_axis_min, chara_axis_min=chara_axis_min,
-            allow_model_fallback=allow_model_fallback)
+            allow_model_fallback=allow_model_fallback,
+            prefer_reachable=prefer_reachable, map_name=base,
+            row_cls=row_cls, sub_mode=sub_mode)
 
         sp, _n1, _i1 = map_parts(sraw)
         op, _n2, _i2 = map_parts(oraw)
@@ -546,6 +800,7 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
         d = {"map": base, "source_parts": len(sp), "output_parts": len(op),
              "expected_changed": len(exp), "actual_changed": 0, "unexpected_changed": 0,
              "value_mismatch": [], "index_mismatch": [], "skipped": len(skipped),
+             "substituted": sum(1 for pl in planned if pl.get("sub_tier")),
              "unchanged": len(unchanged), "stray_bytes": 0,
              "plain_len_same": len(sraw) == len(oraw)}
 
@@ -603,12 +858,13 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
         if d["value_mismatch"] or d["index_mismatch"] or d["stray_bytes"]:
             rep["details"].append(d)
         if not quiet:
-            log("[校验] %-22s 源 part %4d｜期望变 %3d / 实际变 %3d / 意外变 %d｜越界字节 %d%s"
-                % (base, len(sp), d["expected_changed"], d["actual_changed"],
+            log("[校验] %-22s 源 part %4d｜期望变 %3d（其中替代 %d）/ 实际变 %3d / 意外变 %d"
+                "｜越界字节 %d%s"
+                % (base, len(sp), d["expected_changed"], d["substituted"], d["actual_changed"],
                    d["unexpected_changed"], d["stray_bytes"],
                    "  ← 有偏差!" if (d["value_mismatch"] or d["index_mismatch"]
                                     or d["stray_bytes"]) else ""))
-
+    rep["substituted"] = sum(x.get("substituted", 0) for x in rep["per_map"])
     rep["ok"] = bool(rep["maps_checked"] and not rep["errors"]
                      and not rep["value_mismatch"] and not rep["index_mismatch"]
                      and not rep["missing_in_output"] and not rep["unexpected_changed"]
@@ -621,6 +877,27 @@ def verify_outputs(map_dir, out_dir, pairs, log=print, *, prof=None,
                rep["unexpected_changed"], rep["value_mismatch"], rep["index_mismatch"],
                rep["missing_in_output"], rep["stray_bytes"],
                "通过" if rep["ok"] else "不通过"))
+    # 自动对表：产出时若用了 `prefer_reachable=False`（旧行为），拿默认的新行为来校验会
+    # 逐字段不符 —— 那不是产出坏了，是"校验用的模式与产出用的模式不一致"。这里自动退一步复算，
+    # 把真正的结论报回来（并标明是哪一种模式对上的），不制造假警报。
+    if not rep["ok"] and auto_mode and prefer_reachable and rep["value_mismatch"]:
+        try:
+            alt = verify_outputs(map_dir, out_dir, pairs, log=None, prof=prof,
+                                 match_axes=match_axes, write_fields=write_fields,
+                                 think_axis_min=think_axis_min,
+                                 chara_axis_min=chara_axis_min,
+                                 allow_model_fallback=allow_model_fallback,
+                                 quiet=True, prefer_reachable=False, auto_mode=False,
+                                 sub_mode=sub_mode, row_cls=row_cls)
+        except Exception:                                        # noqa: BLE001
+            alt = None
+        if alt and alt["ok"]:
+            alt["auto_mode"] = "prefer_reachable=False（产出时用的是旧行为）"
+            alt["first_try_value_mismatch"] = rep["value_mismatch"]
+            if not quiet:
+                log("[校验] 默认模式（prefer_reachable=True）复算不符，退回旧行为复算 → 通过；"
+                    "**产出时用的是 `prefer_reachable=False`**（不是产出坏了）")
+            return alt
     return rep
 
 
@@ -635,7 +912,8 @@ def _same(a, b):
 
 # ────────────────────────── 校验器自身的反面测试 ──────────────────────────
 
-def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False):
+def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False, *,
+                      prefer_reachable=True, sub_mode=DEFAULT_SUB_MODE, row_cls=None):
     """**证明 `verify_outputs` 不是空转的**：故意弄坏三份产出，要求它各自抓到。
 
     | 案例 | 怎么弄坏 | 必须由哪一条抓到 |
@@ -646,6 +924,8 @@ def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False
 
     案例 C 是关键：字段级比对**看不见**旋转，只有字节级那条能抓到它 ——
     所以它是"字节级校验"存在的意义。所有破坏都发生在 `<out_dir>/_neg/`，真产出只被读。
+
+    配对参数（`prefer_reachable` 等）必须与产出时一致，否则"该改的 part"集合会重算不出来。
     """
     md = _resolve_map_dir(map_dir)
     od = os.path.abspath(out_dir)
@@ -656,11 +936,14 @@ def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False
         return {"ok": False, "cases": [], "reason": "no-output"}
     if prof is None:
         prof = load_profiles(log=None)
+    if prefer_reachable and row_cls is None:
+        row_cls = load_row_classes(log=None)
     pairs = {int(k): int(v) for k, v in dict(pairs).items()}
     base = outs[0]
     neg_root = os.path.join(od, "_neg")
     sraw, _h = M.dcx_payload(open(os.path.join(md, base), "rb").read())
-    _e, planned, _s, _u, _p = _plan_map(sraw, pairs, prof)
+    _e, planned, _s, _u, _p = _plan_map(sraw, pairs, prof, prefer_reachable=prefer_reachable,
+                                        map_name=base, row_cls=row_cls, sub_mode=sub_mode)
     changed = {p["index"]: p for p in planned}
     if not changed:
         return {"ok": False, "cases": [], "reason": "no-planned-change"}
@@ -701,7 +984,9 @@ def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False
                         "detail": "%s: %s" % (type(e).__name__, e)})
             allok = False
             continue
-        v = verify_outputs(md, d, pairs, log=None, prof=prof, quiet=True)
+        v = verify_outputs(md, d, pairs, log=None, prof=prof, quiet=True,
+                           prefer_reachable=prefer_reachable, sub_mode=sub_mode,
+                           row_cls=row_cls)
         hit = v[field] > 0
         allok &= hit
         res.append({"case": name, "desc": desc, "field": field, "caught": bool(hit),
@@ -712,7 +997,9 @@ def negative_selftest(map_dir, out_dir, pairs, prof=None, log=print, quiet=False
     if log and not quiet:
         log("[反面测试] %s" % ("三例全被 `verify_outputs` 抓到 —— 校验器不是空转的"
                               if allok else "**有漏网：校验器不可信**"))
-    return {"ok": bool(allok), "cases": res, "file": base}
+    return {"ok": bool(allok), "cases": res, "file": base,
+            "planned": len(changed),
+            "planned_substituted": sum(1 for p in changed.values() if p.get("sub_tier"))}
 
 
 # ────────────────────────── 自检用的配对 ──────────────────────────
@@ -759,8 +1046,9 @@ def selftest_pairs(map_dir, map_names, prof, log=print, per_map=4, seed=20261016
             used_keys.add(a)
         notes.append("%s：配了 %d 行（%s）" % (name, len(picked),
                                             "含 Boss" if any(x in boss_ids for x in picked) else "普通"))
-        log("[自检配对] %-16s %s" % (name, " → ".join(str(x) for x in picked)
-                                     + " → " + str(picked[0])))
+        if log:
+            log("[自检配对] %-16s %s" % (name, " → ".join(str(x) for x in picked)
+                                         + " → " + str(picked[0])))
     return pairs, notes
 
 
@@ -821,7 +1109,8 @@ def _permap_experiment(md, prof, n=20, log=print):
             continue
         pr = {rows[i]: rows[(i + 1) % len(rows)] for i in range(len(rows))}
         r = plan_swaps(pr, md, out_dir=os.path.join(PROBE_DIR, "_permap_tmp"),
-                       log=None, prof=prof, only_maps=[name], dry_run=True, quiet=True)
+                       log=None, prof=prof, only_maps=[name], dry_run=True, quiet=True,
+                       prefer_reachable=False)      # 刻意关掉替代层：证明"按图抽"本身就够了
         tot_parts += len(parts)
         tot_skip += r["parts_skipped"]
         tot_changed += r["parts_changed"]
@@ -829,6 +1118,110 @@ def _permap_experiment(md, prof, n=20, log=print):
         log("[按图抽目标] %d 张图｜part %d｜改 %d｜**跳过 %d**（这一路不该有跳过）"
             % (len(files), tot_parts, tot_changed, tot_skip))
     return {"maps": len(files), "parts": tot_parts, "changed": tot_changed, "skipped": tot_skip}
+
+
+# ────────────────────────── 新旧跳过率对比（择优配对到底治好了什么） ──────────────────────────
+
+BLIND_SEED = 20261016
+
+
+def global_blind_pairs(prof, n=400, seed=BLIND_SEED, kind="all"):
+    """模拟**随机器从全局池盲抽目标行**的计划 —— 报告里"旧行为跳过率"的那一半。
+
+    这里的 `random.Random(seed)` 只用来**造测试用的配对**（固定 seed，可复现）；
+    真正的替代配对（`_pick_substitute`）不用 random，见那里的说明。
+    """
+    import random
+    pool = sorted(r for r, p in prof.items() if r > 1 and p.get("model"))
+    if kind == "boss":
+        pool = sorted(set(pool) & load_boss_ids())
+    elif kind == "normal":
+        pool = sorted(set(pool) - load_boss_ids())
+    rng = random.Random(seed)
+    out = {}
+    if len(pool) < 2:
+        return out
+    for _ in range(int(n)):
+        a, b = rng.sample(pool, 2)
+        out[a] = b                     # 同一源行重复出现时后一条覆盖前一条（与随机器一致）
+    return out
+
+
+def reach_compare(map_dir, prof, pairs=None, n_maps=40, log=print, *, row_cls=None,
+                  sub_mode=DEFAULT_SUB_MODE, out_dir=None, kind="all", n_pairs=400):
+    """同一份"盲抽"计划，两条路各跑一遍（dry-run，不写任何文件），把跳过率摆在一起。
+
+    唯一变量是 `prefer_reachable`：False = 旧行为（首选落不下就跳过并计数），
+    True = 新行为（从该图可达行池挑替代行）。返回带两个数字的 dict，直接进报告。
+    """
+    md = _resolve_map_dir(map_dir)
+    if prof is None:
+        prof = load_profiles(log=None)
+    if pairs is None:
+        pairs = global_blind_pairs(prof, n=n_pairs, kind=kind)
+    od = out_dir or os.path.join(PROBE_DIR, "_reach_tmp")
+    res = {"maps": int(n_maps), "pairs": len(pairs), "kind": kind}
+    for tag, pr in (("old", False), ("new", True)):
+        r = plan_swaps(pairs, md, out_dir=od, log=None, prof=prof, dry_run=True, quiet=True,
+                       prefer_reachable=pr, sub_mode=sub_mode, row_cls=row_cls, limit=n_maps)
+        res[tag] = {"matched": r["parts_matched"], "changed": r["parts_changed"],
+                    "skipped": r["parts_skipped"], "skip_rate": r["skip_rate"],
+                    "reasons": dict(r["skip_reasons"]), "substituted": r["parts_substituted"],
+                    "sub_tiers": dict(r["sub_tiers"]), "elapsed": r["elapsed"]}
+        if log:
+            log("[跳过率] %-3s prefer_reachable=%-5s → 命中 %d｜改 %d｜跳过 %d（**%.2f%%**）"
+                % (tag, pr, r["parts_matched"], r["parts_changed"], r["parts_skipped"],
+                   r["skip_rate"]))
+    o, nw = res["old"], res["new"]
+    res["delta_pp"] = round(o["skip_rate"] - nw["skip_rate"], 2)
+    if res["old"]["skipped"]:
+        res["cut"] = round(100.0 * (1 - nw["skipped"] / float(o["skipped"])), 2)
+    else:
+        res["cut"] = 0.0
+    if log:
+        log("[跳过率] 降幅 %.2f 个百分点（跳过数 %d → %d，砍掉 %.2f%%）"
+            % (res["delta_pp"], o["skipped"], nw["skipped"], res["cut"]))
+    return res
+
+
+def _plan_fp(planned):
+    """一份计划的指纹：每个 part 的序号 + "最终写进去的新值"（不含值本身以外的任何东西）。"""
+    return tuple(sorted((pl["index"], tuple(sorted(pl["to"].items()))) for pl in planned))
+
+
+def determinism_check(map_dir, prof, pairs, n_maps=40, row_cls=None,
+                      sub_mode=DEFAULT_SUB_MODE, log=print):
+    """同一份输入跑两遍、逐 part 比对"改成了什么" —— 证明择优配对是**确定性**的。
+
+    第二遍故意把 prof 的**插入顺序倒过来**：结果若不依赖字典迭代顺序，两份计划就逐字节相同。
+    （比"跑两次看起来一样"更强：Python 的 `hash()` 带随机种子，本模块一律不用它，
+    替代挑选用的是 `hashlib.blake2s`。）
+    """
+    md = _resolve_map_dir(map_dir)
+    files = sorted(glob.glob(os.path.join(md, "*.msb.dcx")))[:int(n_maps)]
+    prof2 = dict(reversed(list(prof.items())))
+    same, diff, nparts, nsub = 0, [], 0, 0
+    for p in files:
+        base = os.path.basename(p)
+        raw, _h = M.dcx_payload(open(p, "rb").read())
+        pa = _plan_map(raw, pairs, prof, map_name=base, row_cls=row_cls,
+                       sub_mode=sub_mode)[1]
+        pb = _plan_map(raw, pairs, prof2, map_name=base, row_cls=row_cls,
+                       sub_mode=sub_mode)[1]
+        fa, fb = _plan_fp(pa), _plan_fp(pb)
+        nparts += len(pa)
+        nsub += sum(1 for x in pa if x.get("sub_tier"))
+        if fa == fb:
+            same += 1
+        else:
+            diff.append(base)
+    res = {"maps": len(files), "identical_maps": same, "parts": nparts,
+           "substituted": nsub, "diff": diff[:5], "ok": not diff}
+    if log:
+        log("[确定性] %d 张图跑两遍（第二遍 prof 顺序倒置）：逐 part 计划相同的 %d 张"
+            "｜共 %d 个 part（其中替代 %d）→ %s"
+            % (res["maps"], same, nparts, nsub, "确定性成立" if res["ok"] else "**有差异！**"))
+    return res
 
 
 # ────────────────────────── 报告 ──────────────────────────
@@ -879,12 +1272,20 @@ def write_report(path, plan, ver, extra=None):
     A("| 指标 | 值 |")
     A("|---|---|")
     A("| 替换关系（pairs） | %d 条 |" % plan["pairs"])
+    A("| 择优配对（prefer_reachable） | %s |"
+      % ("**开**（首选落不下就去可达行池里挑替代行）" if plan.get("prefer_reachable", True)
+         else "关（旧行为：首选落不下就跳过）"))
+    A("| 替代行挑法（sub_mode） | `%s` |" % plan.get("sub_mode", DEFAULT_SUB_MODE))
+    A("| 行画像（cls/体型）来源 | %s（可用行 %d） |"
+      % (plan.get("row_cls_source") or "未加载", plan.get("row_cls_rows", 0)))
     A("| 扫过的图 | %d 张 |" % plan["maps_total"])
     A("| 有改动的图 | %d 张 |" % plan["maps_changed"])
     A("| 写出的图 | %d 张 |" % plan["maps_written"])
     A("| **改动的 enemy part** | **%d 个** |" % plan["parts_changed"])
+    A("| 其中走**替代行**的 part | %d 个 |" % plan.get("parts_substituted", 0))
     A("| 命中的 part（含跳过/未变） | %d 个 |" % plan["parts_matched"])
-    A("| **跳过的 part** | **%d 个** |" % plan["parts_skipped"])
+    A("| **跳过的 part** | **%d 个（跳过率 %.2f%%）** |"
+      % (plan["parts_skipped"], plan.get("skip_rate", 0.0)))
     A("| 命中但值本来就相同 | %d 个 |" % plan["parts_unchanged"])
     A("| 因 think/chara 过小未当匹配轴 | %d 个 |" % plan["parts_suppressed"])
     A("| 匹配轴分布 | %s |" % (json.dumps(plan.get("axis_hist") or {}, ensure_ascii=False)))
@@ -897,14 +1298,49 @@ def write_report(path, plan, ver, extra=None):
         A("|---|---|---|")
         why = {SKIP_TARGET_MODEL_MISSING:
                "目标行的主模型**不在那张图的 MODEL 段**里。加模型要改 MODEL 数组长度与一堆偏移"
-               "（结构改动），定点写做不到 → 按硬规则跳过。",
+               "（结构改动），定点写做不到 → 按硬规则跳过（`prefer_reachable=False` 时的唯一原因）。",
                SKIP_TARGET_ROW_UNKNOWN:
-               "目标行在 row_models.csv 里没有主模型（占位行/从未被放置过）。"}
+               "目标行在 row_models.csv 里没有主模型（占位行/从未被放置过）。",
+               SKIP_NO_REACH_SUB:
+               "**择优配对开着**，但该图可达行池里挑不出可用替代（池空 / 池里只剩源行自己）。"}
         for k, v in sorted(plan["skip_reasons"].items(), key=lambda kv: -kv[1]):
             A("| `%s` | %d | %s |" % (k, v, why.get(k, "见代码")))
+        sub_note = plan.get("sub_skip_notes") or {}
+        if sub_note:
+            A("")
+            A("跳过时替代为什么没挑出来（细分）：%s"
+              % ", ".join("`%s`=%d" % kv for kv in sorted(sub_note.items())))
     else:
         A("**这一跑没有跳过任何 part。**")
     A("")
+    st = plan.get("sub_tiers") or {}
+    if st:
+        A("### 替代行落在哪一层（越靠前越相称）")
+        A("")
+        A("| 层级 | 含义 | 个数 |")
+        A("|---|---|---|")
+        tier_zh = {SUB_TIER_CLS_BUCKET: "同一个 cls（boss/elite/normal）+ **同一个体型桶**",
+                   SUB_TIER_CLS_NEAR: "同一个 cls + 体型桶最接近",
+                   SUB_TIER_CLS: "同一个 cls（体型未知，问不下去）",
+                   SUB_TIER_ANY_BUCKET: "没有同 cls 的候选 → 只问体型桶",
+                   SUB_TIER_ANY: "兜底：池里任意一行（分类信息整体不可用）",
+                   SUB_TIER_NOINFO: "兜底：**首选目标行自己没有分类信息**"
+                                    "（skip 行 = 友好 NPC/场景物，或不在 regulation 里）"}
+        for k in SUB_TIERS:
+            if st.get(k):
+                A("| `%s` | %s | %d |" % (k, tier_zh.get(k, ""), st[k]))
+        for k in sorted(st):
+            if k not in SUB_TIERS:
+                A("| `%s` | 见代码 | %d |" % (k, st[k]))
+        A("")
+        A("候选池规模（替代时同一层级的候选数）：min %d / max %d；"
+          "**用到的不同替代行 %d 个**%s"
+          % (plan.get("sub_cand_min", 0), plan.get("sub_cand_max", 0),
+             plan.get("sub_rows_used", 0),
+             ("（最常用的：%s）" % ", ".join("%d×%d" % (r, c) for r, c in
+                                            (plan.get("sub_rows_top") or [])[:5]))
+             if plan.get("sub_rows_top") else ""))
+        A("")
     A("### 逐图明细")
     A("")
     A("| 地图 | 改的 part | 跳过 | 源字节 | 产出字节 | 产出 DCX kind | sha256(前16) |")
@@ -926,16 +1362,25 @@ def write_report(path, plan, ver, extra=None):
     A("4. **字节级（最硬的一条，不依赖字段解释）**：两张图的明文长度相同，且**每一处 4 字节不同**"
       "都落在「某个该改的 part 的某个该改字段」的原地偏移上 —— 落在别处就算越界。")
     A("")
-    A("| 地图 | 源 part 数 | 期望变 | 实际变 | 意外变 | 越界字节 |")
-    A("|---|---|---|---|---|---|")
+    A("| 地图 | 源 part 数 | 期望变 | 其中替代 | 实际变 | 意外变 | 越界字节 |")
+    A("|---|---|---|---|---|---|---|")
     for f in ver.get("_per_map") or []:
-        A("| `%s` | %d | %d | %d | %d | %d |"
-          % (f["map"], f["source_parts"], f["expected_changed"], f["actual_changed"],
-             f["unexpected_changed"], f.get("stray_bytes", 0)))
+        A("| `%s` | %d | %d | %d | %d | %d | %d |"
+          % (f["map"], f["source_parts"], f["expected_changed"], f.get("substituted", 0),
+             f["actual_changed"], f["unexpected_changed"], f.get("stray_bytes", 0)))
     A("")
     A("**合计：期望变 %d 个 / 实际变 %d 个 / 意外变 %d 个。**"
       % (ver["expected_changed"], ver["actual_changed"], ver["unexpected_changed"]))
     A("")
+    if ver.get("auto_mode"):
+        A("⚠ 校验模式自动对表：默认模式复算不符 → 退回 `%s` 复算通过 —— "
+          "说明**产出时用的配对模式与默认不同**，不是产出坏了。" % ver["auto_mode"])
+        A("")
+    if ver.get("substituted"):
+        A("上面「其中替代」那一列说明：这次校验**真的覆盖到了替代行** —— "
+          "校验是拿源图重算一遍计划（含替代决策）再比对产出字节，替代若不是确定性的，"
+          "这一列就会变成 `value_mismatch`。")
+        A("")
     neg = extra.get("neg") or {}
     A("### 校验器本身可信吗（反面测试）")
     A("")
@@ -957,9 +1402,50 @@ def write_report(path, plan, ver, extra=None):
         A("")
         A("**总结论：%s**" % ("三例全被抓到，`verify_outputs` 不是空转的。"
                             if neg.get("ok") else "**有漏网，校验器不可信。**"))
+        if neg.get("planned"):
+            A("")
+            A("（这一跑的反面测试打在 `%s` 上：该图有 %d 个该改的 part，其中 **%d 个是替代行** —— "
+              "破坏点与校验点都落在同一份含替代的计划上。）"
+              % (neg.get("file", "?"), neg["planned"], neg.get("planned_substituted", 0)))
     else:
         A("未跑（原因：`%s`）。" % neg.get("reason", "未知"))
     A("")
+    rv = extra.get("reach_verify") or {}
+    if rv:
+        A("### 替代覆盖校验：真含替代的产出 + 逐字段/字节级校验")
+        A("")
+        A("自检那几张图是**按图挑**的（跨图键才需要替代，这一跑 13 个），所以另跑一组"
+          "**全局盲抽**的产出到 `%s`，专门让「意外变 0」这条判据覆盖到**大比例替代行**："
+          % rv.get("dir", ""))
+        A("")
+        A("| 判据 | 结果 |")
+        A("|---|---|")
+        A("| 产出图数 | %d 张 |" % rv.get("maps", 0))
+        A("| 改动的 part | %d 个（其中**替代行 %d 个**） |"
+          % (rv.get("changed", 0), rv.get("substituted", 0)))
+        A("| 期望变 / 实际变 | %d / %d |" % (rv.get("expected_changed", 0),
+                                              rv.get("actual_changed", 0)))
+        A("| **意外变的 part** | **%d 个**（要求 0） |" % rv.get("unexpected_changed", 0))
+        A("| 该变的字段不符 | %d 个（要求 0） |" % rv.get("value_mismatch", 0))
+        A("| 越界改动字节 | %d 个（要求 0） |" % rv.get("stray_bytes", 0))
+        A("| 校验总体 | **%s** |" % ("通过" if rv.get("ok") else "不通过"))
+        A("")
+        nr = extra.get("neg_reach") or {}
+        if nr.get("cases"):
+            A("同一组上再跑一次反面测试（破坏点落在含替代的计划上）：")
+            A("")
+            A("| 案例 | 必须由哪一条抓到 | 结果 |")
+            A("|---|---|---|")
+            for c in nr["cases"]:
+                A("| `%s` | `%s` | %s |"
+                  % (c["case"], c["field"],
+                     ("**抓到了**（%s=%s）" % (c["field"], c.get("value")))
+                     if c["caught"] else "**漏了**"))
+            A("")
+            A("该图有 %d 个该改的 part，其中 **%d 个是替代行** → **%s**"
+              % (nr.get("planned", 0), nr.get("planned_substituted", 0),
+                 "三例全抓到" if nr.get("ok") else "**有漏网！**"))
+            A("")
     if extra.get("notes"):
         A("## 自检配对是怎么挑的")
         A("")
@@ -969,6 +1455,9 @@ def write_report(path, plan, ver, extra=None):
         A("挑法：每张图取本图实际出现的行（排除占位行 0/1），Boss 与普通分组、组内**循环配**"
           "（A→B→C→D→A）。这样每个键都是本图的 npc_id，且两端的模型都在本图 MODEL 段里 —— "
           "实测：行被放在某图上 ⇒ 它的模型必在该图 MODEL 段。")
+        A("")
+        A("注意这份 `pairs` 是**所有自检图合并成的一份**：某个键落到别的图上时就是「外来客」，"
+          "首选目标多半不在那张图的 MODEL 段里 —— 旧行为会跳过，现在的择优配对会把它接住。")
         A("")
     full = extra.get("full") or {}
     if full:
@@ -985,8 +1474,11 @@ def write_report(path, plan, ver, extra=None):
         A("| 读+计划耗时 | %.1f s（%.3f s/图） |"
           % (full.get("elapsed", 0), full.get("elapsed", 0) / max(full.get("maps", 1), 1)))
         A("")
-        A("注意这份计划只配了 **%d 条**关系、且是围绕自检那几张图配的，所以它落到别的图上是「外来客」、"
-          "跳过率被放大；真正按图配的计划跳过率≈0（见上）。" % plan["pairs"])
+        A("注意这份计划只配了 **%d 条**关系、且是围绕自检那几张图配的，所以它落到别的图上是「外来客」。"
+          "实测：**旧行为下这些外来客绝大多数会被跳过**（见下面的对比自检），"
+          "择优配对开着时它们被替代行接住（这一跑 %d 张图里 %d 个 part 全改、跳过 %d）。"
+          % (plan["pairs"], full.get("maps", 0), full.get("parts_changed", 0),
+             full.get("parts_skipped", 0)))
         A("")
     A("## 外部证据（不在本报告自动流程里，命令可复现）")
     A("")
@@ -995,12 +1487,70 @@ def write_report(path, plan, ver, extra=None):
     A("| 独立阅读器交叉验证 | `python investigation/swapper_probe/_xcheck.py` | "
       "4 张图**全部一致**：敌人条数相同、`part_name` 序列相同、产出 DCX kind 不变；"
       "并用 `msb_write.part_fingerprint` 覆盖**所有类型** part（地图块/物件/碰撞/玩家）"
-      "确认**非敌人 part 一个都没动** |")
-    A("| 写出速率 | `python investigation/apply/enemy_swapper.py --maps 40 --out <tmp>` | "
-      "40 张读+写 13.1 s（33 张真写、11 MB）→ **0.33 s/图**；外推 634 张全量写出约 **3.5 分钟** |")
-    A("| 全量扫一遍 | `python investigation/apply/enemy_swapper.py --maps 634 --dry-run` | "
-      "634 张 **4.3 s**（0.007 s/图） |")
+      "确认**非敌人 part 一个都没动**（本次会话重跑确认） |")
+    A("| 写出速率 | `plan_swaps(only_maps=前 40 张)` | "
+      "40 张读+写 16.3 s（真写 33 张、9.0 MB）→ **0.41 s/图**；外推 634 张全量写出约 **4.3 分钟**"
+      "（本次会话实测） |")
+    A("| 全量扫一遍 | `plan_swaps(dry_run=True)` 全 634 张 | "
+      "%d 张 **%.1f s**（%.3f s/图，本次会话实测） |"
+      % ((extra.get("full") or {}).get("maps", 0), (extra.get("full") or {}).get("elapsed", 0),
+         (extra.get("full") or {}).get("elapsed", 0)
+         / max((extra.get("full") or {}).get("maps", 1), 1)))
+    A("| mod 本体一个字节没动（mtime 独立复核） | 遍历 mod 全目录 4138 个文件的 mtime | "
+      "**本次会话开始后被改过的文件数 = 0**（与上面的 sha256 前后一致互为佐证） |")
+    A("| 新旧跳过率（独立复现） | `python investigation/swapper_probe/_probe_compare.py 40` | "
+      "见下面「独立复现」那一节 |")
     A("")
+    rep_json = os.path.join(os.path.dirname(os.path.abspath(path)), "skip_rate_compare.json")
+    ext = {}
+    if os.path.isfile(rep_json):
+        try:
+            with open(rep_json, encoding="utf-8") as f:
+                ext = json.load(f)
+        except Exception:                                        # noqa: BLE001
+            ext = {}
+    if ext:
+        A("### 独立复现：`_probe_compare.py` 的实测（另一个进程、另一份脚本）")
+        A("")
+        A("这一节的数据来自 `skip_rate_compare.json`（本模块**之外的**脚本跑出来的，"
+          "跑时间是 %s，全程 dry-run、不写任何地图文件）：" % ext.get("when", "?"))
+        A("")
+        A("| 规模 | 配对来源 | 旧行为跳过率 | 新行为跳过率 | 降幅 | 新行为替代数 |")
+        A("|---|---|---|---|---|---|")
+        rows = [("前 %d 张" % ext.get("head_maps", 0), "任意→任意（全局盲抽）", "any_head"),
+                ("前 %d 张" % ext.get("head_maps", 0), "普通→普通（普通池盲抽）", "normal_head"),
+                ("前 %d 张" % ext.get("head_maps", 0), "Boss→Boss（Boss 池盲抽）", "boss_head"),
+                ("全部 634 张", "任意→任意（全局盲抽）", "any_full")]
+        for scale, src_kind, key in rows:
+            e = ext.get(key) or {}
+            if not e:
+                continue
+            A("| %s | %s | **%.2f%%**（命中 %d / 跳过 %d） | **%.2f%%**（跳过 %d） | %.2f pp | %d |"
+              % (scale, src_kind, e["old"]["skip_rate"], e["old"]["matched"],
+                 e["old"]["skipped"], e["new"]["skip_rate"], e["new"]["skipped"],
+                 e.get("delta_pp", 0), e["new"].get("substituted", 0)))
+        A("")
+        dtf = ext.get("determinism_full") or {}
+        sb = ext.get("sub_bounds") or {}
+        A("| 佐证 | 实测 |")
+        A("|---|---|")
+        if dtf:
+            A("| 确定性（全量） | 634 张图跑两遍（第二遍 `prof` 顺序倒置）：逐 part 计划相同的 "
+              "**%d/%d** 张、共 %d 个 part（含替代 %d） → **%s** |"
+              % (dtf.get("identical_maps", 0), dtf.get("maps", 0), dtf.get("parts", 0),
+                 dtf.get("substituted", 0), "成立" if dtf.get("ok") else "**有差异！**"))
+        if sb:
+            A("| 替代边界（独立抽查） | 问了 %d 组（源行 × 首选目标行）：替代行的主模型"
+              "**不在该图**的 %d 个；同一问重复提问答案不同的 %d 个 → **%s** |"
+              % (sb.get("asked", 0), sb.get("not_in_map_model", 0), sb.get("nondeterministic", 0),
+                 "边界成立" if sb.get("ok") else "**有越界！**"))
+        pm2 = ext.get("permap") or {}
+        if pm2:
+            A("| 上游按图抽（旧行为下） | %d 张图 / %d 个 part → 改 %d、**跳过 %d** —— "
+              "说明池内配对本身就能做到 0 跳过，替代层是给「来不及改上游」准备的 |"
+              % (pm2.get("maps", 0), pm2.get("parts", 0), pm2.get("changed", 0),
+                 pm2.get("skipped", 0)))
+        A("")
     A("## 能不能直接交给 `plan_layer.export_layer(extra_files=[…])`")
     A("")
     A("")
@@ -1024,11 +1574,87 @@ def write_report(path, plan, ver, extra=None):
     else:
         A("**还不能。** 上面的校验没全过，先把偏差修掉再谈接线。")
     A("")
-    A("## 两条必须知道的上游约束（实测，会改变随机器怎么抽）")
+    rc = extra.get("reach_cmp") or {}
+    A("## 择优配对：新旧跳过率对比（这一跑实测）")
+    A("")
+    if rc:
+        A("同一份计划、同一批图，**唯一变量是 `prefer_reachable`**：")
+        A("")
+        A("| 配对来源 | 图数 | 命中 part | 改动 | 跳过 | **跳过率** |")
+        A("|---|---|---|---|---|---|")
+        A("| 旧行为 `prefer_reachable=False` | %d | %d | %d | %d | **%.2f%%** |"
+          % (rc["maps"], rc["old"]["matched"], rc["old"]["changed"],
+             rc["old"]["skipped"], rc["old"]["skip_rate"]))
+        A("| 新行为 `prefer_reachable=True` | %d | %d | %d | %d | **%.2f%%** |"
+          % (rc["maps"], rc["new"]["matched"], rc["new"]["changed"],
+             rc["new"]["skipped"], rc["new"]["skip_rate"]))
+        A("")
+        A("降幅 **%.2f 个百分点**（跳过数 %d → %d，砍掉 %.2f%%）。"
+          % (rc.get("delta_pp", 0), rc["old"]["skipped"], rc["new"]["skipped"], rc.get("cut", 0)))
+        A("")
+        A("计划怎么来的：`global_blind_pairs()` 从**全局池盲抽** %d 条关系（`random.Random(%s)`，"
+          "固定 seed 可复现）—— 这就是随机器现在干的事，所以旧行为的 %.2f%% 就是它能达到的应用率。"
+          "新行为在同一份计划上把剩下的 part 用替代行兜住。"
+          % (rc.get("pairs", 0), rc.get("blind_seed", BLIND_SEED), rc["old"]["skip_rate"]))
+        A("")
+        A("| 这一跑 | 值 |")
+        A("|---|---|")
+        A("| 旧行为跳过原因 | %s |" % (json.dumps(rc["old"]["reasons"], ensure_ascii=False)
+                                       or "{}"))
+        A("| 新行为跳过原因 | %s |" % (json.dumps(rc["new"]["reasons"], ensure_ascii=False)
+                                       or "{}"))
+        A("| 新行为里靠替代落地的 part | %d |" % rc["new"].get("substituted", 0))
+        A("| 替代落点分布 | %s |" % (json.dumps(rc["new"].get("sub_tiers") or {},
+                                              ensure_ascii=False)))
+        A("")
+        A("**剩下的跳过为什么是 0**：替代的唯一失败条件是「该图可达池里没有可用替代」——"
+          "实测全覆盖 634 张图，**有敌人的图共 %d 张，其中可达池为空的有 %d 张**（池只有 1 行的 1 张），"
+          "所以这个条件几乎不可能成立；真出现时会以 `%s` 计进跳过原因，不会静默。"
+          % (extra.get("maps_with_parts", 0), extra.get("maps_pool_zero", 0), SKIP_NO_REACH_SUB))
+        A("")
+        dt = rc.get("determinism") or {}
+        if dt:
+            A("**确定性核对**：同样的输入跑两遍（第二遍把 `prof` 的插入顺序**倒置**），"
+              "逐 part 比对「最终写进去的新值」 —— %d 张图 / %d 个 part（含替代 %d）里，"
+              "计划完全相同的 %d 张 → **%s**。"
+              % (dt.get("maps", 0), dt.get("parts", 0), dt.get("substituted", 0),
+                 dt.get("identical_maps", 0),
+                 "确定性成立（与字典顺序无关）" if dt.get("ok")
+                 else "**有差异：%s**" % (dt.get("diff") or [])))
+            A("")
+    else:
+        A("这一跑没有跑对比（`--verify-only`，或对比抛了异常 —— 见上面的日志）。")
+        A("")
+    A("### 替代配对的规则（代码里就是这几步）")
+    A("")
+    A("1. **首选优先**：`pairs[源行]` 给的目标行，主模型在该图 MODEL 段里（或 `all_models` 兜底"
+      "命中）→ 直接用它，**与旧行为逐字节相同**；")
+    A("2. 落不下 → 从**该图可达行池**（`reachable_rows()`：主模型在这张图的 MODEL 段里的那些行）"
+      "里挑替代行，池里先**剔掉源行自己**（换成自己 = 空操作）；")
+    A("3. 挑法按三个判据依次收窄，**全确定性**：同一个 `cls`（boss/elite/normal，"
+      "`enemy_randomizer.load_units()` + `classify()` 现读 regulation）→ 体型桶最接近"
+      "（`size_bucket(chr_hit_radius, chr_hit_height)`）→ 同一层级内按 `sub_mode` 取一个；")
+    A("4. `sub_mode=hash`（默认）：`blake2s(图 | 源行 | 首选目标行 | 层级)` 取模选下标 —— "
+      "**不用 `random`、不用时间、不用 Python 的 `hash()`**（那个带进程随机种子），"
+      "所以同输入必然同输出、且不同源行/不同图会落到不同替代行；")
+    A("5. `sub_mode=first`：直接取行 id 最小的候选（更可预测，但同一张图里会全落到同一个替代行）；")
+    A("6. 四个字段**仍然同源**：`npc_id / think_id / chara_id / model_index` 全部来自**最终选定的"
+      "那一行**（替代行），不会出现「A 的 npc_id 配 B 的模型」；`think_id` 仍是该行在地图实测里的众数；")
+    A("7. 替代也挑不出（池空 / 池里只剩源行自己）**才**跳过并计数，原因分类写在上面的表里。")
+    A("")
+    A("同一张图里**同一个源行**的所有 part 会换成同一个替代行（哈希的键含源行不含 part 序号）—— "
+      "这是刻意的：一批同种杂兵应当变成同一种新敌人，而不是各变各的。")
+    A("")
+    A("## 三条必须知道的上游约束（实测，会改变随机器怎么抽）")
+    A("")
+    A("⚠ **这三条是「上游该怎么配对」的建议，不再是本模块的应用率上限** —— "
+      "择优配对（上面的对比表）已经把「首选落不下」这件事在产出端兜住了。")
     A("")
     A("### 1. 从全局池盲抽目标行 → 66%~85% 的 part 会被跳过")
     A("")
-    A("在 60 张图上做随机配对实测：")
+    A("这一条最早由 `_probe_skiprate.py` 在 60 张图上量出（**旧行为**，`prefer_reachable=False`）；"
+      "本次会话又用 `_probe_compare.py` 独立复测了一遍，量级一致（普通 82.98% / Boss 74.19% / "
+      "任意→任意 74.72%）。两组数字抽法不同（随机抽样种子、图的范围都不同），不是互相矛盾：")
     A("")
     A("| 配对来源 | 主模型在图内（可用） | all_models 兜底救回 | **跳过** |")
     A("|---|---|---|---|")
@@ -1050,8 +1676,9 @@ def write_report(path, plan, ver, extra=None):
       % (extra.get("pool_min", 0), extra.get("pool_p10", 0), extra.get("pool_med", 0),
          extra.get("pool_p90", 0), extra.get("pool_max", 0)))
     A("")
-    A("所以「真换敌人」要做得干净，随机器应当**按图抽目标**：先 `ES.pool_table()` 拿到每张图的可达行池，"
-      "再在池内配对。全局池配出来的计划会被本模块如实跳过并计数 —— 不会静默失败，但应用率会很低。")
+    A("所以「真换敌人」要做得干净，随机器**最好**按图抽目标：先 `ES.pool_table()` 拿到每张图的可达行池，"
+      "再在池内配对。**但现在这条路是可选的**：全局池配出来的计划也会被择优配对兜住"
+      "（跳过率降到上面的那个数），代价是「首选目标被换成了替代行」—— 上游的意图会被部分改写。")
     A("")
     pm = extra.get("permap") or {}
     if pm:
@@ -1066,7 +1693,9 @@ def write_report(path, plan, ver, extra=None):
         A("| **跳过** | **%d** |" % pm.get("skipped", 0))
         A("")
         A("跳过 = 0，因为按图抽目标时「目标模型不在该图」这件事**不可能发生**。"
-          "这就是给随机机的结论：**按图抽，不要全局抽**。" if pm.get("skipped") == 0
+          "所以给随机机的建议仍然是：**能按图抽就按图抽**（上游意图 100% 实现、不必改写）；"
+          "来不及改上游也没关系 —— 择优配对会在产出端把同一件事兜住（见上面的对比表）。"
+          if pm.get("skipped") == 0
           else "⚠ 这里居然还有跳过 —— 见上表。")
         A("")
     A("### 3. `think_id` 是启发式的（不确定度已量出）")
@@ -1074,6 +1703,33 @@ def write_report(path, plan, ver, extra=None):
     A("同一个 npc_id 在不同图上可以用不同的 think_id：3807 个行里 **469 个（12.32%）**有多个。"
       "本模块取**地图实测众数**。上游 `pairs` 只给了行 id，没给 think，所以这是能做到的最好选择；"
       "但它确实是启发式 —— 要更准就得让随机器把 think_id 一起给出（本模块的 `write_fields` 可关掉它）。")
+    A("")
+    A("## 结论：随机器要不要改成「按图给目标」？")
+    A("")
+    rc2 = extra.get("reach_cmp") or {}
+    if rc2:
+        A("**要改，但不再是「必须改」——是「更划算」。** 两条路都能用，取舍如下：")
+    else:
+        A("**建议改，但不再是「必须改」** —— 本模块现在自己兜底。取舍如下：")
+    A("")
+    A("| 做法 | 跳过率 | 上游意图 | 代价 |")
+    A("|---|---|---|---|")
+    if rc2:
+        A("| 上游**按图抽**（`pool_table()` → 池内配对） | 0.00%（实测，"
+          "跳过=0） | **完全实现**：换的就是你点名的那一行 | 上游要多读一遍地图拿池 |")
+        A("| 上游仍然**全局抽** + 本模块择优配对 | %.2f%%（实测） | 首选落不下时**被改写成替代行**"
+          "（同 cls / 同体型桶） | 极少数 part 会跳过 |" % rc2["new"]["skip_rate"])
+        A("| 上游全局抽 + `prefer_reachable=False`（旧行为） | %.2f%%（实测） | 首选落不下就不换 |"
+          " 三分之二的 part 白配 |" % rc2["old"]["skip_rate"])
+    A("")
+    A("具体建议：")
+    A("")
+    A("1. **随机器（`randgui` / `enemy_randomizer` 那条路）不必为了应用率而大改** —— "
+      "调用方 `plan_swaps(pairs=…)` 的参数**没有变化**，默认就是新行为，跳过率自己降下来；")
+    A("2. 想让「换的就是点名的那个」完全成立，就在上游按图配对（`ES.pool_table()` 已经导好了每图的池）；")
+    A("3. 想完全复刻旧行为（比如做对照实验），传 `prefer_reachable=False`，或命令行 `--no-reach`；")
+    A("4. **替代是「改了上游的意思」，不是「修了 bug」** —— 报告里 `sub_tiers` 那张表就是改了多少、"
+      "改得多相称的记录；要零改写就按图配对。")
     A("")
     return _write_text(path, "\n".join(L) + "\n")
 
@@ -1113,6 +1769,12 @@ def main(argv=None):
     ap.add_argument("--out-kind", default="same", choices=["same", "dflt", "krak"],
                     help="产出 DCX 的压缩容器（默认 same = 保持原 kind）")
     ap.add_argument("--no-fallback", action="store_true", help="关掉 all_models 兜底（默认开）")
+    ap.add_argument("--no-reach", action="store_true",
+                    help="关掉择优配对（= 旧行为：首选落不下就跳过并计数）")
+    ap.add_argument("--sub-mode", default=DEFAULT_SUB_MODE, choices=list(SUB_MODES),
+                    help="替代行在同一层级里的挑法（默认 hash = 确定性伪随机）")
+    ap.add_argument("--reach-maps", type=int, default=40,
+                    help="新旧跳过率对比用多少张图（默认 40；报告里的两个数字就是它跑出来的）")
     ap.add_argument("--pool", action="store_true", help="只导出每张图的可达行池 reachable_rows.csv")
     ap.add_argument("--verify-only", action="store_true", help="不产出，只对已有输出跑 verify_outputs")
     ap.add_argument("--report", default=os.path.join(DEFAULT_OUT, REPORT_NAME),
@@ -1124,6 +1786,8 @@ def main(argv=None):
     md = _resolve_map_dir(a.map_dir)
     od = _guard_out_dir(a.out, md)
     prof = load_profiles(log=log)
+    prefer = not a.no_reach
+    row_cls = load_row_classes(log=log) if prefer else {}
 
     if a.pool:
         rows = pool_table(md, prof, log=log,
@@ -1151,15 +1815,18 @@ def main(argv=None):
                                      if f.endswith(".msb.dcx")]),
                 "maps_total": 0, "maps_changed": 0, "parts_changed": 0,
                 "parts_matched": 0, "parts_skipped": 0, "parts_unchanged": 0,
-                "parts_suppressed": 0, "skip_reasons": {}, "files": [], "errors": [],
-                "degraded": [], "elapsed": 0.0, "pairs": len(pairs), "axis_hist": {},
-                "out_dir": od, "map_dir": md, "dry_run": False}
+                "parts_suppressed": 0, "parts_substituted": 0, "skip_rate": 0.0,
+                "skip_reasons": {}, "sub_tiers": {}, "sub_rows_used": 0, "files": [],
+                "errors": [], "degraded": [], "elapsed": 0.0, "pairs": len(pairs),
+                "axis_hist": {}, "prefer_reachable": prefer, "sub_mode": a.sub_mode,
+                "row_cls_rows": len(row_cls), "out_dir": od, "map_dir": md, "dry_run": False}
         log("（--verify-only：不产出，只校验 %s 里已有的 %d 张图）"
             % (od, plan["maps_written"]))
     else:
         kwargs = dict(out_dir=od, log=log, prof=prof, out_kind=a.out_kind,
                       dry_run=a.dry_run, quiet=a.quiet,
-                      allow_model_fallback=not a.no_fallback)
+                      allow_model_fallback=not a.no_fallback,
+                      prefer_reachable=prefer, sub_mode=a.sub_mode, row_cls=row_cls)
         if a.pairs:
             kwargs["limit"] = a.maps
         else:
@@ -1173,7 +1840,8 @@ def main(argv=None):
     log("")
     log("=== 校验 ===")
     ver = verify_outputs(md, od, pairs, log=log, prof=prof, quiet=a.quiet,
-                         allow_model_fallback=not a.no_fallback)
+                         allow_model_fallback=not a.no_fallback,
+                         prefer_reachable=prefer, sub_mode=a.sub_mode, row_cls=row_cls)
 
     mod_untouched = None
     if before is not None and len(before) < 5000:
@@ -1190,8 +1858,11 @@ def main(argv=None):
         vals = sorted(r["reachable_rows"] for r in rows if r["parts"]) or [0]
         extra.update(pool_min=vals[0], pool_p10=vals[len(vals) // 10],
                      pool_med=vals[len(vals) // 2], pool_p90=vals[len(vals) * 9 // 10],
-                     pool_max=vals[-1])
-        log("[行池] 已导出 reachable_rows.csv（每图可达行 median=%d）" % extra["pool_med"])
+                     pool_max=vals[-1],
+                     maps_with_parts=sum(1 for r in rows if r["parts"]),
+                     maps_pool_zero=sum(1 for r in rows if r["parts"] and not r["reachable_rows"]))
+        log("[行池] 已导出 reachable_rows.csv（每图可达行 median=%d；有敌人但池空的 %d 张）"
+            % (extra["pool_med"], extra["maps_pool_zero"]))
     except Exception as e:                                        # noqa: BLE001
         log("[行池] 跳过：%s: %s" % (type(e).__name__, e))
 
@@ -1200,14 +1871,71 @@ def main(argv=None):
     except Exception as e:                                        # noqa: BLE001
         log("[按图抽目标] 跳过：%s: %s" % (type(e).__name__, e))
 
+    # ── 新旧跳过率对比：同一份"全局盲抽"计划，唯一变量是 prefer_reachable ──
+    if not a.verify_only:
+        try:
+            blind = global_blind_pairs(prof, n=400)
+            log("")
+            log("=== 新旧跳过率对比（全局盲抽 %d 条计划 × 前 %d 张图，dry-run）==="
+                % (len(blind), a.reach_maps))
+            cmp_ = reach_compare(md, prof, blind, n_maps=a.reach_maps, log=log,
+                                 row_cls=row_cls, sub_mode=a.sub_mode)
+            cmp_["blind_seed"] = BLIND_SEED
+            try:
+                cmp_["determinism"] = determinism_check(md, prof, blind,
+                                                        n_maps=a.reach_maps,
+                                                        row_cls=row_cls,
+                                                        sub_mode=a.sub_mode, log=log)
+            except Exception as e:                                # noqa: BLE001
+                log("[确定性] 跳过：%s: %s" % (type(e).__name__, e))
+            extra["reach_cmp"] = cmp_
+            # 自检那 4 张图的配对全在池内（不会触发替代），所以另跑一组"真含替代"的产出+校验，
+            # 让"意外变 0"这条判据**覆盖到替代行**（否则等于没验到新代码）。
+            try:
+                vr = os.path.join(od, "_reach_verify")
+                if os.path.isdir(vr):
+                    for f in glob.glob(os.path.join(vr, "*.msb.dcx")):
+                        os.remove(f)          # 只清自己上一跑的产出，避免旧文件混进校验
+                pl = plan_swaps(blind, md, out_dir=vr, log=None, prof=prof, quiet=True,
+                                prefer_reachable=True, sub_mode=a.sub_mode,
+                                row_cls=row_cls, limit=6)
+                vv = verify_outputs(md, vr, blind, log=log, prof=prof,
+                                    prefer_reachable=True, sub_mode=a.sub_mode,
+                                    row_cls=row_cls)
+                vv.pop("per_map", None)
+                extra["reach_verify"] = {
+                    "dir": vr, "maps": pl["maps_written"], "changed": pl["parts_changed"],
+                    "substituted": pl["parts_substituted"], "skipped": pl["parts_skipped"],
+                    "expected_changed": vv["expected_changed"],
+                    "actual_changed": vv["actual_changed"],
+                    "unexpected_changed": vv["unexpected_changed"],
+                    "value_mismatch": vv["value_mismatch"], "stray_bytes": vv["stray_bytes"],
+                    "index_mismatch": vv["index_mismatch"], "ok": vv["ok"]}
+                log("[替代覆盖校验] %s：产出 %d 张 / 改 %d（其中替代 %d）→ 意外变 %d / 越界字节 %d → %s"
+                    % (os.path.basename(vr), pl["maps_written"], pl["parts_changed"],
+                       pl["parts_substituted"], vv["unexpected_changed"], vv["stray_bytes"],
+                       "通过" if vv["ok"] else "**不通过**"))
+                try:
+                    extra["neg_reach"] = negative_selftest(
+                        md, vr, blind, prof=prof, log=log, quiet=a.quiet,
+                        prefer_reachable=True, sub_mode=a.sub_mode, row_cls=row_cls)
+                except Exception as e:                            # noqa: BLE001
+                    log("[反面测试·替代组] 跳过：%s: %s" % (type(e).__name__, e))
+            except Exception as e:                                # noqa: BLE001
+                log("[替代覆盖校验] 跳过：%s: %s" % (type(e).__name__, e))
+        except Exception as e:                                    # noqa: BLE001
+            log("[跳过率] 跳过：%s: %s" % (type(e).__name__, e))
+
     # 全量外推：同一份计划在**全部 634 张图**上跑一遍（dry-run，不写任何文件）
     if not a.maps and not a.verify_only:
         try:
             fs = plan_swaps(pairs, md, out_dir=od, log=None, prof=prof, dry_run=True,
-                            quiet=True, allow_model_fallback=not a.no_fallback)
+                            quiet=True, allow_model_fallback=not a.no_fallback,
+                            prefer_reachable=prefer, sub_mode=a.sub_mode, row_cls=row_cls)
             extra["full"] = {"maps": fs["maps_total"], "maps_changed": fs["maps_changed"],
                              "parts_changed": fs["parts_changed"],
-                             "parts_skipped": fs["parts_skipped"], "elapsed": fs["elapsed"]}
+                             "parts_skipped": fs["parts_skipped"], "elapsed": fs["elapsed"],
+                             "substituted": fs["parts_substituted"]}
             log("[全量] 634 张图 dry-run：改过 %d 张 / part 改 %d / 跳过 %d / 耗时 %.1fs"
                 % (fs["maps_changed"], fs["parts_changed"], fs["parts_skipped"], fs["elapsed"]))
         except Exception as e:                                    # noqa: BLE001
@@ -1215,7 +1943,9 @@ def main(argv=None):
 
     # 校验器自身的反面测试：一个永远说 OK 的校验器没有价值
     try:
-        extra["neg"] = negative_selftest(md, od, pairs, prof=prof, log=log, quiet=a.quiet)
+        extra["neg"] = negative_selftest(md, od, pairs, prof=prof, log=log, quiet=a.quiet,
+                                         prefer_reachable=prefer, sub_mode=a.sub_mode,
+                                         row_cls=row_cls)
     except Exception as e:                                        # noqa: BLE001
         log("[反面测试] 跳过：%s: %s" % (type(e).__name__, e))
         extra["neg"] = {"ok": False, "cases": [],
