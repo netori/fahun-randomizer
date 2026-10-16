@@ -60,7 +60,9 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         # 法魂新增行（原版 vs 法魂 的行级 diff 产物，786 行）——「只随机法魂敌人」的依据
         "investigation/convergence_new_rows.csv",
         # 参考实现（thefifthmatt）的人工标注转成我们自己的表：模型 → 档位/multi/打不死/真名
-        "investigation/enemy_ref.csv"]      # 27780 条地图放置（真换敌人要用）
+        "investigation/enemy_ref.csv",
+        # 行级场地画像（来自 634 张图摆放台账）：npc_id → arena_min 等
+        "investigation/row_arena.csv"]      # 27780 条地图放置（真换敌人要用）
 BASELINE = ["GoodsCaption.fmg.xml", "PlaceName.fmg.xml", "PlaceName_dlc01.fmg.xml", "PlaceName_dlc02.fmg.xml"]
 
 

@@ -782,6 +782,8 @@ class App:
             _fl.append("连外观一起换")
         if not self.enemy_keep_unkillable.get():
             _fl.append("连打不死的也换")
+        if not self.enemy_use_arena.get():
+            _fl.append("不看场地档")
         if self.enemy_same_type.get():
             _fl.append("只换同一种敌人")
         _ty = self._enemy_types_picked()
@@ -882,7 +884,8 @@ class App:
              "visual": bool(self.enemy_visual.get()),
              "same_type": bool(self.enemy_same_type.get()),
              # 反向存：勾上「不动打不死的」= 不允许换它们（默认）
-             "allow_unkillable": not bool(self.enemy_keep_unkillable.get())}
+             "allow_unkillable": not bool(self.enemy_keep_unkillable.get()),
+             "use_arena": bool(self.enemy_use_arena.get())}
         _ty = self._enemy_types_picked()
         if _ty:
             d["types"] = _ty
@@ -920,6 +923,7 @@ class App:
             self.enemy_visual.set(bool(e.get("visual")))
             self.enemy_same_type.set(bool(e.get("same_type")))
             self.enemy_keep_unkillable.set(not bool(e.get("allow_unkillable")))
+            self.enemy_use_arena.set(bool(e.get("use_arena", True)))
             try:
                 self.enemy_type_tree.selection_remove(*self.enemy_type_tree.selection())
                 for t in (e.get("types") or []):
@@ -1203,6 +1207,16 @@ class App:
         _cb2.pack(side="left")
         self.enemy_sub.append(_cb2)
         ttk.Label(srow2, text="· 多阶段 Boss（98 个模型）会**整组换**（阶段对阶段，不会半血不变身）",
+                  style="Hint.TLabel").pack(side="left", padx=px(10))
+        srow3 = ttk.Frame(g1)
+        srow3.pack(fill="x", pady=(px(4), 0))
+        self.enemy_use_arena = tk.BooleanVar(value=True)          # 默认勾上：Boss 房大小别乱来
+        _cb3 = ttk.Checkbutton(
+            srow3, text="Boss 只与同场地档的互换（634 张图的 arena 标注：Malenia=3、Margrit=1、Elemer=0…）",
+            variable=self.enemy_use_arena, command=self._refresh_enemy)
+        _cb3.pack(side="left")
+        self.enemy_sub.append(_cb3)
+        ttk.Label(srow3, text="· 不勾则退回「只按体型分桶」",
                   style="Hint.TLabel").pack(side="left", padx=px(10))
 
         # ── 分组 2 · 总体 ──
@@ -3515,6 +3529,16 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("敌人随机：🎲 重掷会开独立种子并填一个数",
        app.enemy_seed_sep.get() and isinstance(_ce6.get("seed"), int) and _ce6["seed"] > 0,
        f"seed={_ce6.get('seed')}")
+    ck("敌人随机页：默认「Boss 只与同场地档互换」（use_arena=True）",
+       app.enemy_use_arena.get() is True
+       and (app._collect().get("enemy") or {}).get("use_arena") is True,
+       f"{(app._collect().get('enemy') or {}).get('use_arena')}")
+    app.enemy_use_arena.set(False); app._refresh_enemy(); root.update()
+    ck("敌人随机页：取消勾选后 cfg 里 use_arena=False（并写进摘要）",
+       (app._collect().get("enemy") or {}).get("use_arena") is False
+       and "不看场地档" in app.enemy_hint.cget("text"),
+       f"{(app._collect().get('enemy') or {}).get('use_arena')}")
+    app.enemy_use_arena.set(True); app._refresh_enemy(); root.update()
     _sum = app.enemy_hint.cget("text")
     ck("敌人随机：摘要里写出了这几项（忽略体型/独立种子）",
        "忽略体型限制" in _sum and "独立敌人种子" in _sum,

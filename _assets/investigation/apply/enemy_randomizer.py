@@ -258,6 +258,27 @@ def load_new_rows(path=None):
     return out
 
 
+def load_row_arena(path=None):
+    """行（npc_id）→ 场地档画像（来自 634 张图的摆放台账，见 row_arena.py）。
+
+    arena_min 才是**约束**：这一行最少出现在多大的场地里 —— 能塞进小场地的才安全。
+    实测这 75 行**全是 Boss 战**（Malenia=3、Margit=1、Elemer=0、Radagon=3…），
+    所以这条约束恰好落在"Boss 摆在哪"这件事上 —— 与参考实现那个
+    "Ignore arena size for boss placement" 是同一件事。
+    """
+    p = path or os.path.join(HERE, "..", "row_arena.csv")
+    out = {}
+    try:
+        with open(p, encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                nid = str(r.get("npc_id") or "").strip()
+                if nid.isdigit() and (r.get("arena_min") or "").strip() != "":
+                    out[int(nid)] = r["arena_min"].strip()
+    except Exception:
+        return {}
+    return out
+
+
 def load_ref(path=None):
     """参考实现（thefifthmatt ER Randomizer）的**模型级**人工标注 → {模型: dict}。
 
@@ -622,6 +643,8 @@ def make_plan(units, cfg):
     rate_all = float(cfg.get("enemy_rate", 1.0))
     rates = cfg.get("enemy_rates") or {}          # 每类各自的比例（参考实现的 per-category）
     ignore_size = bool(cfg.get("ignore_size"))    # 忽略体型限制
+    # 场地档约束（默认开）：见 load_row_arena；关掉就退回"只按体型"
+    _arena = None if cfg.get("use_arena") is False else load_row_arena()
     pools = build_pools(units, cfg)
     warn = pools.pop("_warn", [])
     plan = {}
@@ -644,6 +667,9 @@ def make_plan(units, cfg):
                 b = max(prof)                      # 取最大，保守
             if cfg.get("same_type"):
                 b = (reps[0].enemy_type or "?", b)
+            if _arena is not None:
+                # 场地档：只和"塞得进同样小场地"的行互换（没标注的行自成一组，不混）
+                b = (b, _arena.get(members[0], ""))
             # 阶段数 + "各阶段的体型档案"都进桶键：档案一样才会配对，
             # 于是"阶段 k 换阶段 k"必然同档（此前只取最大档，自检抓到过一条体型越界）
             b = (b, len(members), prof)
@@ -859,6 +885,8 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
         cfg["same_type"] = True
     if enemy_cfg.get("allow_unkillable"):
         cfg["allow_unkillable"] = True
+    if enemy_cfg.get("use_arena") is False:
+        cfg["use_arena"] = False
     if enemy_cfg.get("types"):
         cfg["types"] = list(enemy_cfg["types"])
     plan, warn = make_plan(units, cfg)
