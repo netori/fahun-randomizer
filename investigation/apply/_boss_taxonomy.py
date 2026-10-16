@@ -58,7 +58,24 @@ def paramdef_fields(name):
 
 
 def fmg_parse(data):
-    """FMG → {id: text}。偏移表是 u64 序列（0 = 该 id 无文本），按最长合法段找表起点。"""
+    """FMG → {真 id: 文本}。
+
+    ⚠️ 2026-10-16 口径修正：本函数原来的实现是"启发式找偏移表 + 把**字符串槽号当 id**"，
+    与 NpcParam 引用的 nameId **不是同一套 id** —— FMG 的一条区间记录 [lo, hi] 里，
+    每个 id 各占一个字符串槽，必须按槽号直读偏移表。
+    现在统一委托给权威解析 `enemy_names.parse_fmg`（已修正并自检通过：
+    902130002 → 「“恶兆王”蒙葛特」、902110001 → 「“黑剑”玛利喀斯」）。
+    老实现留作 `_fmg_parse_legacy` 兜底。
+    """
+    try:
+        import enemy_names as _EN
+        return _EN.parse_fmg(data)
+    except Exception:
+        return _fmg_parse_legacy(data)
+
+
+def _fmg_parse_legacy(data):
+    """历史实现（启发式，槽号当 id）：只在权威解析不可用时兜底。"""
     best, best_len = None, 0
     for start in range(0x10, min(len(data) - 16, 0x2000), 4):
         off, zeros, bad = start, 0, 0
