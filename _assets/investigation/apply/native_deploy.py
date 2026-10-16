@@ -224,8 +224,13 @@ def deploy(plan_csv, sync_guide=True, log=print, fingerprint=None, enemy_cfg=Non
             raise RuntimeError(f"敌人随机自检未通过（{len(_issues)} 项）：{_issues[:3]}")
         _tmp = os.path.join(LOG, f"enemy_plan_{ts}.csv")
         er.write_plan(_plan, _u, _tmp)
+        # 没换外观时，**必须**保留与模型绑定的字段（动作 id / 判定框 / 部位伤害 / 状态特效……）——
+        # 否则"模型还是老的、动作却是新行的"，Boss 的 AI/动作就会看起来坏掉（作者实测就是这样）。
+        # 换了外观时这些字段要跟着新行走（新模型的 anibnd 里才有那些动作），所以反过来不能保留。
+        _keep_model = not bool((enemy_cfg or {}).get("visual"))
         _res = er.apply_plan(er.read_plan(_tmp), source=reg, out_path=reg, verify=True, quiet=True,
-                             keep_rune=bool((enemy_cfg or {}).get("keep_rune")))
+                             keep_rune=bool((enemy_cfg or {}).get("keep_rune")),
+                             keep_model_fields=_keep_model)
         log(f"[④a] 敌人随机：整行置换 {_res['rows']} 行"
             f"（{er.summarize(_u, _plan)}，指纹 {_res['fingerprint'][:16]}）")
         rec["steps"].append({"step": "enemy", "ok": True, "rows": _res["rows"],

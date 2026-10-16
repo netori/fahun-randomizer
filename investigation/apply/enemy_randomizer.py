@@ -55,6 +55,24 @@ KEEP_FIELDS = ("teamType", "npcType")
 # 另外可选保留的字段：换 Boss 时"卢恩跟不跟新 Boss 走"（参考实现的 Change boss runes…）
 KEEP_FIELDS_KEEP_RUNE = ("teamType", "npcType", "getSoul")
 
+# 跟**模型**绑定的字段：动作 id、行为变体、判定框、部位伤害、状态特效……
+# 为什么必须留原值：这些字段描述的是"这个模型怎么动、打哪儿疼"。
+# 只换行（不换外观）时若把它们也换掉 ⇒ 模型还是老模型、动作却来自别的敌人
+#   → 表现就是"Boss 的 AI/动作坏掉了"（作者实测遇到的正是这个）。
+# 反过来，**换了外观**时它们必须跟着新行走（新模型的 anibnd 里才有那些动作），所以按需启用。
+SAFE_KEEP_FIELDS = (
+    "teamType", "npcType",
+    "animIdOffset", "animIdOffset2", "normalChangeAnimChrId", "behaviorVariationId",
+    "moveType", "isMoveAnimWait", "isSkipWeakDamageAnim",
+    "chrHitRadius", "chrHitHeight", "chrHitGroupAndNavimesh",
+    "partsDamageRate1", "partsDamageRate2", "partsDamageRate3", "partsDamageRate4",
+    "partsDamageRate5", "partsDamageRate6", "partsDamageRate7", "partsDamageRate8",
+    "weakPartsDamageRate", "partsDamageType",
+    "spEffectID0", "spEffectID1", "spEffectID2", "spEffectID3", "spEffectID4",
+    "spEffectID5", "spEffectID6", "spEffectID7", "spEffectID8", "GameClearSpEffectID",
+    "weight", "npcPlayerWeightType",
+)
+
 # 类别划分的默认口径（纯字段，不依赖名字；名字表可用 CSV 补充）
 CLASS_ORDER = ["boss", "elite", "normal"]
 CLASS_ZH = {"boss": "Boss", "elite": "精英", "normal": "普通敌人", "skip": "非敌人（排除）"}
@@ -753,7 +771,7 @@ class EnemyPlanError(RuntimeError):
 
 
 def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table="NpcParam",
-               keep_rune=False):
+               keep_rune=False, keep_model_fields=False):
     """把计划应用到 regulation：整行内容按计划置换（等长就地改写）
 
     keep_rune=True 时额外保留**原行的 getSoul**（卢恩不跟新 Boss 走）—— 对应界面上的
@@ -794,7 +812,8 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         base = _off + rows[rid]
         newb = bytearray(before_rows[nid])          # 源行的原始内容
-        for k in (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS):
+        _keep = SAFE_KEEP_FIELDS if keep_model_fields else (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS)
+        for k in _keep:
             if k in fmap:
                 o, t, sz = fmap[k]
                 newb[o:o + sz] = before_rows[rid][o:o + sz]   # 保留字段取**原行**的值
@@ -804,7 +823,7 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         changed += 1
 
     if verify:
-        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows, keep_rune=keep_rune)
+        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows, keep_rune=keep_rune, keep_model_fields=keep_model_fields)
     # 回压：与现有工具完全相同的封装顺序（沿用原文件的 DCX 模板，保证帧参数不变）
     dcx = erio.dcx_compress(bytes(plain), getattr(na.erio_bnd_template(source), "dcx_template", None), 12)
     erio.regulation_encrypt(dcx, out_path)
@@ -814,13 +833,14 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         {int(r["row_id"]): int(r["new_row_id"]) for r in plan_rows})}
 
 
-def _verify_plan_applied(plain, plan_rows, rows, off0, row_size, fmap, before_rows, keep_rune=False):
+def _verify_plan_applied(plain, plan_rows, rows, off0, row_size, fmap, before_rows, keep_rune=False,
+                         keep_model_fields=False):
     """应用后自检：每行现在的内容 == **源行的原始内容**（保留字段除外），且长度不变"""
     for r in plan_rows:
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         a = bytes(plain[off0 + rows[rid]:off0 + rows[rid] + row_size])
         want = bytearray(before_rows[nid])
-        for k in (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS):
+        for k in (SAFE_KEEP_FIELDS if keep_model_fields else (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS)):
             if k in fmap:
                 o, _t, sz = fmap[k]
                 want[o:o + sz] = before_rows[rid][o:o + sz]

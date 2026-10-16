@@ -86,8 +86,19 @@ def parse_bhd(plain):
     return {"version": version, "salt": salt, "buckets": buckets, "entries": entries}
 
 
+def path_hash(file_path, prime=37):
+    """FromSoft 的路径哈希：h = h*37 + char（小写、反斜杠转正斜杠；BinderTool 同款）
+
+    Hash/DataN.txt 里只有**路径**（一行一个），哈希是算出来的 —— 这就是"本体文件名"能对上的原因。
+    """
+    h = 0
+    for ch in file_path.replace("\\", "/").lower():
+        h = (h * prime + ord(ch)) & 0xFFFFFFFF
+    return h
+
+
 def load_dict(hash_txt):
-    """Hash/DataN.txt → {哈希(小写十六进制): 路径}"""
+    """Hash/DataN.txt → {32 位哈希: 路径}（路径前加 '/' 后算哈希，与工具一致）"""
     out = {}
     if not os.path.isfile(hash_txt):
         return out
@@ -96,9 +107,7 @@ def load_dict(hash_txt):
             ln = ln.strip()
             if not ln or ln.startswith("#"):
                 continue
-            parts = ln.split(None, 1)
-            if len(parts) == 2:
-                out[parts[0].lower().lstrip("0")] = parts[1]
+            out[path_hash("/" + ln.lstrip("/"))] = ln
     return out
 
 
