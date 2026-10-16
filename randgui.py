@@ -504,7 +504,32 @@ class App:
             ttk.Label(head, image=div, style="Deco.TLabel").pack(pady=(px(6), 0))
 
         self.nb = ttk.Notebook(self.root)
-        self.nb.pack(fill="both", expand=True, padx=px(10), pady=(px(4), px(10)))
+        self.nb.pack(fill="both", expand=True, padx=px(10), pady=(px(4), px(4)))
+        # ── 外层动作栏（2026-10-17）：动作不属于任何一页 —— 一次随机同时管物品与敌人 ──
+        #    为什么搬出来：物品与敌人写的是同一个 regulation、走同一次部署，
+        #    "生成 / 写入"本来就该是一次动作；按钮留在物品页会让人以为只随机物品。
+        outer = ttk.Frame(self.root, padding=(px(12), px(4), px(12), px(2)))
+        outer.pack(fill="x")
+        self.b_gen = ttk.Button(outer, text="① 生成随机方案", command=self.generate, width=20)
+        self.b_gen.pack(side="left")
+        self.b_dep = ttk.Button(outer, text="② 写入游戏", command=self.deploy, width=16)
+        self.b_dep.pack(side="left", padx=8)
+        ttk.Button(outer, text="还原成原始", command=self.rollback, width=14).pack(side="left", padx=(0, 8))
+        self.b_save_lib = ttk.Button(outer, text="💾 保存到方案库", style="Accent.TButton",
+                                     command=self._lib_save_current, width=15)
+        self.b_save_lib.pack(side="left", padx=(0, 8))
+        self.b_save_lib.config(state="disabled")
+        ttk.Button(outer, text="敌人设置…", width=12,
+                   command=lambda: self.nb.select(self.page_enemy)).pack(side="left")
+        self.b_out_settings = ttk.Button(outer, text="物品设置…", width=12,
+                                        command=lambda: self.nb.select(self.page_set))
+        self.b_out_settings.pack(side="left", padx=6)
+        self.outer_what = ttk.Label(self.root, text="", style="Hint.TLabel",
+                                    wraplength=px(940), justify="left")
+        self.outer_what.pack(fill="x", padx=px(12), pady=(px(2), 0))
+        self.status = tk.StringVar(value="先点 ① 生成方案，看过结果再点 ② 写入游戏")
+        self.lbl_status = ttk.Label(self.root, textvariable=self.status, style="Status.TLabel")
+        self.lbl_status.pack(fill="x", padx=px(12), pady=(px(2), px(6)))
         self.page_set = ttk.Frame(self.nb)
         self.page_enemy = ttk.Frame(self.nb)
         self.page_lib = ttk.Frame(self.nb, padding=(px(10), px(8), px(10), px(4)))
@@ -631,21 +656,12 @@ class App:
         ttk.Button(r6, text="补一份原始备份", width=16,
                    command=self.make_backup).pack(side="left")
 
+        # 动作按钮已经搬到窗口底部的外层栏（一次随机同时管物品与敌人）——
+        # 这里只留物品页自己的「更多设置」开关。
         bar = ttk.Frame(body); bar.pack(fill="x", pady=(2, 8))
-        self.b_gen = ttk.Button(bar, text="① 生成随机方案", command=self.generate, width=20)
-        self.b_gen.pack(side="left")
-        self.b_dep = ttk.Button(bar, text="② 写入游戏", command=self.deploy, width=16)
-        self.b_dep.pack(side="left", padx=8)
-        ttk.Button(bar, text="还原成原始", command=self.rollback, width=14).pack(side="left", padx=(0, 8))
-        # 生成之后才可点：没有方案可保存
-        self.b_save_lib = ttk.Button(bar, text="💾 保存到方案库", style="Accent.TButton",
-                                     command=self._lib_save_current, width=15)
-        self.b_save_lib.pack(side="left", padx=(0, 8))
-        self.b_save_lib.config(state="disabled")
         ttk.Button(bar, text="更多设置", command=self._toggle_adv, width=12).pack(side="left")
-        self.status = tk.StringVar(value="先点 ① 生成方案，看过结果再点 ② 写入游戏")
-        self.lbl_status = ttk.Label(bar, textvariable=self.status, style="Status.TLabel")
-        self.lbl_status.pack(side="left", padx=14)
+        ttk.Label(bar, text="· 生成 / 写入 / 还原 都在窗口底部的动作栏里（物品与敌人一起）",
+                  style="Hint.TLabel").pack(side="left", padx=px(10))
 
         # ── 结果（人话）──
         s4 = ttk.LabelFrame(body, text=" 这次会改什么 ", padding=(px(12), px(8)))
@@ -750,6 +766,10 @@ class App:
             self.enemy_hint.configure(
                 text="· 关着。打开后：把每种敌人的整行数据（血量/伤害/AI/掉落…）在同一类别池里互相置换；"
                      "阵营与生成方式不跟着走，种类总数守恒（不会多也不会少）。")
+            try:
+                self._refresh_outer()
+            except Exception:
+                pass
             return
         _zh = {"boss": "Boss", "elite": "精英", "normal": "普通敌人"}
         _pools = [(k, float(self.enemy_cls_rates[k].get())) for k in _zh
@@ -772,6 +792,10 @@ class App:
                                or "（一个都没给比例，等于不换）")
                  + "；来源：" + _src + ("；" + "、".join(_fl) if _fl else "")
                  + "\n· 具体会改多少行、各类各多少，点「读一次统计」或生成后看「这次会改什么」。")
+        try:
+            self._refresh_outer()
+        except Exception:
+            pass
 
     def _enemy_cls_moved(self, key):
         """某一类的比例被拖动 —— 顺手把标签刷新（数值只在 _refresh_enemy 里统一算）"""
@@ -2115,6 +2139,40 @@ class App:
     def _on_tab_changed(self, *_a):
         if hasattr(self, "lib_tree") and self.nb.select() == str(self.page_lib):
             self._lib_refresh()
+        self._refresh_outer()
+
+    def _refresh_outer(self, *_a):
+        """窗口底部那行：这次 ① 生成 / ② 写入会**同时**随机哪些东西（物品 + 敌人）"""
+        if not hasattr(self, "outer_what"):
+            return
+        try:
+            _dom = {"rune": "卢恩", "armor": "护甲", "weapon": "装备"}
+            items = "、".join(_dom.get(d, d) for d in self._picked_doms()) or "（没选）"
+            if self.shops.get():
+                items += " + 商店"
+            e = self._enemy_cfg() or {}
+            if e.get("on"):
+                rates = e.get("rates") or {}
+                _zh = {"boss": "Boss", "elite": "精英", "normal": "普通"}
+                en = "、".join("%s %.0f%%" % (_zh.get(k, k), float(v) * 100)
+                               for k, v in rates.items()) or "（没给比例）"
+                if e.get("types"):
+                    en += "（限定 %d 个敌型）" % len(e["types"])
+                if e.get("same_type"):
+                    en += "·只换同种"
+                if e.get("visual"):
+                    en += "·连外观"
+                if e.get("ignore_size"):
+                    en += "·不限体型"
+                if e.get("source") == "new":
+                    en += "·只法魂"
+            else:
+                en = "关着"
+            self.outer_what.configure(text="一次随机同时管两边 —— **物品**：" + items
+                                           + "　｜　**敌人**：" + en
+                                           + "　（写入是同一次部署、同一个方案层）")
+        except Exception:
+            pass
 
     def _picked_doms(self):
         return [d for d in ("rune", "armor", "weapon") if self.doms[d].get()]
@@ -2263,6 +2321,7 @@ class App:
                     self._deploying = False
                 elif kind == "done":
                     self.b_gen.config(state="normal")
+                    self._refresh_outer()
                     # 生成过了才有东西可存进方案库
                     self.b_save_lib.config(state="normal" if self.plan else "disabled")
                 elif kind == "table":
@@ -3445,6 +3504,26 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("敌人随机：摘要里写出了这几项（忽略体型/独立种子）",
        "忽略体型限制" in _sum and "独立敌人种子" in _sum,
        repr(_sum[:60]))
+
+    # ── 外层动作栏：动作不属于任何一页，一键同时管物品与敌人 ──
+    _root = str(app.root)
+    ck("外层动作栏：① 生成 / ② 写入 / 还原 / 保存到方案库 都在页签**外面**",
+       all(getattr(app, a).winfo_parent() and str(app.nb) not in str(getattr(app, a)).split(".")[0]
+           for a in ("b_gen", "b_dep", "b_save_lib"))
+       and "page" not in str(app.b_gen).split("!")[0].replace(".!frame", ""),
+       f"b_gen={app.b_gen} ｜ nb={app.nb}")
+    ck("外层动作栏：状态行也在外面（哪一页都看得见）",
+       "notebook" not in str(app.lbl_status) and str(app.lbl_status).startswith(str(app.root)),
+       f"{app.lbl_status}")
+    app.enemy_on.set(True); app._refresh_enemy(); root.update()
+    _ow = app.outer_what.cget("text")
+    ck("外层动作栏：摘要同时写了物品与敌人",
+       "**物品**" in _ow and "**敌人**" in _ow and "Boss" in _ow,
+       repr(_ow[:90]))
+    app.enemy_on.set(False); app._refresh_enemy(); root.update()
+    ck("外层动作栏：敌人关了摘要写“关着”",
+       "关着" in app.outer_what.cget("text"), repr(app.outer_what.cget("text")[:80]))
+    app.enemy_on.set(True); app._refresh_enemy(); root.update()
 
     # ── 敌型（模型层）：可多选限制、只换同类 ──
     ck("敌人随机页：有敌型列表（模型层，18 行）",
