@@ -1202,7 +1202,7 @@ class App:
             variable=self.enemy_keep_unkillable, command=self._refresh_enemy)
         _cb2.pack(side="left")
         self.enemy_sub.append(_cb2)
-        ttk.Label(srow2, text="· 多阶段 Boss（98 个模型）已标记，整组换还没做",
+        ttk.Label(srow2, text="· 多阶段 Boss（98 个模型）会**整组换**（阶段对阶段，不会半血不变身）",
                   style="Hint.TLabel").pack(side="left", padx=px(10))
 
         # ── 分组 2 · 总体 ──

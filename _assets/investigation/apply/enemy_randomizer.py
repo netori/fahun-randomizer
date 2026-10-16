@@ -483,6 +483,20 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
                 u.cls = "elite" if u.cls != "boss" else u.cls
             elif _c == "Boss":
                 u.cls = "boss"
+        # ── 多阶段 Boss：档位由**整组**决定 ──
+        # 为什么必须这样：一阶段通常有血条（判成 boss），二阶段没有（会被判成 elite/normal）——
+        # 分开判的结果就是"组里两行进了不同的池"，整组换立刻跨池（自检一次报了 2277 条，就是这么来的）。
+        # 阶段 2 本来也是 Boss，所以取组内最高档。
+        _rank = {"skip": 0, "normal": 1, "elite": 2, "boss": 3}
+        for _key, members in multi_units(units, sorted(units)):
+            if len(members) < 2:
+                continue
+            top = max(members, key=lambda r: _rank.get(units[r].cls, 0))
+            best = units[top].cls
+            if best in ("elite", "boss"):
+                for r in members:
+                    if _rank.get(units[r].cls, 0) < _rank[best]:
+                        units[r].cls = best
 
     if table:
         for rid, meta in table.items():
@@ -568,6 +582,35 @@ def _derangement(items, rng):
     return items[1:] + items[:1]        # 兜底：整体轮换一位
 
 
+def multi_units(units, rids):
+    """把"同一个 Boss 的多个阶段"捆成一个**单元**：[(组名, [各阶段行…]), …]
+
+    为什么必须整组换：多阶段 Boss 是**好几行 NpcParam**（一阶段一行）。
+    只换其中一行的结果是"打到半血变身，又变回原样 / 变成别的 Boss 的第一形态" —— 坏体验。
+    分组依据（来自参考实现的人工标注，见 enemy_ref.csv）：
+      * multi 标记：这个模型是多阶段的
+      * ExtraName 里的基础名：`Rennala 1` / `Rennala 2` → 基础名都叫 Rennala ⇒ 同一组
+        没有名字时退回"同模型"（同模型的多阶段行必然同组）
+    阶段数会写进桶键（见 make_plan）⇒ 2 阶段的只会和 2 阶段的换，1 对 1 的不会被拆散。
+    """
+    groups = {}
+    for rid in rids:
+        u = units[rid]
+        if not getattr(u, "multi", False):
+            groups.setdefault(("single", rid), []).append(rid)
+            continue
+        names = [x.strip() for x in (u.ref_names or "").replace("、", ",").split(",") if x.strip()]
+        base = ""
+        for nm in names:
+            b = re.sub(r"\s*\d+$", "", nm).strip()      # "Rennala 1" → "Rennala"
+            if b:
+                base = b
+                break
+        key = ("multi", base or ("model:" + str(getattr(u, "model", "") or u.rid)))
+        groups.setdefault(key, []).append(rid)
+    return [(k, sorted(v)) for k, v in groups.items()]
+
+
 def make_plan(units, cfg):
     """生成置换计划：{row_id: new_row_id}
 
@@ -587,28 +630,42 @@ def make_plan(units, cfg):
         if not rids:
             continue
         rate = float(rates.get(cls, rate_all))
-        # 体型分桶（(cls, bucket) 为一个子池）
+        # ① 先捆单元：多阶段 Boss 的几个阶段是一整个单元（整组换）
+        unit_list = multi_units(units, rids)
+        # ② 体型分桶（桶键里带"阶段数" ⇒ 2 阶段的只和 2 阶段的换）
         buckets = {}
-        for rid in rids:
-            u = units[rid]
-            b = 0 if ignore_size else size_bucket(u.radius, u.height)
-            if cfg.get("same_type"):        # 只换同一种敌人（骑对骑、龙对龙）
-                b = (u.enemy_type or "?", b)
-            buckets.setdefault(b, []).append(rid)
-        for bucket, members in sorted(buckets.items()):
-            if len(members) < 2:
+        for key, members in unit_list:
+            reps = [units[r] for r in members]
+            if ignore_size:
+                b = 0
+                prof = ()
+            else:
+                prof = tuple(sorted(size_bucket(x.radius, x.height) for x in reps))
+                b = max(prof)                      # 取最大，保守
+            if cfg.get("same_type"):
+                b = (reps[0].enemy_type or "?", b)
+            # 阶段数 + "各阶段的体型档案"都进桶键：档案一样才会配对，
+            # 于是"阶段 k 换阶段 k"必然同档（此前只取最大档，自检抓到过一条体型越界）
+            b = (b, len(members), prof)
+            buckets.setdefault(b, []).append((key, members))
+        for bucket, units_in_bucket in sorted(buckets.items(), key=lambda kv: str(kv[0])):
+            if len(units_in_bucket) < 2:
                 continue
             rng = random.Random(f"{seed}|enemy|{cls}|{bucket}|{ignore_size}|{bool(cfg.get('same_type'))}")
-            k = len(members) if rate >= 1 else max(2, int(round(len(members) * rate)))
-            pool = members[:]
+            k = len(units_in_bucket) if rate >= 1 else max(2, int(round(len(units_in_bucket) * rate)))
+            pool = units_in_bucket[:]
             rng.shuffle(pool)
-            chosen = sorted(pool[:k])
+            chosen = sorted(pool[:k], key=lambda x: str(x[0]))
             if len(chosen) < 2:
                 continue
             order = _derangement(chosen, rng)
-            for tgt, src in zip(chosen, order):
-                if tgt != src:
-                    plan[tgt] = src            # 桶内置换 ⇒ 双射成立
+            for (tk, tm), (sk, sm) in zip(chosen, order):
+                if tm == sm or tk == sk:
+                    continue
+                # 阶段对阶段：第 k 阶段换第 k 阶段（组内按行号排序即阶段序）
+                for i, t in enumerate(tm):
+                    if i < len(sm):
+                        plan[t] = sm[i]    # 桶内置换 ⇒ 双射成立
     return plan, warn
 
 

@@ -1,0 +1,26 @@
+多阶段 Boss 整组换：阶段对阶段，从构造上不可能出现「半血不变身」
+
+问题：多阶段 Boss 是好几行 NpcParam（一阶段一行）。之前只换其中一行 ⇒ 打到半血会
+"变回原样 / 变成别的 Boss 的第一形态"。名单已经在手（参考实现标了 98 个模型带 multi，
+ExtraName 里连配对都写好了：Rennala 1 / Rennala 2、Beast Clergyman / Maliketh）。
+
+做法（enemy_randomizer）：
+* multi_units()：把同一个 Boss 的各阶段捆成一个**单元**；组名取 ExtraName 的基础名
+  （"Rennala 1" → Rennala），没名字时退回同模型
+* make_plan：置换的单位从"行"改成"单元"，阶段对阶段（第 k 阶段换第 k 阶段）
+* 桶键里加两样：**阶段数** 与 **各阶段的体型档案**（排序后的 tuple）⇒
+  阶段数一样的才配对、体型档案一样的才配对 ⇒ 换完必然满足体型护栏
+* classify：多阶段 Boss 的档位由**整组**决定（一阶段有血条判成 boss、二阶段没有会被判成 elite
+  —— 分开判的结果是"组里两行进了不同的池"，整组换立刻跨池，自检一次报了 2277 条；
+  阶段 2 本来也是 Boss，所以取组内最高档）
+
+实测（investigation/apply/_check_multi.py 的验证口径）：
+* 默认（不动打不死的）：计划 4715 行、自检 0、多阶段组零拆散（多阶段 Boss 多属"打不死"，默认没动）
+* 放开 allow_unkillable：计划 5977 行、自检 0、38 个多阶段组里 **10 个整组换到了另一个完整组**、零拆散
+  例：Rennala(1,1,2) → Flying Dragon Agheel；Malenia ↔ Commander Niall
+
+自己踩的坑（都记着）：验证脚本用 heredoc 写，正则里的 `$` 被 shell 吃掉导致"看起来没生效"；
+另一次校验时传了不带 allow_unkillable 的 cfg，池子重算对不上白报两千多条。两处都改成文件 + 同 cfg。
+
+回归：敌人自检 PASS、矩阵 PASS（16 组计划 / 8 组应用）、共存写盘 10/10、
+四道 GUI 闸门 exit 0、打包 18.16 MB 且隔离自检四道全过。
