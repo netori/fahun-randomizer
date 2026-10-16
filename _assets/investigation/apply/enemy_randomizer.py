@@ -470,7 +470,9 @@ def make_plan(units, cfg):
     （一开始我写成"逐对判断、不合格就跳过"，那会破坏双射 —— 自检里当场抓到了。）
     """
     seed = cfg.get("seed", 0)
-    rate = float(cfg.get("enemy_rate", 1.0))
+    rate_all = float(cfg.get("enemy_rate", 1.0))
+    rates = cfg.get("enemy_rates") or {}          # 每类各自的比例（参考实现的 per-category）
+    ignore_size = bool(cfg.get("ignore_size"))    # 忽略体型限制
     pools = build_pools(units, cfg)
     warn = pools.pop("_warn", [])
     plan = {}
@@ -478,15 +480,17 @@ def make_plan(units, cfg):
         rids = pools.get(cls)
         if not rids:
             continue
+        rate = float(rates.get(cls, rate_all))
         # 体型分桶（(cls, bucket) 为一个子池）
         buckets = {}
         for rid in rids:
             u = units[rid]
-            buckets.setdefault(size_bucket(u.radius, u.height), []).append(rid)
+            b = 0 if ignore_size else size_bucket(u.radius, u.height)
+            buckets.setdefault(b, []).append(rid)
         for bucket, members in sorted(buckets.items()):
             if len(members) < 2:
                 continue
-            rng = random.Random(f"{seed}|enemy|{cls}|{bucket}")
+            rng = random.Random(f"{seed}|enemy|{cls}|{bucket}|{ignore_size}")
             k = len(members) if rate >= 1 else max(2, int(round(len(members) * rate)))
             pool = members[:]
             rng.shuffle(pool)
@@ -626,10 +630,12 @@ def verify_plan(units, plan, cfg):
         elif cls_members := pools.get(ct):
             if tgt not in cls_members or src not in cls_members:
                 issues.append(f"池外成员：{tgt} 或 {src} 不在 {ct} 池里")
-        b_t = size_bucket(units[tgt].radius, units[tgt].height)
-        b_s = size_bucket(units[src].radius, units[src].height)
-        if b_s > b_t:
-            issues.append(f"体型越界：{tgt}({b_t}) ← ({b_s})")
+        if not cfg.get("ignore_size"):
+            # 人为放开体型时不检这条（对应参考实现的 Ignore arena size）
+            b_t = size_bucket(units[tgt].radius, units[tgt].height)
+            b_s = size_bucket(units[src].radius, units[src].height)
+            if b_s > b_t:
+                issues.append(f"体型越界：{tgt}({b_t}) ← ({b_s})")
     return issues
 
 
@@ -677,6 +683,11 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
            "enemy_rate": float(enemy_cfg.get("rate", 1.0)),
            "enemy_pools": enemy_cfg.get("pools") or CLASS_ORDER,
            "enemy_source": enemy_cfg.get("source") or "all"}
+    # 2026-10-17：界面新增的两项要透传过去，否则设置会被静默忽略
+    if enemy_cfg.get("rates"):
+        cfg["enemy_rates"] = enemy_cfg["rates"]
+    if enemy_cfg.get("ignore_size"):
+        cfg["ignore_size"] = True
     plan, warn = make_plan(units, cfg)
     if not names and not class_table:
         # 少了名字表就分不出"友好 NPC"，可能把它们也换掉 —— 必须说出来，不静默
