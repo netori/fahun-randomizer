@@ -146,8 +146,31 @@ def parse_fmg(data, expand_ranges=True):
     只取端点会漏掉 750 个非零 nameId 里的 185 个。
     `expand_ranges=False` 只取端点（下界；下界为 0 时取上界），给需要严格单键的场景。
     """
+    recs = list(fmg_records(data))
+    # ⚠️ 区间语义（2026-10-16 修正）：一条 [lo, hi] 记录里，**每个 id 各占一个字符串槽**，
+    #    不是整段共用第一条文本。旧写法 `out[k] = text` 会让整段都显示第一条的名字 ——
+    #    实测后果：NpcName 里 42 个 name_id 的名字是错的（902130002 应该是「“恶兆王”蒙葛特」，
+    #    旧写法给的是区间的第一条「“恶兆妖鬼”玛尔基特」；902110001 应该是「“黑剑”玛利喀斯」）。
+    #    自检：Σ(hi-lo+1) == 字符串槽数（GoodsName_dlc01 1549==1549、NpcName_dlc01 105==105）。
+    # ⚠️ 关键：id 记录只有 n_rec 条（NpcName 实测 265），而字符串槽有 n_str 个（626）。
+    #    区间记录只给"起始槽"，区间里其余 id 的文本要**按槽号直接读偏移表** ——
+    #    不能从记录里找（那些槽根本没有记录）→ 这就是之前整段共用第一条文本的根因。
+    n = len(data)
+    _tab = _u32(data, H_OFF_TABLE)
+    _nstr = _u32(data, H_STR_COUNT)
+
+    def _text_at(slot):
+        if slot >= _nstr:
+            return None
+        q = _tab + 8 * slot
+        if q + 8 > n:
+            return None
+        off = _u64(data, q)
+        return _read_utf16(data, off) if off else None
+
+    by_slot = {rec[0]: (rec[3] or _text_at(rec[0])) for rec in recs}
     out = {}
-    for _slot, lo, hi, text in fmg_records(data):
+    for slot, lo, hi, text in recs:
         if not text:
             continue
         if not expand_ranges:
@@ -160,7 +183,9 @@ def parse_fmg(data, expand_ranges=True):
         if hi < lo or hi - lo > MAX_RANGE:
             hi = lo                      # 上界不合法 → 不铺开，不猜
         for k in range(lo, hi + 1):
-            out.setdefault(k, text)
+            t = by_slot.get(slot + (k - lo)) or _text_at(slot + (k - lo))
+            if t:
+                out.setdefault(k, t)
     return out
 
 

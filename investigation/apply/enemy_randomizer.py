@@ -212,10 +212,18 @@ def load_boss_rows(path=None):
     try:
         with open(p, encoding="utf-8-sig", newline="") as f:
             for r in csv.DictReader(f):
-                if str(r.get("in_regulation", "")).lower() in ("true", "1"):
-                    nid = str(r.get("npc_id") or "").strip()
-                    if nid.isdigit():
-                        out.add(int(nid))
+                if str(r.get("in_regulation", "")).lower() not in ("true", "1"):
+                    continue
+                # 子 agent 给的四条用法（照做）：
+                #   ① 剔掉 .js 里被 // 注释掉的调用（血条根本不会开）
+                #   ② 剔掉没解析出名字的（name_id=0）
+                if "commented" in (r.get("note") or "").lower():
+                    continue
+                if not str(r.get("name_id") or "").strip().strip("0"):
+                    continue
+                nid = str(r.get("npc_id") or "").strip()
+                if nid.isdigit():
+                    out.add(int(nid))
     except Exception:
         return set()
     return out
