@@ -1,0 +1,463 @@
+﻿model,model_name_en,name_zh,source,note
+c0000,Human,,未找到,法魂本体里这个模型挂了 124 个不同行名（米莉森、帕奇、角人…），没有一个是它的模型名；参考实现也没有中文
+c4300,Wandering Noble,,未找到,参考实现与法魂本体都没有它的中文名
+c4191,Small Scarab,,未找到,参考实现与法魂本体都没有它的中文名
+c5240,Shadow Commoner,,未找到,参考实现与法魂本体都没有它的中文名
+c3500,Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c1000,Talk Dummy,,未找到,法魂本体里这个模型挂了 13 个不同行名（漫步灵庙的尸体、仿身泪滴、孪生老妪…），没有一个是它的模型名；参考实现也没有中文
+c3660,Commoner,,未找到,参考实现与法魂本体都没有它的中文名
+c5652,,,未找到,参考实现与法魂本体都没有它的中文名
+c4313,Leyndell Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c3661,Putrid Corpse,,未找到,参考实现与法魂本体都没有它的中文名
+c5830,Messmer Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4490,Living Jar Warrior,,未找到,法魂本体里这个模型挂了 2 个不同行名（“战士壶”亚历山大、大壶勇者…），没有一个是它的模型名；参考实现也没有中文
+c4200,Man-Bat,,未找到,参考实现与法魂本体都没有它的中文名
+c3000,Exile Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c3470,Albinauric,,未找到,参考实现与法魂本体都没有它的中文名
+c3300,Nox Fighter,,未找到,法魂本体里这个模型有 3 个不同显示名且无占优者（诺克斯蚁骑士 x2 / 诺克斯修士 x2 / 诺克斯剑士 x2），不取其中任何一个
+c3080,Imp,,未找到,参考实现与法魂本体都没有它的中文名
+c3010,Banished Knight,“失乡骑士”奥雷格,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5450,Ram,,未找到,参考实现与法魂本体都没有它的中文名
+c4491,Living Jar,小壶,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c6060,Ram,,未找到,参考实现与法魂本体都没有它的中文名
+c2140,Omen,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（恶兆孪生子 x4 / 咒死的恶兆之子 x4），不取其中任何一个
+c3360,Ancestral Follower,,未找到,参考实现与法魂本体都没有它的中文名
+c4373,Leyndell Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c5080,Bloodfiend,,未找到,参考实现与法魂本体都没有它的中文名
+c5401,Eagle,,未找到,参考实现与法魂本体都没有它的中文名
+c3510,Catacombs Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c4100,Demi-Human,,未找到,参考实现与法魂本体都没有它的中文名
+c4080,Rat,,未找到,参考实现与法魂本体都没有它的中文名
+c4140,Snail,唤灵蜗牛,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5250,Divine Bird Warrior,神鸟战士,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3850,Marionette Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4321,Vulgar Militia,,未找到,参考实现与法魂本体都没有它的中文名
+c4374,Radahn Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c5440,Boar,,未找到,参考实现与法魂本体都没有它的中文名
+c4600,Troll,癫火山妖,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4660,Guardian Golem,魔像守衛,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3200,Merchant,,未找到,法魂本体里这个模型挂了 10 个不同行名（流浪民族的商人、遁世商人、林中商人…），没有一个是它的模型名；参考实现也没有中文
+c4312,Raya Lucaria Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c5410,Deer,,未找到,参考实现与法魂本体都没有它的中文名
+c5360,Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c4161,Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4371,Godrick Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c3702,Glintstone Sorcerer,,未找到,参考实现与法魂本体都没有它的中文名
+c3350,Crystalian,結晶人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4315,Mausoleum Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4311,Godrick Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4382,Miner,,未找到,参考实现与法魂本体都没有它的中文名
+c5651,Messmer Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4353,Leyndell Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c5311,Hornsent Inquisitor,,未找到,参考实现与法魂本体都没有它的中文名
+c4240,Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c3970,Beastman of Farum Azula,法姆‧亞茲拉的獸人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5090,Gravebird,凶猛守墓鸟,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5840,Black Knight,“黑骑士”艾瑞德,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）；另有别名 1 个（黑骑士副团长）
+c3320,Silver Tear,,未找到,参考实现与法魂本体都没有它的中文名
+c5490,Springhare,,未找到,参考实现与法魂本体都没有它的中文名
+c2500,Crucible Knight,熔爐騎士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4481,Miranda Sprout,,未找到,参考实现与法魂本体都没有它的中文名
+c4280,Giant Ant,,未找到,参考实现与法魂本体都没有它的中文名
+c3800,Cleanrot Knight,瑪蓮妮亞的尊腐騎士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4316,Haligtree Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4314,Radahn Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c0100,Dummy,,未找到,法魂本体里这个模型有 4 个不同显示名且无占优者（水银躯壳 x2 / 锻造台 x1 / 龙飨大教堂 x1 / “黄金律法”斯奎拉 x1），不取其中任何一个
+c6001,Eagle,,未找到,参考实现与法魂本体都没有它的中文名
+c3400,Grave Warden Duelist,守墓鬥士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3670,Elder Albinauric,,未找到,法魂本体里这个模型挂了 2 个不同行名（仆人毕迪、艾尔帕斯…），没有一个是它的模型名；参考实现也没有中文
+c4070,Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c6100,Springhare,,未找到,参考实现与法魂本体都没有它的中文名
+c3450,Misbegotten,,未找到,参考实现与法魂本体都没有它的中文名
+c4201,Operatic Bat,圣咏翼蝠贵妇,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3750,Clayman,,未找到,参考实现与法魂本体都没有它的中文名
+c4385,Disciple of Rot,,未找到,参考实现与法魂本体都没有它的中文名
+c6010,Deer,,未找到,参考实现与法魂本体都没有它的中文名
+c5661,Shadow Militia,,未找到,参考实现与法魂本体都没有它的中文名
+c5480,Turtle,,未找到,参考实现与法魂本体都没有它的中文名
+c4210,Warhawk,,未找到,参考实现与法魂本体都没有它的中文名
+c4340,Mad Pumpkin Head,發狂南瓜頭士兵,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2010,Blaidd,,未找到,法魂本体里这个模型挂了 2 个不同行名（“半狼”布莱泽、灾厄影子…），没有一个是它的模型名；参考实现也没有中文
+c3070,Dominula Celebrant,,未找到,参考实现与法魂本体都没有它的中文名
+c3950,Man-Serpent,,未找到,参考实现与法魂本体都没有它的中文名
+c3210,Merchant's Donkey,,未找到,参考实现与法魂本体都没有它的中文名
+c4470,Abductor Virgin,,未找到,法魂本体里这个模型有 3 个不同显示名且无占优者（扭曲的掳人者 x2 / 弗兰肯-掳人者-斯坦 x2 / 掳人少女人偶（摆荡镰刀） x2），不取其中任何一个
+c4480,Miranda Blossom,米蘭達之花,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4630,Runebear,盧恩熊,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4550,Giant Dog,,未找到,参考实现与法魂本体都没有它的中文名
+c4071,White Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c4180,Spirit Jellyfish,,未找到,参考实现与法魂本体都没有它的中文名
+c4040,Slug,,未找到,参考实现与法魂本体都没有它的中文名
+c4170,Putrid Flesh,,未找到,参考实现与法魂本体都没有它的中文名
+c5870,Imp,,未找到,参考实现与法魂本体都没有它的中文名
+c5110,Spirit Eel,,未找到,参考实现与法魂本体都没有它的中文名
+c3451,Scaly Misbegotten,片鱗混種,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3703,Page,,未找到,参考实现与法魂本体都没有它的中文名
+c3650,Guardian,黄金树守卫,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4110,Demi-Human Shaman,亚人柏克,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c4020,Royal Revenant,王室幽魂,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4090,Giant Rat,,未找到,参考实现与法魂本体都没有它的中文名
+c5430,Owl,,未找到,参考实现与法魂本体都没有它的中文名
+c4820,Omenkiller,惡兆獵人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3910,Fire Prelate,火焰大主教,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3860,Avionette Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c6031,Bear,,未找到,参考实现与法魂本体都没有它的中文名
+c5900,Man-Fly,,未找到,参考实现与法魂本体都没有它的中文名
+c5160,Fire Knight,火焰骑士圣战者,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c6090,Turtle,,未找到,参考实现与法魂本体都没有它的中文名
+c4430,Sentry Stone,,未找到,参考实现与法魂本体都没有它的中文名
+c3060,Giant Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c3150,Night's Cavalry,黑夜騎兵,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5040,Curseblade,咒剑士拉比利士,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4460,Flame Chariot,,未找到,参考实现与法魂本体都没有它的中文名
+c3810,Kindred of Rot,腐敗眷屬,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4000,Revenant Follower,,未找到,参考实现与法魂本体都没有它的中文名
+c5190,Spider Scorpion,,未找到,参考实现与法魂本体都没有它的中文名
+c2100,Black Knife Assassin,黑刀刺客,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4230,Larval Land Octopus,,未找到,参考实现与法魂本体都没有它的中文名
+c4355,Mausoleum Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c4352,Cuckoo Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c5740,Kindred of Rot,腐敗眷屬,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3071,,,未找到,参考实现与法魂本体都没有它的中文名
+c5530,Man-Bat,,未找到,参考实现与法魂本体都没有它的中文名
+c5750,Living Jar Warrior,,未找到,参考实现与法魂本体都没有它的中文名
+c4354,Redmane Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c4980,Death Rite Bird,死亡儀式鳥,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2300,,,未找到,参考实现与法魂本体都没有它的中文名
+c3701,Perfumer,调香师托莉夏,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3160,Night's Cavalry Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c3600,Onyx Lord,石膚黑王,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4260,Erdtree Burial Watchdog,歸樹看門犬,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5260,Smith Golem,,未找到,参考实现与法魂本体都没有它的中文名
+c3704,Battlemage,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“战场魔法师”邓肯 x2 / 战场魔法师犹格 x2），不取其中任何一个
+c3730,Graven School,,未找到,参考实现与法魂本体都没有它的中文名
+c4220,Land Octopus,,未找到,参考实现与法魂本体都没有它的中文名
+c4150,Basilisk,,未找到,参考实现与法魂本体都没有它的中文名
+c3330,Giant Ball,,未找到,参考实现与法魂本体都没有它的中文名
+c7005,,,未找到,参考实现与法魂本体都没有它的中文名
+c6050,Boar,,未找到,参考实现与法魂本体都没有它的中文名
+c6080,Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c4356,Haligtree Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c3971,,,未找到,参考实现与法魂本体都没有它的中文名
+c4351,Godrick Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c4160,Large Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4640,Ulcerated Tree Spirit,腐爛樹靈,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c8100,Ballista,,未找到,参考实现与法魂本体都没有它的中文名
+c4770,Gargoyle,黑剑眷属,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4120,Demi-Human Chief,亞人首領,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3900,Fire Monk,,未找到,参考实现与法魂本体都没有它的中文名
+c5270,Jar Innards,,未找到,参考实现与法魂本体都没有它的中文名
+c4420,Giant Crayfish,,未找到,参考实现与法魂本体都没有它的中文名
+c3181,Red Wolf,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（艾格蕾的红狼 x2 / 拉达冈的红狼 x2），不取其中任何一个
+c4483,Rotten Miranda Sprout,,未找到,参考实现与法魂本体都没有它的中文名
+c4380,Starcaller,,未找到,参考实现与法魂本体都没有它的中文名
+c3310,,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（风暴呼召者塔兰 x2 / 风暴敕令者科温特 x2），不取其中任何一个
+c5500,Living Magma,,未找到,参考实现与法魂本体都没有它的中文名
+c6081,Yellow Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c3665,Gatekeeper Gostoc,门卫葛托克,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c3700,Depraved Perfumer,,未找到,参考实现与法魂本体都没有它的中文名
+c4290,Bloodhound Knight,獵犬騎士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3170,Albinauric Archer,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（白金狼骑射手 x2 / 白金之子勒缇娜 x2），不取其中任何一个
+c4101,Large Demi-Human,,未找到,参考实现与法魂本体都没有它的中文名
+c5060,Lamprey,,未找到,参考实现与法魂本体都没有它的中文名
+c3370,Ancestral Follower Shaman,祖灵祭司,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4620,Astel,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“黑暗弃子”艾丝缇 x2 / “黑暗繁星”艾丝缇 x2），不取其中任何一个
+c2160,Finger Reader,,未找到,法魂本体里这个模型挂了 3 个不同行名（解指老妪、看守禁域的老妪、葛德文的乳母…），没有一个是它的模型名；参考实现也没有中文
+c4165,Bloodbane Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c0120,Bullet Dummy,,未找到,参考实现与法魂本体都没有它的中文名
+c2040,Juvenile Scholar,,未找到,参考实现与法魂本体都没有它的中文名
+c4383,Glintstone Miner,,未找到,参考实现与法魂本体都没有它的中文名
+c4376,Haligtree Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4192,Extra Large Scarab,,未找到,参考实现与法魂本体都没有它的中文名
+c4372,Raya Lucaria Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c6040,Owl,,未找到,参考实现与法魂本体都没有它的中文名
+c5170,Furnace Golem,,未找到,参考实现与法魂本体都没有它的中文名
+c6201,Scarab,,未找到,参考实现与法魂本体都没有它的中文名
+c5421,Bear,,未找到,参考实现与法魂本体都没有它的中文名
+c3020,Large Exile Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4690,Grafted Scion,「接肢」貴族後裔,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3460,Leonine Misbegotten,獅子混種,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4050,Kaiden Sellsword,,未找到,参考实现与法魂本体都没有它的中文名
+c3550,Sanguine Noble,鮮血貴族,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3901,Blackflame Monk,,未找到,参考实现与法魂本体都没有它的中文名
+c4601,Troll Knight,“卡利亚骑士”波尔斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c2270,Giant Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c4650,Dragonkin Soldier,龍人士兵,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2150,Lightning Ball,,未找到,参考实现与法魂本体都没有它的中文名
+c2271,Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c4450,Walking Mausoleum,,未找到,参考实现与法魂本体都没有它的中文名
+c2275,Albinauric Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c3662,Large Putrid Corpse,,未找到,参考实现与法魂本体都没有它的中文名
+c4357,,,未找到,参考实现与法魂本体都没有它的中文名
+c5590,Putrid Flesh,,未找到,参考实现与法魂本体都没有它的中文名
+c5600,Catacombs Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c5760,Rat,,未找到,参考实现与法魂本体都没有它的中文名
+c6290,Misbegotten,,未找到,参考实现与法魂本体都没有它的中文名
+c6070,Guillemot,,未找到,参考实现与法魂本体都没有它的中文名
+c5523,Shadow Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5230,Scadutree Avatar,幽影樹的化身,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2130,Morgott,“恶兆王”蒙葛特,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）；另有别名 1 个（“恶兆妖鬼”玛尔基特）
+c4270,Elder Lion,,未找到,参考实现与法魂本体都没有它的中文名
+c7100,Ancient Hero of Zamor,薩米爾的古英雄,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5320,Fat Hornsent Inquisitor,,未找到,参考实现与法魂本体都没有它的中文名
+c5880,Catacombs Sorcerer,,未找到,参考实现与法魂本体都没有它的中文名
+c3664,Cemetery Shade,墓地影子,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5081,Chief Bloodfiend,血怪之首,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5011,Hippopotamus,发狂河马,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3180,Archer's Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c4670,Ancestor Spirit,祖靈,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3570,Godskin Noble,神皮貴族,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5560,Small Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c5761,Giant Rat,,未找到,参考实现与法魂本体都没有它的中文名
+c3560,Godskin Apostle,神皮使徒,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4250,Small Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c3100,Bell Bearing Hunter,鈴珠獵人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5470,Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c6320,Wandering Noble,,未找到,参考实现与法魂本体都没有它的中文名
+c5380,Miranda Blossom,米蘭達之花,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5381,Miranda Sprout,,未找到,参考实现与法魂本体都没有它的中文名
+c6231,Perfumer,,未找到,参考实现与法魂本体都没有它的中文名
+c5570,Marionette Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c8101,Trebuchet,,未找到,参考实现与法魂本体都没有它的中文名
+c3666,Goldmask,金面具,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c2110,Beast Clergyman,野獸祭司,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c3201,Frenzied Merchant,,未找到,参考实现与法魂本体都没有它的中文名
+c4130,Demi-Human Queen,“亚人女王”姬丽卡,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4602,Snowfield Troll,雪山山妖,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4560,Giant Crow,,未找到,参考实现与法魂本体都没有它的中文名
+c3361,,,未找到,参考实现与法魂本体都没有它的中文名
+c4482,Rotten Miranda Blossom,,未找到,参考实现与法魂本体都没有它的中文名
+c2041,Larva of Rot,,未找到,参考实现与法魂本体都没有它的中文名
+c7000,Fallen Hawks Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c4510,Ancient Dragon,“古龙”兰斯桑克斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4910,Magma Wyrm,熔岩土龍,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5192,Large Spider Scorpion,巨大蜘蛛蝎,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5241,Large Shadow Commoner,,未找到,参考实现与法魂本体都没有它的中文名
+c5960,Ulcerated Tree Spirit,腐爛樹靈,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5640,Giant Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c5751,Living Jar,,未找到,参考实现与法魂本体都没有它的中文名
+c4440,Land Squirt,,未找到,参考实现与法魂本体都没有它的中文名
+c4502,Glintstone Dragon,“辉石龙”亚杜拉,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4190,Large Scarab,,未找到,参考实现与法魂本体都没有它的中文名
+c4950,Tibia Mariner,提比亞的喚聲船,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5522,Large Shadow Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5850,Giant Ram,,未找到,参考实现与法魂本体都没有它的中文名
+c8110,Dragon-Faced Flamethrower,,未找到,参考实现与法魂本体都没有它的中文名
+c3610,Small Oracle Envoy,,未找到,参考实现与法魂本体都没有它的中文名
+c3630,Fat Oracle Envoy,,未找到,参考实现与法魂本体都没有它的中文名
+c7101,,,未找到,参考实现与法魂本体都没有它的中文名
+c3471,Large Albinauric,,未找到,参考实现与法魂本体都没有它的中文名
+c3705,,夏玻利利的选民,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4381,Guilty,,未找到,参考实现与法魂本体都没有它的中文名
+c5810,Demi-Human Swordmaster,“亚人剑圣”翁吉,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3061,Giant Beast Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c4171,Large Putrid Flesh,,未找到,参考实现与法魂本体都没有它的中文名
+c4570,Wormface,蚯蚓臉,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4580,Large Wormface,蚯蚓脸,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4603,Stonedigger Troll,挖石山妖,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4800,Mohg,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“鲜血君王”蒙格 x2 / “恶兆之子”蒙格 x2），不取其中任何一个
+c3805,,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（失落部族的密契女猎手 x2 / 密契女猎手 x2），不取其中任何一个
+c4500,Flying Dragon,“飞龙”亚基尔,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3302,,,未找到,参考实现与法魂本体都没有它的中文名
+c4164,Large Bloodbane Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5180,DLC Dummy,,未找到,参考实现与法魂本体都没有它的中文名
+c5181,DLC Dummy 2,,未找到,参考实现与法魂本体都没有它的中文名
+c5220,Promised Consort Radahn,「約定之王」拉塔恩,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5511,Putrid Corpse,,未找到,参考实现与法魂本体都没有它的中文名
+c5641,Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c5271,Large Jar Innards,,未找到,参考实现与法魂本体都没有它的中文名
+c5940,Sentry Stone,,未找到,参考实现与法魂本体都没有它的中文名
+c4377,Highwayman,,未找到,参考实现与法魂本体都没有它的中文名
+c2278,,巨大结晶蟹,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4680,Fallingstar Beast,墜星獸物,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5841,,,未找到,参考实现与法魂本体都没有它的中文名
+c5931,Giant Beast Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c6091,Giant Turtle,“结缘牧师”米利耶,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c2274,Giant Albinauric Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c4604,Iji,,未找到,法魂本体里这个模型挂了 2 个不同行名（军师伊吉、铁匠伊吉…），没有一个是它的模型名；参考实现也没有中文
+c2050,Ranni,,未找到,法魂本体里这个模型挂了 2 个不同行名（魔女菈妮、魔女蕾娜…），没有一个是它的模型名；参考实现也没有中文
+c5550,Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c3251,Tree Sentinel,大樹守衛,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5790,Guardian Golem,魔像守衛,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5860,Ghostflame Dragon,靈火龍,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5460,Guillemot,,未找到,参考实现与法魂本体都没有它的中文名
+c5630,Giant Crayfish,,未找到,参考实现与法魂本体都没有它的中文名
+c5700,Demi-Human,,未找到,参考实现与法魂本体都没有它的中文名
+c5471,Yellow Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c5521,Messmerfire Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5580,Jagged Peak Drake,尖刺山的飛龍,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2180,Melina,梅琳娜,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c3620,Tall Oracle Envoy,,未找到,参考实现与法魂本体都没有它的中文名
+c4720,Godfrey,,未找到,参考实现与法魂本体都没有它的中文名
+c4505,Small Flying Dragon,,未找到,参考实现与法魂本体都没有它的中文名
+c4162,Large Farum Azula Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4281,Skull Plate Giant Ant,,未找到,参考实现与法魂本体都没有它的中文名
+c6082,Great Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c4400,,受封印神祇之嗣,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4166,Large Rotten Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4635,,“梦之灾厄”哥拉斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3755,,,未找到,参考实现与法魂本体都没有它的中文名
+c5070,Death Knight,死騎士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5800,Crucible Knight Devonia,,未找到,参考实现与法魂本体都没有它的中文名
+c3250,Draconic Tree Sentinel,龍裝大樹守衛,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5300,"Rellana, Twin Moon Knight",「雙月騎士」蕾菈娜,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2030,Rennala 1,,未找到,参考实现与法魂本体都没有它的中文名
+c2031,Rennala 2,,未找到,参考实现与法魂本体都没有它的中文名
+c2120,Malenia,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“米凯拉的锋刃”玛莲妮亚 x2 / “腐败女神”玛莲妮亚 x2），不取其中任何一个
+c4811,Putrid Avatar,腐敗化身,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4710,God-Devouring Serpent,噬神大蛇,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c6240,Lightning Ball,,未找到,参考实现与法魂本体都没有它的中文名
+c5193,Small Spider Scorpion,,未找到,参考实现与法魂本体都没有它的中文名
+c5210,Divine Beast Dancing Lion,神獸舞獅,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5130,Messmer,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“恶之蛇”梅瑟莫 x2 / “穿刺者”梅瑟莫 x2），不取其中任何一个
+c5020,Putrescent Knight,融泥騎士,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c2272,Giant Black Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c4441,Giant Land Squirt,,未找到,参考实现与法魂本体都没有它的中文名
+c4363,Leyndell Knight's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c3903,,,未找到,参考实现与法魂本体都没有它的中文名
+c5662,,,未找到,参考实现与法魂本体都没有它的中文名
+c5513,Cemetery Shade,墓地影子,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5350,Basilisk Eyes,,未找到,参考实现与法魂本体都没有它的中文名
+c5990,Basilisk,,未找到,参考实现与法魂本体都没有它的中文名
+c4760,Fire Giant,火焰巨人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4362,Cuckoo Knight's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c4960,Giant Skeleton Torso,,未找到,参考实现与法魂本体都没有它的中文名
+c2276,Giant Death Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c2277,Death Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c4361,Godrick Knight's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c3050,Commander,老将尼奥,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5527,Bloodbane Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5820,Great Red Bear,大红熊拉鲁瓦,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5930,Giant Skeleton,,未找到,参考实现与法魂本体都没有它的中文名
+c5391,Troll Knight,,未找到,参考实现与法魂本体都没有它的中文名
+c5525,Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5890,Black Knight Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c6291,Scaly Misbegotten,片鱗混種,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5970,Abductor Virgin,,未找到,参考实现与法魂本体都没有它的中文名
+c5980,Omenkiller,惡兆獵人,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5472,Great Dragonfly,,未找到,参考实现与法魂本体都没有它的中文名
+c6251,Tree Sentinel,大樹守衛,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4750,Godrick the Grafted,「接肢」葛瑞克,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4751,Defeated Godrick,,未找到,参考实现与法魂本体都没有它的中文名
+c2131,Defeated Morgott,,未找到,参考实现与法魂本体都没有它的中文名
+c3401,,“黑夜骑兵长官”西古尔,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c2501,,“背叛熔炉者”斯卡德,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4721,Hoarah Loux,,未找到,法魂本体里这个模型有 2 个不同显示名且无占优者（“初始之王”葛孚雷 x2 / 战士荷莱·露 x2），不取其中任何一个
+c2060,The Two Fingers,双指,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c2170,Finger Reader Enia,“解指”恩雅,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c8099,,,未找到,参考实现与法魂本体都没有它的中文名
+c8006,,,未找到,参考实现与法魂本体都没有它的中文名
+c8005,,,未找到,参考实现与法魂本体都没有它的中文名
+c8007,,,未找到,参考实现与法魂本体都没有它的中文名
+c8003,,,未找到,参考实现与法魂本体都没有它的中文名
+c8008,,,未找到,参考实现与法魂本体都没有它的中文名
+c8009,,,未找到,参考实现与法魂本体都没有它的中文名
+c8004,,,未找到,参考实现与法魂本体都没有它的中文名
+c3371,,,未找到,参考实现与法魂本体都没有它的中文名
+c4135,,腐败容器,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4850,,“塑灵者”凯玛,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3301,,“黑夜的女主人”蒂尔娜,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4072,,,未找到,参考实现与法魂本体都没有它的中文名
+c3062,,咒死的诺克斯先祖,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4365,Mausoleum Knight's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c4511,Lichdragon Fortissax,「死龍」弗爾桑克斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5861,,“血焰龙”桑吉瓦罗斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5165,,“纯血骑士”康拉德,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4493,,,未找到,参考实现与法魂本体都没有它的中文名
+c3655,,,未找到,参考实现与法魂本体都没有它的中文名
+c4484,,,未找到,参考实现与法魂本体都没有它的中文名
+c4151,,,未找到,参考实现与法魂本体都没有它的中文名
+c4271,,“古龙之剑”希拉,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4163,Farum Azula Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4520,Dragonlord Placidusax,「龍王」普拉頓桑克斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c7102,,,未找到,参考实现与法魂本体都没有它的中文名
+c3252,Loretta,“圣树骑士”罗蕾塔,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4251,,,未找到,参考实现与法魂本体都没有它的中文名
+c4242,,,未找到,参考实现与法魂本体都没有它的中文名
+c4711,Rykard's Corpse,,未找到,参考实现与法魂本体都没有它的中文名
+c4390,,“地底大法师”达格拉夫,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4391,,“伪龙王”达格拉夫,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c2105,,,未找到,参考实现与法魂本体都没有它的中文名
+c2151,,,未找到,参考实现与法魂本体都没有它的中文名
+c4342,,,未找到,参考实现与法魂本体都没有它的中文名
+c2190,Radagon,“黄金律法”拉达冈,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c2200,Elden Beast,艾爾登之獸,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5910,Hornsent Grandam,角人老妪,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c5251,Hornsent Shaman,,未找到,参考实现与法魂本体都没有它的中文名
+c5010,Golden Hippopotamus,黃金河馬,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5140,Large Messmer Serpent,,未找到,参考实现与法魂本体都没有它的中文名
+c5141,Messmer Serpent,,未找到,参考实现与法魂本体都没有它的中文名
+c5330,St. Trina,圣女托莉娜,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c5591,Large Putrid Flesh,,未找到,参考实现与法魂本体都没有它的中文名
+c5950,Leonine Misbegotten,獅子混種,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5200,"Metyr, Mother of Fingers",「指頭之母」梅蒂爾,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5050,Mini Midra,,未找到,参考实现与法魂本体都没有它的中文名
+c5051,"Midra, Lord of Frenzied Flame",「癲火之王」米德拉,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5280,Aging Untouchable,,未找到,参考实现与法魂本体都没有它的中文名
+c4261,,癫火归树看门犬,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4561,Bloodbane Giant Crow,,未找到,参考实现与法魂本体都没有它的中文名
+c2273,Black Crab,,未找到,参考实现与法魂本体都没有它的中文名
+c8120,Merciless Chariot,,未找到,参考实现与法魂本体都没有它的中文名
+c4740,,“艾格蕾大祭司”维戈,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3911,,恶兵长官,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）；另有别名 1 个（离群仿身泪滴）
+c3720,Lusat,“起源魔法师”卢瑟特,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c4384,Large Glintstone Miner,,未找到,参考实现与法魂本体都没有它的中文名
+c2195,,,未找到,参考实现与法魂本体都没有它的中文名
+c5885,,,未找到,参考实现与法魂本体都没有它的中文名
+c2035,,神皮女族长,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row/ours:row_name）
+c3580,,“神皮欺诈者”伊德里斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5871,Large Bigmouth Imp,,未找到,参考实现与法魂本体都没有它的中文名
+c5872,Massive Bigmouth Imp,,未找到,参考实现与法魂本体都没有它的中文名
+c5540,Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c5541,White Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c5920,Magma Wyrm,熔岩土龍,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c0110,Caravan Dummy,,未找到,参考实现与法魂本体都没有它的中文名
+c4060,Kaiden Sellsword's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c4730,Starscourge Radahn,「碎星」拉塔恩,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4503,Borealis the Freezing Fog,「凍結冰霧」玻列琉斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4492,Greatjar,,未找到,参考实现与法魂本体都没有它的中文名
+c0130,Balloon,,未找到,参考实现与法魂本体都没有它的中文名
+c3155,,“卡利亚典范”里斯,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3920,,“冰之守卫”艾纳尔,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3710,Azur,“起源魔法师”亚兹勒,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c3015,,焦黑失乡骑士,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c3480,,“剥尸王”迪鲁,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4810,Erdtree Avatar,黃金樹的化身,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4167,Rotten Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c4375,Mausoleum Foot Soldier,,未找到,参考实现与法魂本体都没有它的中文名
+c3171,Phillia,“庞大妹妹”菲莉亚,ours:row_name,法魂本体中文显示名（来源 ours:row_name）
+c3902,,腐败习武修士,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4442,Giant Rotten Land Squirt,,未找到,参考实现与法魂本体都没有它的中文名
+c4501,Decaying Ekzykes,「步入腐敗」艾格基斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4364,Redmane Knight's Horse,,未找到,参考实现与法魂本体都没有它的中文名
+c4504,Greyoll,,未找到,参考实现与法魂本体都没有它的中文名
+c4911,Great Wyrm Theodorix,「大土龍」席歐朵利克,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c4051,,“唤星领主”达克,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c4241,Colossal Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c5030,Romina,“花蕾圣女”萝蜜娜,ours:boss_healthbar,法魂本体中文显示名（来源 ours:boss_healthbar/ours:boss_row）
+c5526,Large Bloodbane Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5780,Runebear,盧恩熊,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c6300,Snail,,未找到,参考实现与法魂本体都没有它的中文名
+c5701,Large Demi-Human,,未找到,参考实现与法魂本体都没有它的中文名
+c5680,Ballista,,未找到,参考实现与法魂本体都没有它的中文名
+c5390,Troll,,未找到,参考实现与法魂本体都没有它的中文名
+c6260,Death Rite Bird,死亡儀式鳥,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5720,Demi-Human Chief,亞人首領,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5524,Large Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c6232,Glintstone Sorcerer,,未找到,参考实现与法魂本体都没有它的中文名
+c6233,Page,,未找到,参考实现与法魂本体都没有它的中文名
+c5690,Dragon-Faced Flamethrower,,未找到,参考实现与法魂本体都没有它的中文名
+c5520,Large Messmerfire Stray,,未找到,参考实现与法魂本体都没有它的中文名
+c5620,Tibia Mariner,提比亞的喚聲船,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c6270,Royal Revenant,王室幽魂,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5340,DLC Dummy 3,,未找到,参考实现与法魂本体都没有它的中文名
+c120,,,未找到,参考实现与法魂本体都没有它的中文名
+c5000,Commander Gaius,老將蓋烏斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c6210,Albinauric Archer,,未找到,参考实现与法魂本体都没有它的中文名
+c6220,Archer's Wolf,,未找到,参考实现与法魂本体都没有它的中文名
+c5312,"Jori, Elder Inquisitor",「拷問老者」約里,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c6310,Fallingstar Beast,墜星獸物,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5061,Large Lamprey,,未找到,参考实现与法魂本体都没有它的中文名
+c5551,Colossal Fingercreeper,,未找到,参考实现与法魂本体都没有它的中文名
+c5120,Bayle the Dread,「狂龍」貝勒,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
+c5370,Ancient Dragon Senessax,「古龍」瑟涅桑克斯,zh.enemy.json/boss_names,参考实现自带的 Boss 中英对照（繁體）
