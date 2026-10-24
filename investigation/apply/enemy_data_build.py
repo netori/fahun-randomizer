@@ -429,7 +429,8 @@ def apply_layer(rows, cfg, npc=None):
     ov_models = ov.get("models") or {}
     ov_places = {(x["map"], x["part_name"], int(x.get("occurrence", 1))): x
                  for x in (ov.get("places") or [])}
-    # 多阶段 Boss：一场战斗的两阶段，v1 一律 keep（证据见 M0 报告 §5.2）
+    # 多阶段 Boss：一场战斗的两阶段。位置表里仍标 keep（数据层不做随机），
+    # v1.3.15 起由计划层 _multiphase_plan 统一按 yaml swap/swap_entities 决定换哪些实体。
     mp_of = {}
     for grp in ((cfg.get("multiphase") or {}).get("groups") or []):
         for ent in (grp.get("phases") or []):
@@ -1158,13 +1159,42 @@ def check(yaml_path=None):
                 if r["policy"] != "keep":
                     fails.append("多阶段组 %s：%s/%s 被标成 %s（只换一阶段=半只 Boss）" % (
                         gid, gmap, r["part_name"], r["policy"]))
-                if grp.get("swap") and "pair" in (r.get("evt") or ""):
-                    fails.append("多阶段组 %s 开了 swap，但 %s 有 CreateReferredDamagePair 绑定"
-                                 "（整组换会重演安塞尔河坏档）：%s" % (
-                                     gid, r["part_name"], r.get("evt")))
-        if grp.get("swap") and str(grp.get("kind") or "phase") != "phase":
-            fails.append("多阶段组 %s 开了 swap，但 kind=%s（只有 phase 组能整组换）" % (
-                gid, grp.get("kind")))
+                # pair 检查挪到下面「真正要换的实体」上：辅助组不换的血条助手/坐骑保留 pair 没问题。
+        # v1.3.15：swap_entities = 真正要被换掉的实体（缺省 = phases）。辅助组只换真身
+        # （血条助手 / HP 壳 / 坐骑 / 事件共用实体不动），所以非 phase 组必须显式写。
+        sw_ents = grp.get("swap_entities")
+        if sw_ents is not None:
+            if not sw_ents:
+                fails.append("多阶段组 %s 的 swap_entities 是空的（要么不写，缺省用 phases）" % gid)
+            sw_seen = set()
+            for ent in sw_ents:
+                k = (gmap, int(ent))
+                if k in sw_seen:
+                    fails.append("多阶段组 %s 的 swap_entities 重复：%s/%s" % (gid, gmap, ent))
+                sw_seen.add(k)
+                hit = [r for r in tab.values()
+                       if r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)]
+                if not hit:
+                    fails.append("多阶段组 %s 的 swap_entities 实体 %s/%s 在位置表里找不到" % (
+                        gid, gmap, ent))
+                for r in hit:
+                    if r["policy"] != "keep":
+                        fails.append("多阶段组 %s 的 swap_entities 实体 %s 被标成 %s"
+                                     "（要被换掉的位置在数据层仍是 keep，由计划层接管）" % (
+                                         gid, r["part_name"], r["policy"]))
+        if grp.get("swap") and str(grp.get("kind") or "phase") != "phase" and not sw_ents:
+            fails.append("多阶段组 %s 开了 swap，但 kind=%s 且没写 swap_entities"
+                         "（辅助组必须明确指出换哪个真身）" % (gid, grp.get("kind")))
+        # 真正要换的实体若被 CreateReferredDamagePair 绑定，必须显式认账（pair: true → 组内同换）
+        if grp.get("swap"):
+            _real = sw_ents if sw_ents is not None else (grp.get("phases") or [])
+            for ent in _real:
+                for r in tab.values():
+                    if (r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)
+                            and "pair" in (r.get("evt") or "") and not grp.get("pair")):
+                        fails.append("多阶段组 %s 要换的 %s 有 CreateReferredDamagePair 绑定"
+                                     "（整组换会重演安塞尔河坏档；确认要换请显式写 pair: true）：%s" % (
+                                         gid, r["part_name"], r.get("evt")))
         # v1.3.14：sources = 允许当「来源」的实体（缺省 = phases）。真身不在 phases 里的组
         # （幽影树化身 800）显式写；这些位置也必须 keep（当来源 != 可当目标）。
         src_ents = grp.get("sources")
@@ -1189,8 +1219,11 @@ def check(yaml_path=None):
                                          gid, r["part_name"], r["policy"]))
     swap_n = sum(1 for g in mp_groups if g.get("swap"))
     src_n = sum(len(g.get("sources") or g.get("phases") or []) for g in mp_groups)
-    print("multiphase: %d 组 / %d 个位置（必须全部 keep；其中 %d 组开了整组替换，"
-          "%d 个实体可当来源）" % (len(mp_groups), len(seen_mp), swap_n, src_n))
+    swap_units = sum(len(g.get("swap_entities") or g.get("phases") or [])
+                     for g in mp_groups if g.get("swap"))
+    print("multiphase: %d 组 / %d 个位置（数据层全部 keep；其中 %d 组开了位置替换 = "
+          "%d 个实体，%d 个实体可当来源）" % (
+              len(mp_groups), len(seen_mp), swap_n, swap_units, src_n))
 
     # ⑤c 重复 MSB（已封印/未封印两份）：同一物理位置必须成组，且 link 列自洽
     kg = collections.defaultdict(list)

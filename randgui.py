@@ -1428,14 +1428,11 @@ class App:
             self.ev1_pools[_pid] = _pv
             GoldCheck(_prow, text=_ptxt, variable=_pv,
                       command=self._ev1_status_refresh).pack(side="left", padx=(0, px(14)))
-        self.ev1_mp = tk.BooleanVar(value=False)
-        GoldCheck(b0, text="多阶段BOSS整组替换（实验：蕾娜菈 / 拉卡德 / 达格拉夫 / 拉达冈 / 玛莲妮亚）",
-                  variable=self.ev1_mp,
-                  command=self._ev1_status_refresh).pack(anchor="w", pady=(px(8), 0))
-        self.ev1_mp_src = tk.BooleanVar(value=True)
-        GoldCheck(b0, text="多阶段BOSS也能当来源（默认开：玛莲妮亚 / 拉达冈 / 艾尔登之兽 / 梅瑟莫 等可以换到别处）",
-                  variable=self.ev1_mp_src,
-                  command=self._ev1_status_refresh).pack(anchor="w", pady=(px(2), 0))
+        # v1.3.15：多阶段 Boss 的位置默认也参与替换、身份也可当来源，两件事常开，不再给开关。
+        tk.Label(b0, text="多阶段BOSS：位置默认也参与替换（14 组，含二阶段 / 辅助真身），身份也可当来源；"
+                          "这一项默认常开，不提供开关。",
+                 bg=BG, fg=SUB, font=FONT_MICRO, justify="left",
+                 wraplength=px(980)).pack(anchor="w", pady=(px(8), 0))
         # 参考实现敌人页的安全/演出开关（写盘层消费；默认按安全值）
         self.ev1_bar_names = tk.BooleanVar(value=True)
         self.ev1_night = tk.BooleanVar(value=False)
@@ -1702,9 +1699,9 @@ class App:
             mult = 1.0
         opts = {"pools": pools, "rates": {"multiplier": max(0.0, min(1.0, mult))},
                 "constraints": {
-                    "multiphase_swap": bool(getattr(self, "ev1_mp", None) and self.ev1_mp.get()),
-                    "multiphase_as_source": bool(getattr(self, "ev1_mp_src", None)
-                                                 and self.ev1_mp_src.get()),
+                    # v1.3.15：多阶段 Boss 的位置默认也换、身份也能当来源；常开，界面无开关。
+                    "multiphase_swap": True,
+                    "multiphase_as_source": True,
                     "ignore_size": bool(getattr(self, "ev1_ignore_size", None) and self.ev1_ignore_size.get()),
                 },
                 "features": {
@@ -2250,10 +2247,8 @@ class App:
                            [c for c in classes if counts.get(c, 0) > 0
                             and c not in ("Dummy", "None", "Helper", "DupeOnly")],
                            "合并全敌人")).pack(side="left", padx=(px(8), 0))
-            GoldCheck(right, text="多阶段首领整组替换（实验）", variable=self.ev1_mp,
-                      command=self._ev1_status_refresh).pack(anchor="w", pady=(px(12), 0))
-            GoldCheck(right, text="多阶段首领也能当来源（默认开）", variable=self.ev1_mp_src,
-                      command=self._ev1_status_refresh).pack(anchor="w", pady=(px(2), 0))
+            tk.Label(right, text="多阶段首领：位置默认也换、身份也能当来源（常开，无开关）",
+                     bg=BG, fg=SUB, font=FONT_MICRO).pack(anchor="w", pady=(px(12), 0))
             tk.Label(right, text="参与池（池只决定哪些位置参与；具体换谁由下面类别规则决定）",
                      bg=BG, fg=GOLD, font=FONT_MICRO).pack(anchor="w", pady=(px(14), px(4)))
             prow = tk.Frame(right, bg=BG)
@@ -2263,7 +2258,7 @@ class App:
                 GoldCheck(prow, text=_pnames.get(_pid, _pid), variable=_pv,
                           command=self._ev1_status_refresh).pack(side="left", padx=(0, px(12)))
             tk.Label(right, text="注意：黄金树传送门守卫 / 本来有BOSS血条的位置 / 多阶段BOSS组由特殊规则先接管，"
-                                 "类别预设不会改变它们能不能换；多阶段 Boss 的身份能不能当来源看上面的开关。",
+                                 "类别预设不会改变它们能不能换；多阶段 Boss 的位置与身份都默认参与（常开）。",
                      bg=BG, fg=MUTED, font=FONT_MICRO, wraplength=px(700),
                      justify="left").pack(anchor="w", pady=(px(14), 0))
 
@@ -5421,22 +5416,10 @@ def uitest():
         ck("敌人页 v1：池开关与比例进了 options",
            set(_o.get("pools", {})) == {"waygate", "keystone", "remembrance", "reliquary"}
            and "multiplier" in (_o.get("rates") or {}), repr(_o))
-        ck("敌人页 v1：多阶段整组替换开关默认关、能进 options",
-           hasattr(app, "ev1_mp")
-           and (_o.get("constraints") or {}).get("multiphase_swap") is False, repr(_o))
-        app.ev1_mp.set(True)
-        _o2 = app._ev1_options()
-        ck("敌人页 v1：勾上多阶段后 constraints.multiphase_swap=True",
-           (_o2.get("constraints") or {}).get("multiphase_swap") is True, repr(_o2))
-        ck("敌人页 v1：多阶段BOSS当来源默认开、能进 options",
-           hasattr(app, "ev1_mp_src") and app.ev1_mp_src.get() is True
+        ck("敌人页 v1：多阶段位置默认也换、身份也能当来源，且没有开关（constraints 恒真）",
+           (not hasattr(app, "ev1_mp")) and (not hasattr(app, "ev1_mp_src"))
+           and (_o.get("constraints") or {}).get("multiphase_swap") is True
            and (_o.get("constraints") or {}).get("multiphase_as_source") is True, repr(_o))
-        app.ev1_mp_src.set(False)
-        ck("敌人页 v1：关掉后 constraints.multiphase_as_source=False",
-           (app._ev1_options().get("constraints") or {}).get("multiphase_as_source") is False,
-           repr(app._ev1_options().get("constraints")))
-        app.ev1_mp_src.set(True)
-        app.ev1_mp.set(False)
 
         # ── 方案库「用这个方案玩」+ 每方案独立存档（2026-10-23）──
         ck("方案库详情：多出「存档」两行（方案存档 / 游戏存档）",
@@ -5570,7 +5553,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
                        "enemy_cls_rates", "enemy_hint", "enemy_sub")
           if hasattr(app, a)]
     ck("敌人页：旧管线（v0）的死表单已删干净", not _v0, f"残留={_v0}")
-    _v1 = ("ev1_pools", "ev1_mult", "ev1_mp", "ev1_mp_src", "ev1_bar_names", "ev1_night",
+    _v1 = ("ev1_pools", "ev1_mult", "ev1_bar_names", "ev1_night",
            "ev1_ignore_size", "ev1_bgm", "ev1_soul", "ev1_rainbow", "ev1_scale",
            "ev1_oops", "ev1_ons", "ev1_seed", "ev1_overlay", "ev1_hint")
     ck("敌人页：v1 控件齐（特殊池 4 个 + 8 个开关 + 3 个滑块 + 种子）",
@@ -5607,9 +5590,11 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and abs(_o0["rates"]["multiplier"] - 1.0) < 1e-6
        and abs(_o0["scaling"]["hp"] - 1.0) < 1e-6,
        f"{_o0.get('pools')}")
-    ck("v1：安全默认值（血条名开、多阶段整组关但可当来源、夜间关、忽略体型关、纯方案层开）",
-       app.ev1_bar_names.get() is True and app.ev1_mp.get() is False
-       and app.ev1_mp_src.get() is True
+    ck("v1：安全默认值（血条名开、多阶段常开且无开关、夜间关、忽略体型关、纯方案层开）",
+       app.ev1_bar_names.get() is True
+       and (not hasattr(app, "ev1_mp")) and (not hasattr(app, "ev1_mp_src"))
+       and app._ev1_options()["constraints"]["multiphase_swap"] is True
+       and app._ev1_options()["constraints"]["multiphase_as_source"] is True
        and app.ev1_night.get() is False and app.ev1_ignore_size.get() is False
        and app.ev1_overlay.get() is True, "默认值不对")
     app.ev1_mult.set(0.4); app.ev1_scale.set(1.5); root.update()
@@ -5617,9 +5602,9 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("v1：比例 / 血量倍率进了选项",
        abs(_o1["rates"]["multiplier"] - 0.4) < 1e-6
        and abs(_o1["scaling"]["hp"] - 1.5) < 1e-6, f"{_o1.get('scaling')}")
-    app.ev1_pools["waygate"].set(False); app.ev1_mp.set(True); root.update()
+    app.ev1_pools["waygate"].set(False); root.update()
     _o2 = app._ev1_options()
-    ck("v1：关一个特殊池 / 开多阶段都如实进选项",
+    ck("v1：关一个特殊池如实进选项；多阶段常开",
        _o2["pools"]["waygate"] is False
        and _o2["constraints"]["multiphase_swap"] is True, f"{_o2.get('constraints')}")
     app.ev1_oops.set(ENEMY_CLASS_CN["Boss"]); root.update()
@@ -5627,7 +5612,7 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        app._ev1_options().get("oops_all") == "Boss",
        f"{app._ev1_options().get('oops_all')}")
     app.ev1_oops.set("不启用（按规则表）")
-    app.ev1_pools["waygate"].set(True); app.ev1_mp.set(False)
+    app.ev1_pools["waygate"].set(True)
     app.ev1_mult.set(1.0); app.ev1_scale.set(1.0)
     app._ev1_status_refresh(); root.update()
     _ow = app.outer_what.cget("text")

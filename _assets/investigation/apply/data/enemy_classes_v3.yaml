@@ -135,24 +135,30 @@ multiphase:
   # kind： phase = 真阶段（换阶段事件按顺序绑）；helper = 血条/辅助实体；mount = 坐骑；dummy = HP 壳
   # sources：允许当「来源」的实体（v1.3.14；缺省 = phases）。个别组的真身不在 phases 里
   #   （如幽影树化身 800 是本体、810-812 是血条助手），显式列出；HP 壳/坐骑/帮忙实体不列。
-  # swap： true = 允许 v1.1「整组替换」。只给**无 pair 绑定**的 5 组开；
-  #        有 CreateReferredDamagePair 的 4 组（godfrey/maliketh/radahn/fire_giant）保持 false
-  #        —— pair 是 2026-10-21 安塞尔河坏档的根因（骑手/坐骑互换后读档崩溃）。
+  # swap： v1.3.15 起 14 组全部 true —— 这些位置本身也参与随机（默认开，界面不提供开关）。
+  #        有 CreateReferredDamagePair 的 5 组（godfrey/maliketh/radahn/messmer/fire_giant）
+  #        历史上因 2026-10-21 安塞尔河坏档一度关掉；现按用户要求默认换，pair 两端一起换
+  #        （pair 关系不动；pair 组统一按 one_boss 处理：两个位置换成同一个 Boss）。
+  # swap_entities：真正要被换掉的实体（缺省 = phases）。辅助组只换真身：
+  #        血条助手 / HP 壳 / 坐骑 / 事件共用实体保持原样。
+  # pair： true = 该组带 CreateReferredDamagePair，按用户要求仍换（v1.3.15）；能同换的
+  #        一起换（godfrey 等 phase 组、godskin 壳+真身），换不了的辅助体（坐骑/血条助手）
+  #        保持原样，pair 靠实体 id 维持。这是已认账的风险项，出问题回退 multiphase_swap。
   groups:
-    - {id: godfrey_horah,       map: m11_05_00_00, phases: [11050800, 11050801], kind: phase, swap: false, sources: [11050800, 11050801]}  # 葛孚雷 → 荷莱·露（pair）
-    - {id: maliketh_beast,      map: m13_00_00_00, phases: [13000801, 13000800], kind: phase, swap: false, sources: [13000801, 13000800]}  # 野兽祭司 → 玛利喀斯（pair）
+    - {id: godfrey_horah,       map: m11_05_00_00, phases: [11050800, 11050801], kind: phase, swap: true, pair: true, sources: [11050800, 11050801]}  # 葛孚雷 → 荷莱·露（pair）
+    - {id: maliketh_beast,      map: m13_00_00_00, phases: [13000801, 13000800], kind: phase, swap: true, pair: true, sources: [13000801, 13000800]}  # 野兽祭司 → 玛利喀斯（pair）
     - {id: rennala,             map: m14_00_00_00, phases: [14000801, 14000800], kind: phase, swap: true, sources: [14000800, 14000801]}   # 蕾娜菈：一阶段 800 / 二阶段 801
     - {id: rykard_serpent,      map: m16_00_00_00, phases: [16000801, 16000800], kind: phase, swap: true, sources: [16000801, 16000800]}   # 噬神大蛇 801 → 拉卡德 800
     - {id: daergraf,            map: m17_00_00_00, phases: [17000800, 17000810], kind: phase, swap: true, sources: [17000800, 17000810]}   # 地底大法师 → 伪龙王
     - {id: radagon_eldenbeast,  map: m19_00_00_00, phases: [19000810, 19000800], kind: phase, swap: true, sources: [19000810, 19000800]}   # 拉达冈 810 → 艾尔登之兽 800
-    - {id: radahn_consort,      map: m20_01_00_00, phases: [20010800, 20010801], kind: phase, swap: false, sources: [20010800, 20010801]}  # 拉塔恩 两阶段（pair）
-    - {id: messmer,             map: m21_01_00_00, phases: [21010800, 21010801], kind: phase, swap: false, sources: [21010800, 21010801]}  # 梅瑟莫 两阶段（pair）
+    - {id: radahn_consort,      map: m20_01_00_00, phases: [20010800, 20010801], kind: phase, swap: true, pair: true, sources: [20010800, 20010801]}  # 拉塔恩 两阶段（pair）
+    - {id: messmer,             map: m21_01_00_00, phases: [21010800, 21010801], kind: phase, swap: true, pair: true, sources: [21010800, 21010801]}  # 梅瑟莫 两阶段（pair）
     - {id: malenia,             map: m15_00_00_00, phases: [15000800, 15000806], kind: phase, swap: true, sources: [15000800, 15000806]}   # 玛莲妮亚 → 腐败女神（15000806 注释 "Phase 2 Malenia"）
-    - {id: godskin_scion,       map: m12_01_00_00, phases: [12010810, 12010812], kind: dummy, swap: false, sources: [12010812]}  # 12010812 真身，12010810 是 ScionHpDummy
-    - {id: fire_giant,          map: m60_13_13_02, phases: [1052520800, 1052520801], kind: phase, swap: false, sources: [1052520800, 1052520801]}  # pair + 拆 NPCPart
-    - {id: scadutree,           map: m61_50_48_00, phases: [2050480810, 2050480811, 2050480812], kind: helper, swap: false, sources: [2050480800]}  # 真身 800（evt:pair）；810-812 是三阶段血条助手
-    - {id: putrescent,          map: m22_00_00_00, phases: [22000800, 22000801], kind: mount, swap: false, sources: [22000800]}   # 融泥骑士（800）；801 是坐骑
-    - {id: midra,               map: m28_00_00_00, phases: [28000800, 28000801], kind: helper, swap: false, sources: [28000800]}  # 米德拉本体（800）；801 被三个事件共用
+    - {id: godskin_scion,       map: m12_01_00_00, phases: [12010810, 12010812], kind: dummy, swap: true, pair: true, swap_entities: [12010810, 12010812], sources: [12010812]}  # 12010812 真身 + 12010810 ScionHpDummy（两者 pair，必须同换）
+    - {id: fire_giant,          map: m60_13_13_02, phases: [1052520800, 1052520801], kind: phase, swap: true, pair: true, sources: [1052520800, 1052520801]}  # pair + 拆 NPCPart
+    - {id: scadutree,           map: m61_50_48_00, phases: [2050480810, 2050480811, 2050480812], kind: helper, swap: true, pair: true, swap_entities: [2050480800], sources: [2050480800]}  # 真身 800（evt:pair，按用户要求照换）；810-812 是三阶段血条助手
+    - {id: putrescent,          map: m22_00_00_00, phases: [22000800, 22000801], kind: mount, swap: true, pair: true, swap_entities: [22000800], sources: [22000800]}   # 融泥骑士（800，evt:pair，按用户要求照换）；801 是坐骑
+    - {id: midra,               map: m28_00_00_00, phases: [28000800, 28000801], kind: helper, swap: true, swap_entities: [28000800], sources: [28000800]}  # 米德拉本体（800）；801 被三个事件共用
 
 # ── 池（法魂专属；只决定"界面给玩家勾哪一行"，不限制候选）─────────────────────
 pools:
