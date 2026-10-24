@@ -1,120 +1,120 @@
 ﻿model,ref_class,ref_class_top,n_entries,multi,unkillable,size,arena,perceptive,extra_names
-c0000,None×273/HostileNPC×54/Helper×22/MinorBoss×11/Basic×6/Boss×3/Evergaol×2,None,371,1,1,2,1,1,"Adan, Thief of Fire、Ancient Dragon-Man、Count Ymir, Mother of Fingers"
+c0000,None×273/HostileNPC×54/Helper×22/MinorBoss×11/Basic×6/Boss×3/Evergaol×2,None,371,1,0,2,1,1,"Adan, Thief of Fire、Ancient Dragon-Man、Count Ymir, Mother of Fingers"
 c0100,None×382/Helper×3,None,385,1,0,,,0,
 c0120,None×13,None,13,0,0,,,0,
 c0130,None×12,None,12,0,0,,,0,
 c1000,None×777/Helper×3,None,780,1,0,,,0,
-c2010,None×10/Basic×1,None,11,0,1,,,0,Baleful Shadow
-c2030,None×2/Boss×1,None,3,1,1,2,,1,Rennala 1
-c2031,Boss×1,Boss,1,1,1,2,3,1,Rennala 2
+c2010,None×10/Basic×1,None,11,0,0,,,0,Baleful Shadow
+c2030,None×2/Boss×1,None,3,1,0,2,,1,Rennala 1
+c2031,Boss×1,Boss,1,1,0,2,3,1,Rennala 2
 c2040,Helper×28,Helper,28,1,0,,,1,
 c2041,Basic×38,Basic,38,0,0,,,0,
 c2050,None×3,None,3,0,0,,,0,
 c2060,None×1,None,1,0,0,,,0,
-c2100,None×9/Basic×5/MinorBoss×3/Evergaol×1/Miniboss×1/Helper×1,None,20,0,1,1,0,1,"Alecto, Black Knife Ringleader、Black Knife Assassin Boss、Invisible Black Knife Assassin Boss"
-c2110,Boss×2/None×1,Boss,3,0,1,1,3,1,"Beast Clergyman、Maliketh, the Black Blade"
-c2120,Helper×5/Boss×1,Helper,6,1,1,2,3,1,"Malenia, Blade of Miquella"
-c2130,Boss×2/Basic×1,Boss,3,0,1,2,1,1,"Capital Outskirts Margit、Margit, the Fell Omen、Morgott, the Omen King"
+c2100,None×9/Basic×5/MinorBoss×3/Evergaol×1/Miniboss×1/Helper×1,None,20,0,0,1,0,1,"Alecto, Black Knife Ringleader、Black Knife Assassin Boss、Invisible Black Knife Assassin Boss"
+c2110,Boss×2/None×1,Boss,3,0,0,1,3,1,"Beast Clergyman、Maliketh, the Black Blade"
+c2120,Helper×5/Boss×1,Helper,6,1,0,2,3,1,"Malenia, Blade of Miquella"
+c2130,Boss×2/Basic×1,Boss,3,0,0,2,1,1,"Capital Outskirts Margit、Margit, the Fell Omen、Morgott, the Omen King"
 c2131,None×1,None,1,0,0,,,0,
-c2140,Basic×32/MinorBoss×1/Helper×1,Basic,34,1,1,2,3,1,Fell Twin、Fell Twin Duo
-c2150,Basic×34,Basic,34,0,0,,,0,
+c2140,Basic×32/MinorBoss×1/Helper×1,Basic,34,1,0,2,3,1,Fell Twin、Fell Twin Duo
+c2150,Basic×34,Basic,34,0,1,,,0,
 c2160,None×8,None,8,0,0,,,0,
 c2170,None×1,None,1,0,0,,,0,
 c2180,None×1,None,1,0,0,,,0,
-c2190,Boss×1,Boss,1,0,1,1,3,1,Radagon of the Golden Order
-c2200,Boss×1,Boss,1,0,1,3,3,1,Elden Beast
+c2190,Boss×1,Boss,1,0,0,1,3,1,Radagon of the Golden Order
+c2200,Boss×1,Boss,1,0,0,3,3,1,Elden Beast
 c2270,Basic×22,Basic,22,0,0,,,0,
 c2271,Wildlife×136,Wildlife,136,0,0,,,0,
 c2272,Basic×3,Basic,3,0,0,,,0,
 c2273,Wildlife×15,Wildlife,15,0,0,,,0,
 c2274,Basic×21,Basic,21,0,0,,,0,
-c2275,Wildlife×197,Wildlife,197,0,1,,,0,
+c2275,Wildlife×197,Wildlife,197,0,0,,,0,
 c2276,Basic×2,Basic,2,0,0,,,0,
 c2277,Wildlife×12,Wildlife,12,0,0,,,0,
-c2500,Helper×11/Basic×9/MinorBoss×2/Miniboss×1/None×1/Evergaol×1,Helper,25,1,1,2,,1,Crucible Knight、Crucible Knight Boss、Crucible Knight Duo
+c2500,Helper×11/Basic×9/MinorBoss×2/Miniboss×1/None×1/Evergaol×1,Helper,25,1,0,2,,1,Crucible Knight、Crucible Knight Boss、Crucible Knight Duo
 c3000,Basic×105/Helper×5,Basic,110,1,0,,,1,
-c3010,Basic×31/Helper×2/None×1,Basic,34,1,1,,,1,
+c3010,Basic×31/Helper×2/None×1,Basic,34,1,0,,,1,
 c3020,Basic×12/Helper×3,Basic,15,1,0,,,0,
-c3050,Miniboss×1/Boss×1,Miniboss,2,1,1,2,,1,Commander Niall、Commander O'Neil
+c3050,Miniboss×1/Boss×1,Miniboss,2,1,0,2,,1,Commander Niall、Commander O'Neil
 c3060,Basic×13,Basic,13,0,0,,,0,
 c3061,Basic×8,Basic,8,0,0,,,0,
-c3070,Basic×39,Basic,39,0,1,,,0,
-c3080,Basic×176/Helper×4/DupeOnly×2,Basic,182,1,1,,,1,
-c3100,NightMiniboss×4/MinorBoss×1,NightMiniboss,5,0,1,,2,1,Bell Bearing Hunter、Elemer of the Briar
-c3150,NightMiniboss×8,NightMiniboss,8,1,1,,2,0,Night's Cavalry
+c3070,Basic×39,Basic,39,0,0,,,0,
+c3080,Basic×176/Helper×4/DupeOnly×2,Basic,182,1,0,,,1,
+c3100,NightMiniboss×4/MinorBoss×1,NightMiniboss,5,0,0,,2,1,Bell Bearing Hunter、Elemer of the Briar
+c3150,NightMiniboss×8,NightMiniboss,8,1,0,,2,0,Night's Cavalry
 c3160,Helper×8,Helper,8,1,0,,,0,
-c3170,Basic×21/None×2,Basic,23,1,1,,,1,
+c3170,Basic×21/None×2,Basic,23,1,0,,,1,
 c3171,None×1,None,1,0,0,,,0,
 c3180,Basic×6/Helper×3/None×1,Basic,10,1,0,,,0,
-c3181,Basic×4/Boss×1/MinorBoss×1,Basic,6,0,1,2,,1,Red Wolf of Radagon、Red Wolf of the Champion
+c3181,Basic×4/Boss×1/MinorBoss×1,Basic,6,0,0,2,,1,Red Wolf of Radagon、Red Wolf of the Champion
 c3200,None×19,None,19,0,0,,,0,
 c3201,Basic×8/None×2,Basic,10,0,0,,,0,
 c3210,None×15,None,15,0,0,,,0,
-c3250,Basic×1/Miniboss×1,Basic,2,0,1,2,,0,Draconic Tree Sentinel Boss
-c3251,Miniboss×3,Miniboss,3,0,1,,,0,Tree Sentinel
-c3252,Boss×2,Boss,2,0,1,,3,1,"Loretta, Knight of the Haligtree、Royal Knight Loretta"
-c3300,Basic×18/None×1/MinorBoss×1/Helper×1,Basic,21,1,1,2,1,1,Ant-Riding Nox Swordstress、Nox Duo、Nox Swordstress
+c3250,Basic×1/Miniboss×1,Basic,2,0,0,2,,0,Draconic Tree Sentinel Boss
+c3251,Miniboss×3,Miniboss,3,0,0,,,0,Tree Sentinel
+c3252,Boss×2,Boss,2,0,0,,3,1,"Loretta, Knight of the Haligtree、Royal Knight Loretta"
+c3300,Basic×18/None×1/MinorBoss×1/Helper×1,Basic,21,1,0,2,1,1,Ant-Riding Nox Swordstress、Nox Duo、Nox Swordstress
 c3320,Basic×100/Helper×9,Basic,109,1,0,,,1,
-c3330,Basic×4/DupeOnly×4,Basic,8,0,1,,,1,
-c3350,Basic×16/MinorBoss×4/Helper×4,Basic,24,1,1,2,1,0,Crystalian (Spear)、Crystalian Ringblade Spear Duo、Crystalian Staff Spear Duo
-c3360,Basic×89,Basic,89,0,1,,,1,
-c3370,Basic×6,Basic,6,0,1,,,0,
-c3400,Basic×4/MinorBoss×4/None×1,Basic,9,1,1,1,1,1,Frenzied Duelist、Grave Warden Duelist Boss、Putrid Grave Warden Duelist
+c3330,Basic×4/DupeOnly×4,Basic,8,0,0,,,1,
+c3350,Basic×16/MinorBoss×4/Helper×4,Basic,24,1,0,2,1,0,Crystalian (Spear)、Crystalian Ringblade Spear Duo、Crystalian Staff Spear Duo
+c3360,Basic×89,Basic,89,0,0,,,1,
+c3370,Basic×6,Basic,6,0,0,,,0,
+c3400,Basic×4/MinorBoss×4/None×1,Basic,9,1,0,1,1,1,Frenzied Duelist、Grave Warden Duelist Boss、Putrid Grave Warden Duelist
 c3450,Basic×114,Basic,114,0,0,,,0,
-c3451,Basic×21/None×4/MinorBoss×1,Basic,26,0,1,,,0,Scaly Misbegotten Boss
-c3460,Basic×4/MinorBoss×2/Boss×1/Helper×1,Basic,8,1,1,1,1,1,Leonine Misbegotten Boss、Misbegotten Crusader、Misbegotten Perfumer Duo
+c3451,Basic×21/None×4/MinorBoss×1,Basic,26,0,0,,,0,Scaly Misbegotten Boss
+c3460,Basic×4/MinorBoss×2/Boss×1/Helper×1,Basic,8,1,0,1,1,1,Leonine Misbegotten Boss、Misbegotten Crusader、Misbegotten Perfumer Duo
 c3470,Basic×169,Basic,169,0,0,,,1,
-c3471,Basic×20,Basic,20,0,1,,,0,
+c3471,Basic×20,Basic,20,0,0,,,0,
 c3500,Basic×262/Helper×29,Basic,291,0,0,,,1,
 c3510,Basic×73/Helper×3,Basic,76,1,0,,,1,
-c3550,Basic×7/MinorBoss×1,Basic,8,0,1,1,1,0,Sanguine Noble Boss
-c3560,Helper×2/Boss×1/MinorBoss×1/Miniboss×1,Helper,5,1,1,2,1,1,Godskin Apostle、Godskin Duo
-c3570,Helper×2/Boss×1/Basic×1,Helper,4,1,1,2,,1,Godskin Noble、Godskin Noble Boss
-c3600,Basic×6/MinorBoss×1/Evergaol×1,Basic,8,0,1,,1,1,Onyx Lord Boss
-c3610,Basic×37,Basic,37,0,1,,,0,
+c3550,Basic×7/MinorBoss×1,Basic,8,0,0,1,1,0,Sanguine Noble Boss
+c3560,Helper×2/Boss×1/MinorBoss×1/Miniboss×1,Helper,5,1,0,2,1,1,Godskin Apostle、Godskin Duo
+c3570,Helper×2/Boss×1/Basic×1,Helper,4,1,0,2,,1,Godskin Noble、Godskin Noble Boss
+c3600,Basic×6/MinorBoss×1/Evergaol×1,Basic,8,0,0,,1,1,Onyx Lord Boss
+c3610,Basic×37,Basic,37,0,0,,,0,
 c3620,Basic×7,Basic,7,0,0,,,0,
 c3630,Basic×3,Basic,3,0,0,,,1,
 c3650,Basic×99,Basic,99,0,0,,,0,
-c3660,Basic×156/None×17,Basic,173,0,1,,,0,
+c3660,Basic×156/None×17,Basic,173,0,0,,,0,
 c3661,Basic×530/None×6/Helper×1,Basic,537,0,0,,,0,
 c3662,Basic×30,Basic,30,0,0,,,1,
-c3664,MinorBoss×3/Basic×1,MinorBoss,4,1,1,1,1,1,Cemetery Shade Boss、Cemetery Shade and Skeletons
+c3664,MinorBoss×3/Basic×1,MinorBoss,4,1,0,1,1,1,Cemetery Shade Boss、Cemetery Shade and Skeletons
 c3665,None×7,None,7,0,0,,,0,
 c3666,None×4,None,4,0,0,,,0,
 c3670,Basic×72/None×3,Basic,75,0,0,,,0,
 c3700,Basic×9,Basic,9,0,0,,,0,
 c3701,Basic×20/Helper×1/None×1,Basic,22,1,0,,,0,Perfumer Tricia
-c3702,Basic×72,Basic,72,0,1,,,1,
+c3702,Basic×72,Basic,72,0,0,,,1,
 c3703,Basic×21,Basic,21,0,0,,,0,
-c3704,Basic×5/Evergaol×1,Basic,6,0,1,,,1,Battlemage Hugues
+c3704,Basic×5/Evergaol×1,Basic,6,0,0,,,1,Battlemage Hugues
 c3710,None×1,None,1,0,0,,,0,
 c3720,None×1,None,1,0,0,,,0,
 c3730,Basic×14/None×1,Basic,15,0,0,,,0,
 c3750,Basic×128,Basic,128,0,0,,,0,
-c3800,Basic×36/MinorBoss×2/None×2/Helper×1,Basic,41,1,1,2,1,0,Cleanrot Knight (Sickle)、Cleanrot Knight Boss、Cleanrot Knight Duo
-c3810,Basic×53/MinorBoss×1/Helper×1/None×1,Basic,56,1,1,1,1,0,Kindred of Rot、Kindred of Rot Duo
+c3800,Basic×36/MinorBoss×2/None×2/Helper×1,Basic,41,1,0,2,1,0,Cleanrot Knight (Sickle)、Cleanrot Knight Boss、Cleanrot Knight Duo
+c3810,Basic×53/MinorBoss×1/Helper×1/None×1,Basic,56,1,0,1,1,0,Kindred of Rot、Kindred of Rot Duo
 c3850,Basic×143,Basic,143,0,0,,,1,
-c3860,Basic×34,Basic,34,0,1,,,1,
+c3860,Basic×34,Basic,34,0,0,,,1,
 c3900,Basic×15,Basic,15,0,0,,,0,
 c3901,Basic×3,Basic,3,0,0,,,0,
-c3910,Basic×4,Basic,4,0,1,,,0,
+c3910,Basic×4,Basic,4,0,0,,,0,
 c3950,Basic×16/None×2,Basic,18,0,0,,,0,
-c3970,Basic×55/MinorBoss×2/Helper×1,Basic,58,1,1,2,,1,Beastman of Farum Azula (Throwing Knife)、Beastman of Farum Azula Boss、Beastman of Farum Azula Duo
+c3970,Basic×55/MinorBoss×2/Helper×1,Basic,58,1,0,2,,1,Beastman of Farum Azula (Throwing Knife)、Beastman of Farum Azula Boss、Beastman of Farum Azula Duo
 c4000,Basic×153,Basic,153,0,0,,,0,
-c4020,Basic×15/MinorBoss×1,Basic,16,0,1,1,1,0,Royal Revenant Boss
-c4040,Basic×198,Basic,198,0,1,,,0,
+c4020,Basic×15/MinorBoss×1,Basic,16,0,0,1,1,0,Royal Revenant Boss
+c4040,Basic×198,Basic,198,0,0,,,0,
 c4050,Basic×18,Basic,18,1,0,,,0,
 c4060,Helper×7,Helper,7,1,0,,,0,
-c4070,Basic×294/Helper×4,Basic,298,1,1,,,1,
+c4070,Basic×294/Helper×4,Basic,298,1,0,,,1,
 c4071,Basic×73,Basic,73,0,0,,,1,
 c4080,Basic×173,Basic,173,0,0,,,0,
 c4090,Basic×20,Basic,20,0,0,,,0,
-c4100,Basic×224/Helper×7,Basic,231,1,1,,,0,
-c4101,Basic×22,Basic,22,0,1,,,1,
-c4110,Basic×28/None×8,Basic,36,0,1,,,0,
-c4120,Basic×10/MinorBoss×1/Helper×1,Basic,12,1,1,2,,0,Demi-Human Chief、Demi-Human Chief Duo
-c4130,MinorBoss×2/Miniboss×1/Basic×1,MinorBoss,4,0,1,,1,0,Demi-Human Queen Gilika、Demi-Human Queen Maggie、Demi-Human Queen Margot
-c4140,Basic×144/DupeOnly×9/Helper×3/MinorBoss×2,Basic,158,1,1,2,1,1,Crucible Spiritcaller Snail、Godskin Spiritcaller Snail
+c4100,Basic×224/Helper×7,Basic,231,1,0,,,0,
+c4101,Basic×22,Basic,22,0,0,,,1,
+c4110,Basic×28/None×8,Basic,36,0,0,,,0,
+c4120,Basic×10/MinorBoss×1/Helper×1,Basic,12,1,0,2,,0,Demi-Human Chief、Demi-Human Chief Duo
+c4130,MinorBoss×2/Miniboss×1/Basic×1,MinorBoss,4,0,0,,1,0,Demi-Human Queen Gilika、Demi-Human Queen Maggie、Demi-Human Queen Margot
+c4140,Basic×144/DupeOnly×9/Helper×3/MinorBoss×2,Basic,158,1,0,2,1,1,Crucible Spiritcaller Snail、Godskin Spiritcaller Snail
 c4150,Basic×134,Basic,134,0,0,,,0,
 c4160,Basic×11,Basic,11,0,0,,,0,
 c4161,Basic×113,Basic,113,0,0,,,0,
@@ -126,36 +126,36 @@ c4166,Basic×7,Basic,7,0,0,,,0,
 c4167,Basic×13,Basic,13,0,0,,,0,
 c4170,Basic×83,Basic,83,0,0,,,0,
 c4171,Basic×2,Basic,2,0,0,,,0,
-c4180,Basic×199/None×1,Basic,200,0,1,,,0,
-c4190,Scarab×4,Scarab,4,0,1,,,0,
-c4191,Scarab×177/Helper×1/None×1,Scarab,179,0,1,,,0,
-c4192,Scarab×8,Scarab,8,0,1,,,0,
-c4200,Basic×271,Basic,271,0,1,,,0,
-c4201,Basic×17/None×1,Basic,18,0,1,,,0,
+c4180,Basic×199/None×1,Basic,200,0,0,,,0,
+c4190,Scarab×4,Scarab,4,0,0,,,0,
+c4191,Scarab×177/Helper×1/None×1,Scarab,179,0,0,,,0,
+c4192,Scarab×8,Scarab,8,0,0,,,0,
+c4200,Basic×271,Basic,271,0,0,,,0,
+c4201,Basic×17/None×1,Basic,18,0,0,,,0,
 c4210,Basic×45,Basic,45,0,0,,,1,
-c4220,Basic×43,Basic,43,0,1,,,0,
+c4220,Basic×43,Basic,43,0,0,,,0,
 c4230,Basic×145/Helper×5,Basic,150,0,0,,,0,
-c4240,Basic×34,Basic,34,0,1,,,1,
+c4240,Basic×34,Basic,34,0,0,,,1,
 c4241,Basic×4,Basic,4,0,0,,,1,
 c4250,Basic×148,Basic,148,0,0,,,0,
-c4260,Basic×8/MinorBoss×5/Helper×1,Basic,14,1,1,1,1,1,Erdtree Burial Watchdog (Scepter)、Erdtree Burial Watchdog Duo、Erdtree Burial Watchdog and Imps
-c4270,Basic×9,Basic,9,0,1,,,1,
-c4280,Basic×110/Helper×5,Basic,115,1,1,,,0,
+c4260,Basic×8/MinorBoss×5/Helper×1,Basic,14,1,0,1,1,1,Erdtree Burial Watchdog (Scepter)、Erdtree Burial Watchdog Duo、Erdtree Burial Watchdog and Imps
+c4270,Basic×9,Basic,9,0,0,,,1,
+c4280,Basic×110/Helper×5,Basic,115,1,0,,,0,
 c4281,Basic×6,Basic,6,0,0,,,0,
-c4290,Basic×4/Helper×1/MinorBoss×1/Evergaol×1,Basic,7,1,1,,1,1,Bloodhound Knight Boss、Bloodhound Knight Darriwil
-c4300,Basic×433/None×36/Helper×4,Basic,473,0,1,,,1,
-c4311,Basic×78/MinorBoss×1,Basic,79,0,1,,0,1,Soldier of Godrick
+c4290,Basic×4/Helper×1/MinorBoss×1/Evergaol×1,Basic,7,1,0,,1,1,Bloodhound Knight Boss、Bloodhound Knight Darriwil
+c4300,Basic×433/None×36/Helper×4,Basic,473,0,0,,,1,
+c4311,Basic×78/MinorBoss×1,Basic,79,0,0,,0,1,Soldier of Godrick
 c4312,Basic×77/None×6,Basic,83,0,0,,,1,
 c4313,Basic×98,Basic,98,0,0,,,0,
 c4314,Basic×88,Basic,88,0,0,,,1,
 c4315,Basic×88,Basic,88,0,0,,,0,
 c4316,Basic×45,Basic,45,0,0,,,0,
 c4321,Basic×143,Basic,143,0,0,,,0,
-c4340,Basic×11/MinorBoss×2/Helper×1,Basic,14,1,1,1,0,1,Mad Pumpkin Head (Flail)、Mad Pumpkin Head Boss、Mad Pumpkin Head Duo
-c4351,Basic×5,Basic,5,1,1,,,0,
+c4340,Basic×11/MinorBoss×2/Helper×1,Basic,14,1,0,1,0,1,Mad Pumpkin Head (Flail)、Mad Pumpkin Head Boss、Mad Pumpkin Head Duo
+c4351,Basic×5,Basic,5,1,0,,,0,
 c4352,Basic×12,Basic,12,1,0,,,0,
-c4353,Basic×36,Basic,36,1,1,,,1,
-c4354,Basic×13,Basic,13,1,1,,,1,
+c4353,Basic×36,Basic,36,1,0,,,1,
+c4354,Basic×13,Basic,13,1,0,,,1,
 c4355,Basic×12,Basic,12,1,0,,,1,
 c4356,Basic×7,Basic,7,0,0,,,0,
 c4361,Helper×2,Helper,2,1,0,,,0,
@@ -163,15 +163,15 @@ c4362,Helper×7,Helper,7,1,0,,,0,
 c4363,Helper×5,Helper,5,1,0,,,0,
 c4364,Helper×1,Helper,1,1,0,,,0,
 c4365,Helper×3,Helper,3,1,0,,,0,
-c4371,Basic×53,Basic,53,1,1,,,1,
-c4372,Basic×62,Basic,62,1,1,,,0,
-c4373,Basic×136,Basic,136,1,1,,,1,
-c4374,Basic×44,Basic,44,1,1,,,1,
+c4371,Basic×53,Basic,53,1,0,,,1,
+c4372,Basic×62,Basic,62,1,0,,,0,
+c4373,Basic×136,Basic,136,1,0,,,1,
+c4374,Basic×44,Basic,44,1,0,,,1,
 c4375,Basic×3,Basic,3,0,0,,,0,
 c4376,Basic×9,Basic,9,1,0,,,1,
 c4377,Basic×7,Basic,7,0,0,,,0,
 c4380,Basic×20,Basic,20,0,0,,,0,
-c4381,Basic×60,Basic,60,0,1,,,0,
+c4381,Basic×60,Basic,60,0,0,,,0,
 c4382,Basic×68,Basic,68,0,0,,,0,
 c4383,Basic×52,Basic,52,0,0,,,0,
 c4384,Basic×3,Basic,3,0,0,,,0,
@@ -182,113 +182,113 @@ c4440,Basic×139,Basic,139,0,0,,,0,
 c4441,Basic×12,Basic,12,0,0,,,1,
 c4442,Basic×11,Basic,11,0,0,,,1,
 c4450,None×1,None,1,0,0,,,0,
-c4460,Basic×12,Basic,12,0,1,,,0,
-c4470,Basic×19/Helper×1/MinorBoss×1/None×1,Basic,22,1,1,2,,1,Abductor Virgin (Wheel)、Abductor Virgin Duo
-c4480,Basic×55/MinorBoss×2,Basic,57,1,1,1,0,0,Miranda Blossom and Sprouts、Miranda Omenkiller Duo
+c4460,Basic×12,Basic,12,0,0,,,0,
+c4470,Basic×19/Helper×1/MinorBoss×1/None×1,Basic,22,1,0,2,,1,Abductor Virgin (Wheel)、Abductor Virgin Duo
+c4480,Basic×55/MinorBoss×2,Basic,57,1,0,1,0,0,Miranda Blossom and Sprouts、Miranda Omenkiller Duo
 c4481,Basic×279/Helper×3,Basic,282,1,0,,,0,
 c4482,Basic×17,Basic,17,0,0,,,0,
 c4483,Basic×139,Basic,139,0,0,,,0,
-c4490,Basic×16/None×9,Basic,25,0,1,,,0,
+c4490,Basic×16/None×9,Basic,25,0,0,,,0,
 c4491,Basic×83/None×9/Helper×4,Basic,96,1,0,,,0,
-c4500,DragonMiniboss×2/Helper×1,DragonMiniboss,3,1,1,2,,1,Flying Dragon Agheel、Flying Dragon Greyll
-c4501,DragonMiniboss×1,DragonMiniboss,1,0,1,3,,1,Decaying Ekzykes
-c4502,Basic×3/DragonMiniboss×3,Basic,6,0,1,2,,1,Glintstone Dragon Adula、Glintstone Dragon Smarag
+c4500,DragonMiniboss×2/Helper×1,DragonMiniboss,3,1,0,2,,1,Flying Dragon Agheel、Flying Dragon Greyll
+c4501,DragonMiniboss×1,DragonMiniboss,1,0,0,3,,1,Decaying Ekzykes
+c4502,Basic×3/DragonMiniboss×3,Basic,6,0,0,2,,1,Glintstone Dragon Adula、Glintstone Dragon Smarag
 c4504,None×1,None,1,0,0,,,0,
-c4505,Basic×13,Basic,13,0,1,,,1,
-c4510,Basic×6/DragonMiniboss×2,Basic,8,0,1,2,,1,Ancient Dragon Lansseax
-c4511,Boss×1,Boss,1,0,1,2,3,1,Lichdragon Fortissax
-c4520,Boss×1,Boss,1,1,1,3,3,1,Dragonlord Placidusax
+c4505,Basic×13,Basic,13,0,0,,,1,
+c4510,Basic×6/DragonMiniboss×2,Basic,8,0,0,2,,1,Ancient Dragon Lansseax
+c4511,Boss×1,Boss,1,0,0,2,3,1,Lichdragon Fortissax
+c4520,Boss×1,Boss,1,1,0,3,3,1,Dragonlord Placidusax
 c4550,Basic×48/None×9,Basic,57,0,0,,,1,
 c4560,Basic×25/None×1,Basic,26,0,0,,,1,
 c4561,Basic×4,Basic,4,0,0,,,1,
 c4570,Basic×45,Basic,45,0,0,,,0,
-c4580,Basic×2/Miniboss×1,Basic,3,0,1,2,,0,Wormface Boss
-c4600,Basic×27/Helper×1/None×1,Basic,29,1,1,,,1,
-c4601,Basic×6/Evergaol×1,Basic,7,0,1,,,1,"Bols, Carian Knight"
-c4602,Basic×11,Basic,11,0,1,,,1,
-c4603,MinorBoss×2,MinorBoss,2,0,1,,,1,Stonedigger Troll
+c4580,Basic×2/Miniboss×1,Basic,3,0,0,2,,0,Wormface Boss
+c4600,Basic×27/Helper×1/None×1,Basic,29,1,0,,,1,
+c4601,Basic×6/Evergaol×1,Basic,7,0,0,,,1,"Bols, Carian Knight"
+c4602,Basic×11,Basic,11,0,0,,,1,
+c4603,MinorBoss×2,MinorBoss,2,0,0,,,1,Stonedigger Troll
 c4604,None×3,None,3,0,0,,,0,
-c4620,Helper×8/Basic×2/Boss×1/None×1/MinorBoss×1,Helper,13,1,1,2,3,1,"Astel, Naturalborn of the Void、Astel, Stars of Darkness、Withered Astel"
-c4630,Basic×27/MinorBoss×1,Basic,28,0,1,1,1,0,Runebear Boss
-c4640,Basic×8/MinorBoss×3/Miniboss×1,Basic,12,0,1,2,,1,Putrid Tree Spirit Boss、Ulcerated Tree Spirit Boss
-c4650,Basic×6/Helper×2/Miniboss×2/Boss×1,Basic,11,1,1,2,1,1,Dragonkin Soldier Boss、Dragonkin Soldier of Nokstella
-c4660,Basic×17/MinorBoss×1,Basic,18,0,1,2,,1,Guardian Golem Boss
-c4670,Boss×2,Boss,2,1,1,2,3,1,Ancestor Spirit、Regal Ancestor Spirit
-c4680,Miniboss×2/MinorBoss×1,Miniboss,3,0,1,2,2,1,Full-Grown Fallingstar Beast、Regular Fallingstar Beast
-c4690,Basic×5/MinorBoss×1,Basic,6,0,1,1,,1,Grafted Scion Boss
-c4710,Boss×2,Boss,2,0,1,3,3,1,"God-Devouring Serpent、Rykard, Lord of Blasphemy"
+c4620,Helper×8/Basic×2/Boss×1/None×1/MinorBoss×1,Helper,13,1,0,2,3,1,"Astel, Naturalborn of the Void、Astel, Stars of Darkness、Withered Astel"
+c4630,Basic×27/MinorBoss×1,Basic,28,0,0,1,1,0,Runebear Boss
+c4640,Basic×8/MinorBoss×3/Miniboss×1,Basic,12,0,0,2,,1,Putrid Tree Spirit Boss、Ulcerated Tree Spirit Boss
+c4650,Basic×6/Helper×2/Miniboss×2/Boss×1,Basic,11,1,0,2,1,1,Dragonkin Soldier Boss、Dragonkin Soldier of Nokstella
+c4660,Basic×17/MinorBoss×1,Basic,18,0,0,2,,1,Guardian Golem Boss
+c4670,Boss×2,Boss,2,1,0,2,3,1,Ancestor Spirit、Regal Ancestor Spirit
+c4680,Miniboss×2/MinorBoss×1,Miniboss,3,0,0,2,2,1,Full-Grown Fallingstar Beast、Regular Fallingstar Beast
+c4690,Basic×5/MinorBoss×1,Basic,6,0,0,1,,1,Grafted Scion Boss
+c4710,Boss×2,Boss,2,0,0,3,3,1,"God-Devouring Serpent、Rykard, Lord of Blasphemy"
 c4711,None×1,None,1,0,0,,,0,
-c4720,Boss×2,Boss,2,0,1,,1,1,"Godfrey, First Elden Lord、Goldfrey, First Elden Lord"
-c4721,Boss×1,Boss,1,0,1,2,,1,"Hoarah Loux, Warrior"
-c4750,Boss×1/Evergaol×1,Boss,2,0,1,2,,1,Godefroy the Grafted、Godrick the Grafted
+c4720,Boss×2,Boss,2,0,0,,1,1,"Godfrey, First Elden Lord、Goldfrey, First Elden Lord"
+c4721,Boss×1,Boss,1,0,0,2,,1,"Hoarah Loux, Warrior"
+c4750,Boss×1/Evergaol×1,Boss,2,0,0,2,,1,Godefroy the Grafted、Godrick the Grafted
 c4751,None×1,None,1,0,0,,,0,
-c4770,Basic×13/None×2/Miniboss×2/Boss×1/Helper×1,Basic,19,1,1,3,3,1,Black Blade Kindred、Valiant Gargoyle (Twinblade)、Valiant Gargoyles
-c4800,Boss×2,Boss,2,0,1,2,1,1,"Mohg, Lord of Blood、Mohg, the Omen"
-c4810,Miniboss×4/Helper×3/Basic×2,Miniboss,9,1,1,2,,0,Erdtree Avatar、Erdtree Avatar Boss、Erdtree Avatar Duo
-c4811,Miniboss×3/Basic×2,Miniboss,5,0,1,2,,0,Putrid Avatar Boss
-c4820,Basic×4/None×4/Helper×1/Miniboss×1,Basic,10,1,1,1,2,0,Omenkiller、Omenkiller Boss
-c4910,Basic×1/MinorBoss×1/Boss×1/Miniboss×1,Basic,4,0,1,2,3,1,Magma Wyrm Boss、Magma Wyrm Makar
-c4911,Miniboss×1,Miniboss,1,0,1,2,,1,Great Wyrm Theodorix
-c4950,Miniboss×3/Basic×1,Miniboss,4,0,1,1,,0,Tibia Mariner Boss
-c4960,Basic×11/Helper×1,Basic,12,0,1,,,1,
-c4980,NightMiniboss×7/None×1/Miniboss×1,NightMiniboss,9,0,1,2,,1,Death Rite Bird、Deathbird
-c5000,Boss×1,Boss,1,0,1,2,3,1,Commander Gaius
-c5010,Boss×1,Boss,1,0,1,1,1,1,Golden Hippopotamus
-c5011,Basic×4,Basic,4,0,1,,,0,
-c5020,Boss×1/Helper×1,Boss,2,1,1,1,3,1,Putrescent Knight
-c5030,Boss×1,Boss,1,0,1,2,,1,"Romina, Saint of the Bud"
-c5040,Basic×11/MinorBoss×1,Basic,12,0,1,,,1,Curseblade Labirith
-c5050,Basic×1,Basic,1,0,1,,,1,
-c5051,Boss×1,Boss,1,0,1,2,,1,"Midra, Lord of Frenzied Flame"
-c5060,Basic×101,Basic,101,0,1,,,1,
+c4770,Basic×13/None×2/Miniboss×2/Boss×1/Helper×1,Basic,19,1,0,3,3,1,Black Blade Kindred、Valiant Gargoyle (Twinblade)、Valiant Gargoyles
+c4800,Boss×2,Boss,2,0,0,2,1,1,"Mohg, Lord of Blood、Mohg, the Omen"
+c4810,Miniboss×4/Helper×3/Basic×2,Miniboss,9,1,0,2,,0,Erdtree Avatar、Erdtree Avatar Boss、Erdtree Avatar Duo
+c4811,Miniboss×3/Basic×2,Miniboss,5,0,0,2,,0,Putrid Avatar Boss
+c4820,Basic×4/None×4/Helper×1/Miniboss×1,Basic,10,1,0,1,2,0,Omenkiller、Omenkiller Boss
+c4910,Basic×1/MinorBoss×1/Boss×1/Miniboss×1,Basic,4,0,0,2,3,1,Magma Wyrm Boss、Magma Wyrm Makar
+c4911,Miniboss×1,Miniboss,1,0,0,2,,1,Great Wyrm Theodorix
+c4950,Miniboss×3/Basic×1,Miniboss,4,0,0,1,,0,Tibia Mariner Boss
+c4960,Basic×11/Helper×1,Basic,12,0,0,,,1,
+c4980,NightMiniboss×7/None×1/Miniboss×1,NightMiniboss,9,0,0,2,,1,Death Rite Bird、Deathbird
+c5000,Boss×1,Boss,1,0,0,2,3,1,Commander Gaius
+c5010,Boss×1,Boss,1,0,0,1,1,1,Golden Hippopotamus
+c5011,Basic×4,Basic,4,0,0,,,0,
+c5020,Boss×1/Helper×1,Boss,2,1,0,1,3,1,Putrescent Knight
+c5030,Boss×1,Boss,1,0,0,2,,1,"Romina, Saint of the Bud"
+c5040,Basic×11/MinorBoss×1,Basic,12,0,0,,,1,Curseblade Labirith
+c5050,Basic×1,Basic,1,0,0,,,1,
+c5051,Boss×1,Boss,1,0,0,2,,1,"Midra, Lord of Frenzied Flame"
+c5060,Basic×101,Basic,101,0,0,,,1,
 c5061,Basic×3,Basic,3,0,0,,,1,
-c5070,MinorBoss×2,MinorBoss,2,0,1,,,1,Longhaft Death Knight、Twin Axe Death Knight
-c5080,Basic×94,Basic,94,0,1,,,0,
-c5081,Basic×2/MinorBoss×1,Basic,3,0,1,,1,0,Chief Bloodfiend Boss
+c5070,MinorBoss×2,MinorBoss,2,0,0,,,1,Longhaft Death Knight、Twin Axe Death Knight
+c5080,Basic×94,Basic,94,0,0,,,0,
+c5081,Basic×2/MinorBoss×1,Basic,3,0,0,,1,0,Chief Bloodfiend Boss
 c5090,Basic×120,Basic,120,0,0,,,1,
 c5110,Basic×257,Basic,257,0,0,,,0,
-c5120,Boss×1,Boss,1,0,1,2,3,1,Bayle the Dread
-c5130,Boss×2,Boss,2,1,1,1,,1,Base Serpent Messmer、Messmer the Impaler
+c5120,Boss×1,Boss,1,0,0,2,3,1,Bayle the Dread
+c5130,Boss×2,Boss,2,1,0,1,,1,Base Serpent Messmer、Messmer the Impaler
 c5140,Helper×1,Helper,1,1,0,,,1,
 c5141,Helper×8,Helper,8,1,0,,,1,
-c5160,Basic×21,Basic,21,0,1,,,1,
+c5160,Basic×21,Basic,21,0,0,,,1,
 c5180,None×9,None,9,0,0,,,0,
 c5181,None×3,None,3,0,0,,,0,
 c5190,Basic×31,Basic,31,0,0,,,0,
 c5192,Basic×4,Basic,4,0,0,,,0,
 c5193,Basic×42,Basic,42,0,0,,,0,
-c5200,Boss×1,Boss,1,1,1,3,3,1,"Metyr, Mother of Fingers"
-c5210,Boss×1/Miniboss×1,Boss,2,1,1,2,,1,Divine Beast Dancing Lion、Divine Beast Dancing Lion and Basilisks
-c5220,Helper×4/Boss×2,Helper,6,1,1,3,3,1,"Promised Consort Radahn、Radahn, Consort of Miquella"
-c5230,Helper×5/Boss×1,Helper,6,1,1,2,3,1,Scadutree Avatar
-c5240,Basic×719/None×16,Basic,735,0,1,,,1,
+c5200,Boss×1,Boss,1,1,0,3,3,1,"Metyr, Mother of Fingers"
+c5210,Boss×1/Miniboss×1,Boss,2,1,0,2,,1,Divine Beast Dancing Lion、Divine Beast Dancing Lion and Basilisks
+c5220,Helper×4/Boss×2,Helper,6,1,0,3,3,1,"Promised Consort Radahn、Radahn, Consort of Miquella"
+c5230,Helper×5/Boss×1,Helper,6,1,0,2,3,1,Scadutree Avatar
+c5240,Basic×719/None×16,Basic,735,0,0,,,1,
 c5241,Basic×19,Basic,19,0,0,,,0,
-c5250,Basic×16,Basic,16,0,1,,,1,
+c5250,Basic×16,Basic,16,0,0,,,1,
 c5251,Basic×2,Basic,2,0,0,,,1,
-c5260,Basic×16,Basic,16,0,1,,,0,
+c5260,Basic×16,Basic,16,0,0,,,0,
 c5270,Basic×43,Basic,43,0,0,,,0,
 c5271,Basic×4,Basic,4,0,0,,,0,
 c5280,Basic×6,Basic,6,0,1,,,0,
-c5300,Boss×1,Boss,1,0,1,1,,1,"Rellana, Twin Moon Knight"
+c5300,Boss×1,Boss,1,0,0,1,,1,"Rellana, Twin Moon Knight"
 c5311,Basic×74/Helper×6,Basic,80,1,0,,,1,
-c5312,MinorBoss×1,MinorBoss,1,1,1,1,,1,"Jori, Elder Inquisitor"
-c5320,Basic×3/Helper×3,Basic,6,1,1,,,1,
+c5312,MinorBoss×1,MinorBoss,1,1,0,1,,1,"Jori, Elder Inquisitor"
+c5320,Basic×3/Helper×3,Basic,6,1,0,,,1,
 c5330,None×1,None,1,0,0,,,0,
 c5340,Helper×6/None×5,Helper,11,0,0,,,0,
 c5350,None×4,None,4,0,0,,,0,
 c5360,Basic×64/Helper×9,Basic,73,1,0,,,1,
-c5370,DragonMiniboss×1,DragonMiniboss,1,0,1,2,,1,Ancient Dragon Senessax
+c5370,DragonMiniboss×1,DragonMiniboss,1,0,0,2,,1,Ancient Dragon Senessax
 c5380,Basic×7,Basic,7,0,0,,,0,
 c5381,Basic×59,Basic,59,0,0,,,0,
-c5390,Basic×1,Basic,1,0,1,,,1,
-c5391,Basic×2,Basic,2,0,1,,,0,
-c5401,Wildlife×893,Wildlife,893,0,0,,,0,
+c5390,Basic×1,Basic,1,0,0,,,1,
+c5391,Basic×2,Basic,2,0,0,,,0,
+c5401,Wildlife×893,Wildlife,893,0,1,,,0,
 c5410,Wildlife×727,Wildlife,727,0,0,,,0,
 c5421,Basic×25,Basic,25,0,0,,,0,
-c5430,Wildlife×35,Wildlife,35,0,0,,,0,
+c5430,Wildlife×35,Wildlife,35,0,1,,,0,
 c5440,Wildlife×80,Wildlife,80,0,0,,,0,
 c5450,Wildlife×830,Wildlife,830,0,0,,,0,
-c5460,Wildlife×27,Wildlife,27,0,0,,,0,
+c5460,Wildlife×27,Wildlife,27,0,1,,,0,
 c5470,Wildlife×53,Wildlife,53,0,0,,,0,
 c5471,Wildlife×6,Wildlife,6,0,0,,,0,
 c5472,Wildlife×4,Wildlife,4,0,0,,,0,
@@ -306,18 +306,18 @@ c5525,Basic×9,Basic,9,0,0,,,0,
 c5526,Basic×2,Basic,2,0,0,,,0,
 c5527,Basic×11,Basic,11,0,0,,,0,
 c5530,Basic×53,Basic,53,0,0,,,0,
-c5540,Basic×127,Basic,127,0,1,,,0,
+c5540,Basic×127,Basic,127,0,0,,,0,
 c5541,Basic×15,Basic,15,0,0,,,0,
 c5550,Basic×25,Basic,25,0,0,,,0,
 c5551,Basic×1,Basic,1,0,0,,,1,
-c5560,Basic×85/Helper×25,Basic,110,1,1,,,1,
+c5560,Basic×85/Helper×25,Basic,110,1,0,,,1,
 c5570,Basic×56,Basic,56,0,0,,,0,
-c5580,DragonMiniboss×2/Basic×1,DragonMiniboss,3,0,1,2,,1,Jagged Peak Drake Boss
+c5580,DragonMiniboss×2/Basic×1,DragonMiniboss,3,0,0,2,,1,Jagged Peak Drake Boss
 c5590,Basic×188,Basic,188,0,0,,,0,
-c5591,Basic×1,Basic,1,0,1,,,0,
+c5591,Basic×1,Basic,1,0,0,,,0,
 c5600,Basic×8,Basic,8,0,0,,,1,
-c5620,Basic×1,Basic,1,0,1,,,0,
-c5630,Basic×4,Basic,4,0,1,,,0,
+c5620,Basic×1,Basic,1,0,0,,,0,
+c5630,Basic×4,Basic,4,0,0,,,0,
 c5640,Basic×9,Basic,9,0,0,,,0,
 c5641,Wildlife×62,Wildlife,62,0,0,,,0,
 c5651,Basic×49,Basic,49,1,0,,,1,
@@ -328,67 +328,67 @@ c5700,Basic×22,Basic,22,0,0,,,0,
 c5701,Basic×9,Basic,9,0,0,,,0,
 c5710,Basic×5,Basic,5,0,0,,,0,
 c5720,Basic×2,Basic,2,0,0,,,0,
-c5730,Miniboss×1,Miniboss,1,0,1,,,0,Demi-Human Queen Marigga
+c5730,Miniboss×1,Miniboss,1,0,0,,,0,Demi-Human Queen Marigga
 c5740,Basic×23/None×12,Basic,35,0,0,,,0,
-c5750,Basic×10,Basic,10,0,1,,,0,
-c5751,Basic×32,Basic,32,0,1,,,0,
+c5750,Basic×10,Basic,10,0,0,,,0,
+c5751,Basic×32,Basic,32,0,0,,,0,
 c5760,Basic×116,Basic,116,0,0,,,0,
 c5761,Basic×19,Basic,19,0,0,,,0,
 c5780,Basic×4,Basic,4,0,0,,,0,
 c5790,Basic×2,Basic,2,0,0,,,1,
-c5800,Basic×1,Basic,1,0,1,,,0,
-c5810,MinorBoss×1/Basic×1,MinorBoss,2,0,1,,,1,Demi-Human Swordmaster Onze
-c5820,Miniboss×2,Miniboss,2,0,1,1,,0,Ralva the Great Red Bear、Rugalea the Great Red Bear
+c5800,Basic×1,Basic,1,0,0,,,0,
+c5810,MinorBoss×1/Basic×1,MinorBoss,2,0,0,,,1,Demi-Human Swordmaster Onze
+c5820,Miniboss×2,Miniboss,2,0,0,1,,0,Ralva the Great Red Bear、Rugalea the Great Red Bear
 c5830,Basic×153/None×2,Basic,155,0,0,,,1,
-c5840,Basic×26/Miniboss×2/None×1,Basic,29,1,1,,1,1,Black Knight Edredd、Black Knight Garrew
+c5840,Basic×26/Miniboss×2/None×1,Basic,29,1,0,,1,1,Black Knight Edredd、Black Knight Garrew
 c5850,Basic×10,Basic,10,0,0,,,1,
-c5860,DragonMiniboss×3,DragonMiniboss,3,1,1,2,,1,Ghostflame Dragon Boss、Ghostflame Dragon and Skeletons
+c5860,DragonMiniboss×3,DragonMiniboss,3,1,0,2,,1,Ghostflame Dragon Boss、Ghostflame Dragon and Skeletons
 c5870,Basic×65,Basic,65,0,0,,,0,
 c5871,Basic×1,Basic,1,0,0,,,1,
-c5872,Basic×1,Basic,1,0,1,,,1,
+c5872,Basic×1,Basic,1,0,0,,,1,
 c5880,Basic×12,Basic,12,0,0,,,1,
 c5890,Helper×8,Helper,8,1,0,,,0,
 c5900,Basic×168,Basic,168,0,0,,,0,
 c5910,None×1,None,1,0,0,,,0,
-c5920,Basic×1,Basic,1,0,1,,,1,
+c5920,Basic×1,Basic,1,0,0,,,1,
 c5930,Basic×4,Basic,4,0,0,,,0,
 c5931,Basic×6,Basic,6,0,0,,,0,
 c5940,Basic×40,Basic,40,0,0,,,1,
-c5950,Basic×1,Basic,1,0,1,,,0,
-c5960,Basic×4/None×2,Basic,6,0,1,,,1,
-c5970,Basic×2,Basic,2,0,1,,,0,
-c5980,Basic×3,Basic,3,0,1,,,0,
+c5950,Basic×1,Basic,1,0,0,,,0,
+c5960,Basic×4/None×2,Basic,6,0,0,,,1,
+c5970,Basic×2,Basic,2,0,0,,,0,
+c5980,Basic×3,Basic,3,0,0,,,0,
 c5990,Helper×8/Basic×6,Helper,14,1,0,,,0,
-c6001,Wildlife×895,Wildlife,895,0,0,,,0,
+c6001,Wildlife×895,Wildlife,895,0,1,,,0,
 c6010,Wildlife×614/Helper×7/None×3,Wildlife,624,1,0,,,0,
 c6031,Basic×34,Basic,34,0,0,,,0,
-c6040,Wildlife×53,Wildlife,53,0,0,,,0,
+c6040,Wildlife×53,Wildlife,53,0,1,,,0,
 c6050,Wildlife×67/Helper×7/None×2,Wildlife,76,1,0,,,0,
 c6060,Wildlife×894/Helper×7/None×2,Wildlife,903,1,0,,,0,
-c6070,Wildlife×246,Wildlife,246,0,0,,,0,
+c6070,Wildlife×246,Wildlife,246,0,1,,,0,
 c6080,Wildlife×156,Wildlife,156,0,0,,,0,
 c6081,Wildlife×43,Wildlife,43,0,0,,,0,
 c6082,Wildlife×10,Wildlife,10,0,0,,,0,
-c6090,Wildlife×94/None×6,Wildlife,100,0,1,,,0,
+c6090,Wildlife×94/None×6,Wildlife,100,0,0,,,0,
 c6091,None×3,None,3,0,0,,,0,
 c6100,Wildlife×1166/Helper×7,Wildlife,1173,1,0,,,0,
-c6201,Scarab×11,Scarab,11,0,1,,,0,
-c6210,Basic×1,Basic,1,1,1,,,0,
+c6201,Scarab×11,Scarab,11,0,0,,,0,
+c6210,Basic×1,Basic,1,1,0,,,0,
 c6220,Helper×1,Helper,1,1,0,,,0,
 c6231,Basic×16,Basic,16,0,0,,,0,
 c6232,Basic×4,Basic,4,0,0,,,0,
 c6233,Basic×2,Basic,2,0,0,,,0,
-c6240,Basic×9,Basic,9,0,0,,,0,
-c6251,Miniboss×2,Miniboss,2,0,1,,,0,Tree Sentinel
-c6260,Miniboss×1,Miniboss,1,0,1,2,,1,Death Rite Bird
-c6270,Helper×3,Helper,3,0,1,,,0,
+c6240,Basic×9,Basic,9,0,1,,,0,
+c6251,Miniboss×2,Miniboss,2,0,0,,,0,Tree Sentinel
+c6260,Miniboss×1,Miniboss,1,0,0,2,,1,Death Rite Bird
+c6270,Helper×3,Helper,3,0,0,,,0,
 c6290,Basic×32,Basic,32,0,0,,,0,
 c6291,Basic×3,Basic,3,0,0,,,0,
 c6300,Basic×6,Basic,6,0,0,,,0,
-c6310,Miniboss×1,Miniboss,1,0,1,2,,1,Regular Fallingstar Beast
+c6310,Miniboss×1,Miniboss,1,0,0,2,,1,Regular Fallingstar Beast
 c6320,Basic×4/None×3,Basic,7,0,0,,,1,
 c7000,Basic×39,Basic,39,0,0,,,0,
-c7100,Basic×8/MinorBoss×2/Evergaol×1,Basic,11,0,1,1,,1,Ancient Hero of Zamor Boss
+c7100,Basic×8/MinorBoss×2/Evergaol×1,Basic,11,0,0,1,,1,Ancient Hero of Zamor Boss
 c8100,Helper×19,Helper,19,1,0,,,0,
 c8101,None×6,None,6,0,0,,,0,
 c8110,Helper×17,Helper,17,1,0,,,0,

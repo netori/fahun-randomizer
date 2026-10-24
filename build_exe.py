@@ -37,7 +37,20 @@ PIPELINE = ["erio.py", "param_layout.py", "param_patch.py", "fmg.py", "oodle.py"
             # 漏掉任何一个，打包版就会在"生成/写入"那一步炸（隔离自检不跑生成，抓不到）。
             "enemy_randomizer.py", "enemy_names.py", "enemy_types.py",
             "msb_read.py", "msb_write.py", "enemy_swapper.py", "plan_layer.py",
-            "enemy_map_atlas.py", "boss_healthbar.py"]
+            "enemy_emevd.py", "enemy_map_atlas.py", "boss_healthbar.py",
+            # 敌人 v1 新管线（2026-10-21 M5）：GUI 的「预览 / 部署到方案层」会 import 这一串，
+            # 漏一个，打包版的 v1 部署就会在 import 那一步炸（隔离自检不跑部署，抓不到）。
+            "enemy_plan.py", "param_bin.py", "msb_edit.py", "evd_edit.py",
+            "enemy_write.py", "enemy_gate.py", "bar_names.py",
+            # 2026-10-24：Boss 数值平衡（写盘时在内存里补算；两层都要打进去，
+            # 漏了打包版会在 GUI 生成那一步 import 失败，隔离自检抓不到）
+            "enemy_balance.py", "balance_ref.py",
+            # 2026-10-23：方案库"启动游戏 + 每个方案一份独立存档"（GUI 会 import 它，
+            # 运行时才 import 的东西隔离自检抓不到 —— 必须列在这里）
+            "gamelib.py",
+            # 2026-10-23 晚：统一的路径解析（MOD 目录 / 游戏目录）。引擎、方案层、
+            # 启动器都 import 它；漏了它打包版会在第一次读 regulation 时 ModuleNotFoundError
+            "modpaths.py"]
 ENGINE = "investigation/randomization-dryrun/scripts/randomizer.py"
 DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/randomization-catalog/manifest.json",
@@ -62,7 +75,23 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         # 参考实现（thefifthmatt）的人工标注转成我们自己的表：模型 → 档位/multi/打不死/真名
         "investigation/enemy_ref.csv",
         # 行级场地画像（来自 634 张图摆放台账）：npc_id → arena_min 等
-        "investigation/row_arena.csv"] + [
+        "investigation/row_arena.csv",
+        # v1 重做用的三张新表（M0 产物，enemy_data_build.py 生成）：
+        #   位置主键表 = 634 张 msb 实测的 27,780 个敌人 part（含 cls/silo/tier/policy）
+        #   模型名字表 = 462 个模型的名字与类（无名杂兵用统一名）
+        #   分类配置   = L1 类 / silo / tier / policy / 四个特殊池（运行期只读它）
+        "investigation/enemy_places.csv",
+        "investigation/enemy_model_names.csv",
+        # 血条名表（v1.2）：(map, entity) → 原名字 ID；运行时据此把血条名换成换入者的名字
+        "investigation/enemy_bar_names.csv",
+        # mod 没覆盖 event 的地图：本体事件里的旧血条名 + 整份事件兜底
+        "investigation/enemy_bar_fallback.csv",
+        # 没有血条名、但有同义中文名的普通敌人（模型 → name_id）；缺了会退化成 ?NpcName? 占位
+        "investigation/enemy_bar_name_overrides.csv",
+        ] + [os.path.join("investigation", "vanilla_events", f)
+             for f in sorted(os.listdir(os.path.join(WS, "investigation", "vanilla_events")))
+             if f.endswith(".emevd.dcx")] + [
+        "investigation/apply/data/enemy_classes_v3.yaml"] + [
         # Paramdex 的 ER paramdef（enemy_randomizer 运行时要读 XML 解析行表；
         # 以前漏了它 ⇒ exe 里"写入失败：读不到 Paramdex 定义：NpcParam"）
         os.path.join("tools", "witchybnd-3.0.1.0", "Assets", "Paramdex", "ER", "Defs", f)

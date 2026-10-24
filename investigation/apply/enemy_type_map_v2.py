@@ -66,10 +66,10 @@ from collections import Counter, defaultdict, OrderedDict
 HERE = os.path.dirname(os.path.abspath(__file__))
 INV = os.path.dirname(HERE)
 
-REF_DIR = (r"C:\Users\20905\Downloads\Elden Ring Randomizer 428 v0.12.2 "
-           r"2026-09-09T07-25Z kRGZWDlvJ\randomizer\diste")
-MOD_DIR = (r"F:/game/studygame/elden ring/THE_COVERAGE-随机开发/"
-           r"法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）")
+sys.path.insert(0, HERE)
+import modpaths                      # noqa: E402
+REF_DIR = modpaths.require_ref_dir()
+MOD_DIR = os.environ.get("CONVERGENCE_MOD_ROOT") or modpaths.find_mod_root(HERE) or ""
 
 IN_MODEL_TYPES = os.path.join(INV, "model_types.csv")
 IN_MAP_ENEMIES = os.path.join(INV, "map_enemies.csv")

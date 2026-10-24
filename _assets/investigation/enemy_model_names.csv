@@ -1,0 +1,463 @@
+model,display_name,name_src,cls,cls_src,placements,npc_rows,hp_min,hp_max,boss_any,policy,note
+c6100,Springhare,ModelName,Wildlife,exact,1302,16,27,27,1,randomize,class.silo=false
+c1000,仿身泪滴,血条名(多: 2),None,exact,1061,50,55,9999,1,keep,class.silo=false
+c5401,Eagle,ModelName,Wildlife,exact,1008,23,27,27,1,randomize,
+c6001,Eagle,ModelName,Wildlife,exact,987,16,27,27,1,randomize,
+c6060,Ram,ModelName,Wildlife,exact,965,25,55,150,1,randomize,class.silo=false
+c5240,Shadow Commoner,ModelName,Basic,exact,962,78,85,408,1,randomize,class.silo=false
+c5410,Deer,ModelName,Wildlife,exact,951,20,55,55,1,randomize,
+c5450,Ram,ModelName,Wildlife,exact,938,26,55,82,1,randomize,
+c6010,Deer,ModelName,Wildlife,exact,710,15,55,55,1,randomize,class.silo=false
+c5490,Springhare,ModelName,Wildlife,exact,650,18,27,27,1,randomize,
+c4300,Wandering Noble,ModelName,Basic,exact,536,108,85,85,1,randomize,class.silo=false
+c3661,Putrid Corpse,ModelName,Basic,exact,521,34,376,376,1,randomize,取不到数值：不碰
+c0100,水银躯壳,血条名,None,exact,455,15,39,2765,1,keep,class.silo=false
+c0000,“指头之母”尤弥尔,血条名(多: 13),None,exact,417,325,1,2000,1,keep,占位模型 c0000（真身由事件生成）
+c3500,Skeleton,ModelName,Basic,model,404,58,148,350,1,randomize,keep_maps
+c4070,Wolf,ModelName,Basic,model,329,16,78,225,1,randomize,class.silo=false
+c4481,Miranda Sprout,ModelName,Basic,exact,309,17,0,119,1,randomize,class.silo=false
+c4100,Demi-Human,ModelName,Basic,exact,295,23,119,119,1,randomize,class.silo=false
+c6070,Guillemot,ModelName,Wildlife,exact,276,6,27,27,1,randomize,
+c4200,Man-Bat,ModelName,Basic,exact,263,29,126,430,1,randomize,keep_maps
+c3660,Commoner,ModelName,Basic,exact,256,41,105,150,1,randomize,class.silo=false
+c5110,Spirit Eel,ModelName,Basic,exact,228,13,223,223,1,randomize,
+c5830,Messmer Soldier,ModelName,Basic,model,224,35,192,192,1,randomize,keep_maps
+c4140,唤灵蜗牛,血条名,Basic,exact,222,22,126,380,1,randomize,keep_maps
+c5900,Man-Fly,ModelName,Basic,model,210,11,192,192,1,randomize,keep_maps
+c3320,Silver Tear,ModelName,Basic,exact,207,18,111,111,1,randomize,class.silo=false
+c4040,Slug,ModelName,Basic,exact,205,13,105,105,1,randomize,
+c4080,Rat,ModelName,Basic,exact,200,22,162,162,1,randomize,
+c4191,Small Scarab,ModelName,Scarab,exact,199,78,41,154,1,keep,class.silo=false
+c6080,Dragonfly,ModelName,Wildlife,exact,198,9,17,17,1,randomize,
+c5590,Putrid Flesh,ModelName,Basic,exact,194,6,275,275,1,randomize,
+c4180,Spirit Jellyfish,ModelName,Basic,model,193,13,223,223,1,randomize,class.silo=false
+c4483,Rotten Miranda Sprout,ModelName,Basic,model,188,8,120,120,1,randomize,
+c2275,Albinauric Crab,ModelName,Wildlife,exact,183,6,28,260,1,randomize,
+c3750,Clayman,ModelName,Basic,exact,181,15,262,262,1,randomize,
+c4430,Sentry Stone,ModelName,DupeOnly,model,171,11,174,174,1,keep,class.silo=false
+c3470,Albinauric,ModelName,Basic,model,170,28,169,247,1,randomize,keep_maps
+c4230,Larval Land Octopus,ModelName,Basic,exact,168,10,115,115,1,randomize,class.silo=false
+c4491,Living Jar,ModelName,Basic,exact,166,25,150,691,1,randomize,class.silo=false
+c3450,Misbegotten,ModelName,Basic,exact,162,15,192,192,1,randomize,
+c3000,Exile Soldier,ModelName,Basic,exact,160,28,134,134,1,randomize,class.silo=false
+c4321,Vulgar Militia,ModelName,Basic,model,160,22,153,153,1,randomize,keep_maps
+c4000,Revenant Follower,ModelName,Basic,model,154,10,115,250,1,randomize,keep_maps
+c2271,Crab,ModelName,Wildlife,exact,152,6,28,28,1,randomize,
+c4312,Raya Lucaria Soldier,ModelName,Basic,model,146,20,192,192,1,randomize,class.silo=false
+c5560,Small Fingercreeper,ModelName,Basic,exact,146,5,63,296,1,randomize,class.silo=false
+c4313,Leyndell Soldier,ModelName,Basic,exact,141,36,192,192,1,randomize,keep_maps
+c3850,Marionette Soldier,ModelName,Basic,model,140,22,179,179,1,randomize,keep_maps
+c4440,Land Squirt,ModelName,Basic,exact,140,4,366,366,1,randomize,
+c4373,Leyndell Foot Soldier,ModelName,Basic,exact,139,23,109,147,1,randomize,
+c5080,Bloodfiend,ModelName,Basic,model,135,23,224,550,1,randomize,
+c4311,Godrick Soldier,ModelName,Basic,exact,134,19,192,192,1,randomize,
+c5090,凶猛守墓鸟,血条名,Basic,model,131,18,161,1000,1,randomize,keep_maps
+c6090,Turtle,ModelName,Wildlife,exact,130,11,378,750,1,randomize,class.silo=false
+c4314,Radahn Soldier,ModelName,Basic,exact,129,17,192,192,1,randomize,
+c5540,Wolf,ModelName,Basic,exact,127,1,78,78,1,randomize,
+c4385,Disciple of Rot,ModelName,Basic,model,126,15,162,162,1,randomize,
+c4280,Giant Ant,ModelName,Basic,model,122,17,196,1745,1,randomize,keep_maps
+c3300,诺克斯修士,血条名(多: 4),Basic,model,120,28,339,1745,1,randomize,keep_maps
+c3360,Ancestral Follower,ModelName,Basic,model,120,24,316,316,1,randomize,keep_maps
+c5760,Rat,ModelName,Basic,exact,117,6,162,162,1,randomize,
+c3080,Imp,ModelName,Basic,exact,115,27,172,172,1,randomize,keep_maps
+c3650,黄金树守卫,血条名,Basic,model,114,12,147,1344,1,randomize,keep_maps
+c4161,Stray,ModelName,Basic,exact,113,19,162,162,1,randomize,
+c5440,Boar,ModelName,Wildlife,model,111,22,82,82,1,randomize,
+c5652,法魂杂兵（c5652）,generic,Basic,auto:noname,106,39,147,147,1,randomize,
+c4150,Basilisk,ModelName,Basic,model,104,9,338,338,1,randomize,keep_maps
+c5311,Hornsent Inquisitor,ModelName,Basic,model,102,18,58,173,1,randomize,keep_maps
+c4170,Putrid Flesh,ModelName,Basic,exact,97,13,275,275,1,randomize,
+c4250,Small Fingercreeper,ModelName,Basic,exact,96,5,105,105,1,randomize,
+c4371,Godrick Foot Soldier,ModelName,Basic,model,93,19,109,147,1,randomize,
+c4380,Starcaller,ModelName,Basic,exact,93,7,162,250,1,randomize,取不到数值：不碰
+c6050,Boar,ModelName,Wildlife,exact,93,9,82,82,1,randomize,class.silo=false
+c3970,法姆·亚兹拉的兽人（大刀）,血条名,Basic,model,92,18,250,621,1,randomize,keep_maps
+c4374,Radahn Foot Soldier,ModelName,Basic,model,89,22,147,147,1,randomize,
+c3070,Dominula Celebrant,ModelName,Basic,model,86,14,110,233,1,randomize,keep_maps
+c4315,Mausoleum Soldier,ModelName,Basic,exact,86,19,192,192,1,randomize,
+c3670,Elder Albinauric,ModelName,Basic,model,83,16,115,316,1,randomize,keep_maps
+c2041,Larva of Rot,ModelName,Basic,model,81,4,77,77,1,randomize,
+c7005,法魂杂兵（c7005）,generic,Wildlife,exact,79,9,115,147,1,randomize,
+c4071,White Wolf,ModelName,Basic,model,77,13,409,409,1,randomize,keep_maps
+c5500,Living Magma,ModelName,Basic,model,77,8,111,111,1,randomize,class.silo=false
+c5651,Messmer Foot Soldier,ModelName,Basic,exact,76,19,109,147,1,randomize,
+c5641,Crab,ModelName,Wildlife,exact,75,3,28,28,1,randomize,
+c5360,Skeleton,ModelName,Basic,exact,73,20,148,148,1,randomize,class.silo=false
+c4372,Raya Lucaria Foot Soldier,ModelName,Basic,exact,72,7,109,147,1,randomize,
+c3510,Catacombs Skeleton,ModelName,Basic,exact,71,23,281,281,1,randomize,class.silo=false
+c5060,Lamprey,ModelName,Basic,model,70,7,148,159,1,randomize,keep_maps
+c3702,Glintstone Sorcerer,ModelName,Basic,model,69,19,183,267,1,randomize,keep_maps
+c5480,Turtle,ModelName,Wildlife,exact,69,15,378,378,1,randomize,
+c5381,Miranda Sprout,ModelName,Basic,exact,68,5,119,119,1,randomize,
+c5523,Shadow Stray,ModelName,Basic,exact,68,6,162,162,1,randomize,
+c5661,Shadow Militia,ModelName,Basic,exact,68,15,153,153,1,randomize,
+c4550,Giant Dog,ModelName,Basic,model,67,13,668,668,1,randomize,keep_maps
+c5870,Imp,ModelName,Basic,exact,65,13,172,172,1,randomize,
+c5470,Dragonfly,ModelName,Wildlife,exact,64,5,17,17,1,randomize,
+c4316,Haligtree Soldier,ModelName,Basic,exact,62,17,192,192,1,randomize,class.silo=false
+c5740,Kindred of Rot,ModelName,Basic,model,62,10,313,640,1,randomize,class.silo=false
+c3010,“失乡骑士”奥雷格,血条名,Basic,exact,61,26,448,2200,1,randomize,class.silo=false
+c4383,Glintstone Miner,ModelName,Basic,exact,61,7,70,70,1,randomize,
+c3950,Man-Serpent,ModelName,Basic,model,60,14,289,409,1,randomize,keep_maps
+c5530,Man-Bat,ModelName,Basic,exact,59,10,126,126,1,randomize,
+c3810,腐败眷属,血条名,Basic,model,58,10,313,313,1,randomize,keep_maps
+c5193,Small Spider Scorpion,ModelName,Basic,exact,57,2,58,58,1,randomize,
+c6040,Owl,ModelName,Wildlife,exact,57,7,27,27,1,randomize,
+c5570,Marionette Soldier,ModelName,Basic,exact,56,5,179,179,1,randomize,
+c5940,Sentry Stone,ModelName,Basic,exact,56,3,174,174,1,randomize,
+c4480,“病花”米兰达,血条名(多: 2),Basic,model,55,13,1939,1939,1,randomize,
+c6031,Bear,ModelName,Basic,model,55,11,681,681,1,randomize,keep_maps
+c3800,玛莲妮亚的尊腐骑士,血条名(多: 2),Basic,model,54,17,437,437,1,randomize,keep_maps
+c4382,Miner,ModelName,Basic,exact,54,19,93,93,1,randomize,
+c5190,Spider Scorpion,ModelName,Basic,model,54,10,168,168,1,randomize,keep_maps
+c6081,Yellow Dragonfly,ModelName,Wildlife,exact,54,8,17,17,1,randomize,
+c4353,Leyndell Knight,ModelName,Basic,model,53,18,576,576,1,randomize,keep_maps
+c4210,Warhawk,ModelName,Basic,exact,51,14,155,302,1,randomize,keep_maps
+c4600,癫火山妖,血条名,Basic,exact,48,21,1581,2200,1,randomize,keep_maps
+c5430,Owl,ModelName,Wildlife,model,48,11,27,27,1,randomize,
+c4220,Land Octopus,ModelName,Basic,model,44,9,2327,2327,1,randomize,keep_maps
+c5270,Jar Innards,ModelName,Basic,model,44,8,397,397,1,randomize,keep_maps
+c4490,大壶勇者,血条名(多: 2),Basic,exact,43,31,449,3600,1,randomize,keep_maps
+c2140,咒死的恶兆之子,血条名(多: 2),Basic,exact,41,23,902,1745,1,randomize,取不到数值：不碰
+c3071,法魂杂兵（c3071）,generic,Basic,auto:noname,41,10,162,233,1,randomize,
+c4376,Haligtree Foot Soldier,ModelName,Basic,exact,41,7,147,147,1,randomize,
+c7000,Fallen Hawks Soldier,ModelName,Basic,exact,41,4,115,147,1,randomize,
+c3703,Page,ModelName,Basic,model,40,12,353,600,1,randomize,keep_maps
+c2150,Lightning Ball,ModelName,Basic,exact,39,6,187,187,1,randomize,
+c5840,“黑骑士”艾瑞德,血条名(多: 2),Basic,model,38,18,512,1250,1,randomize,keep_maps
+c3361,法魂杂兵（c3361）,generic,Basic,ref,37,4,316,316,1,randomize,
+c3701,调香师托莉夏,血条名,Basic,model,37,9,184,184,1,randomize,keep_maps
+c4050,Kaiden Sellsword,ModelName,Basic,model,37,5,487,487,1,randomize,keep_maps
+c4420,Giant Crayfish,ModelName,Basic,model,37,7,876,876,1,randomize,keep_maps
+c3451,片鳞混种,血条名,Basic,exact,35,12,531,531,1,randomize,class.silo=false
+c3755,法魂杂兵（c3755）,generic,Basic,auto:noname,35,2,262,262,1,randomize,
+c3860,Avionette Soldier,ModelName,Basic,model,35,11,173,173,1,randomize,keep_maps
+c3020,Large Exile Soldier,ModelName,Basic,exact,34,6,192,192,1,randomize,keep_maps
+c4165,Bloodbane Stray,ModelName,Basic,exact,34,7,162,162,1,randomize,class.silo=false
+c0120,Bullet Dummy,ModelName,None,exact,33,7,1939,1939,1,keep,class.silo=false
+c3170,白金狼骑射手,血条名(多: 2),Basic,model,33,7,487,1745,1,randomize,keep_maps
+c4630,Runebear,ModelName,Basic,model,33,13,2585,2585,1,randomize,keep_maps
+c4101,Large Demi-Human,ModelName,Basic,model,32,7,233,233,1,randomize,keep_maps
+c4560,Giant Crow,ModelName,Basic,model,32,4,1204,1204,1,randomize,keep_maps
+c5511,Putrid Corpse,ModelName,Basic,exact,32,3,376,376,1,randomize,
+c5550,Fingercreeper,ModelName,Basic,model,32,3,747,747,1,randomize,
+c5751,Living Jar,ModelName,Basic,exact,32,4,150,150,1,randomize,
+c6290,Misbegotten,ModelName,Basic,exact,32,6,192,192,1,randomize,
+c4110,Demi-Human Shaman,ModelName,Basic,exact,31,12,0,599,1,randomize,class.silo=false
+c4352,Cuckoo Knight,ModelName,Basic,exact,31,10,576,750,1,randomize,
+c5241,Large Shadow Commoner,ModelName,Basic,exact,30,4,371,408,1,randomize,
+c5250,神鸟战士,血条名,Basic,model,30,22,453,1000,1,randomize,keep_maps
+c2270,Giant Crab,ModelName,Basic,model,29,6,357,357,1,randomize,keep_maps
+c4354,Redmane Knight,ModelName,Basic,exact,29,10,576,576,1,randomize,
+c4570,Wormface,ModelName,Basic,model,29,3,621,621,1,randomize,keep_maps
+c2040,Juvenile Scholar,ModelName,Helper,exact,28,7,85,85,1,keep,class.silo=false
+c3350,结晶人,血条名(多: 7),Basic,model,27,19,352,698,1,randomize,keep_maps
+c5460,Guillemot,ModelName,Wildlife,exact,27,3,27,27,1,randomize,
+c4351,Godrick Knight,ModelName,Basic,model,26,8,576,576,1,randomize,
+c4660,卡利亚魔像,血条名(多: 3),Basic,exact,26,20,2442,5236,1,randomize,keep_maps
+c5421,Bear,ModelName,Basic,exact,26,7,681,681,1,randomize,
+c2500,“熔炉骑士”奥陶琵斯,血条名(多: 2),Helper,exact,24,16,628,840,1,keep,class.silo=false
+c3180,Archer's Wolf,ModelName,Basic,model,24,5,774,1745,1,randomize,keep_maps
+c3610,Small Oracle Envoy,ModelName,Basic,exact,24,3,169,169,1,randomize,keep_maps
+c4090,Giant Rat,ModelName,Basic,model,24,12,556,556,1,randomize,keep_maps
+c5160,火焰骑士圣战者,血条名,Basic,model,24,11,403,864,1,randomize,keep_maps
+c5260,Smith Golem,ModelName,Basic,model,24,9,778,778,1,randomize,keep_maps
+c3900,Fire Monk,ModelName,Basic,model,23,8,320,594,1,randomize,keep_maps
+c4166,Large Rotten Stray,ModelName,Basic,model,23,2,338,338,1,randomize,
+c4355,Mausoleum Knight,ModelName,Basic,exact,23,10,576,576,1,randomize,
+c5990,Basilisk,ModelName,Helper,exact,22,2,127,338,1,keep,class.silo=false
+c8100,Ballista,ModelName,Helper,exact,22,8,679,679,1,keep,class.silo=false
+c2100,黑刀刺客,血条名,None,model,21,9,731,1307,1,keep,class.silo=false
+c3200,Merchant,ModelName,None,exact,21,20,1282,1282,1,keep,class.silo=false
+c3201,Frenzied Merchant,ModelName,Basic,model,21,4,169,169,1,randomize,keep_maps
+c3370,祖灵祭司,血条名,Basic,model,21,7,450,1500,1,randomize,keep_maps
+c6231,Perfumer,ModelName,Basic,exact,21,5,184,184,1,randomize,
+c2277,Death Crab,ModelName,Wildlife,exact,20,2,28,28,1,randomize,
+c4482,Rotten Miranda Blossom,ModelName,Basic,model,20,4,1939,1939,1,randomize,
+c4340,发狂南瓜头士兵,血条名(多: 2),Basic,model,19,14,582,582,1,randomize,keep_maps
+c5761,Giant Rat,ModelName,Basic,exact,19,5,556,556,1,randomize,
+c2274,Giant Albinauric Crab,ModelName,Basic,exact,18,3,357,357,1,randomize,
+c3662,Large Putrid Corpse,ModelName,Basic,exact,18,6,188,626,1,randomize,
+c3730,Graven School,ModelName,Basic,model,18,9,593,593,1,randomize,keep_maps
+c3901,Blackflame Monk,ModelName,Basic,model,18,6,320,594,1,randomize,keep_maps
+c4167,Rotten Stray,ModelName,Basic,exact,18,1,162,162,1,randomize,
+c4240,Fingercreeper,ModelName,Basic,model,18,18,747,747,1,randomize,keep_maps
+c4470,弗兰肯-掳人者-斯坦,血条名(多: 3),Basic,exact,18,13,829,1418,1,randomize,keep_maps
+c8110,Dragon-Faced Flamethrower,ModelName,Helper,exact,18,3,441,441,1,keep,class.silo=false
+c3060,Giant Skeleton,ModelName,Basic,exact,17,10,613,750,1,randomize,keep_maps
+c3400,守墓斗士,血条名,Basic,exact,17,15,900,1280,1,randomize,取不到数值：不碰
+c3471,Large Albinauric,ModelName,Basic,model,17,3,388,549,1,randomize,keep_maps
+c3655,法魂杂兵（c3655）,generic,Basic,auto:noname,17,1,167,167,1,randomize,
+c3700,Depraved Perfumer,ModelName,Basic,model,17,7,400,429,1,randomize,keep_maps
+c4160,Large Stray,ModelName,Basic,exact,17,8,338,338,1,randomize,
+c4356,Haligtree Knight,ModelName,Basic,exact,17,9,576,576,1,randomize,
+c4357,法魂杂兵（c4357）,generic,Basic,auto:noname,17,6,576,576,1,randomize,
+c4602,雪山山妖,血条名(多: 2),Basic,model,17,4,1581,2500,1,randomize,keep_maps
+c5040,咒剑士拉比利士,血条名,Basic,model,17,10,840,840,1,randomize,keep_maps
+c5527,Bloodbane Stray,ModelName,Basic,exact,17,2,162,162,1,randomize,
+c3330,Giant Ball,ModelName,Basic,exact,16,9,552,552,1,randomize,class.silo=false
+c4163,Farum Azula Stray,ModelName,Basic,exact,16,1,162,162,1,randomize,
+c5521,Messmerfire Stray,ModelName,Basic,exact,16,3,162,162,1,randomize,
+c5525,Stray,ModelName,Basic,exact,16,2,162,162,1,randomize,
+c8101,Trebuchet,ModelName,None,model,16,4,679,679,1,keep,class.silo=false
+c2010,Blaidd,ModelName,None,model,15,14,1320,2900,1,keep,class.silo=false
+c2273,Black Crab,ModelName,Wildlife,exact,15,1,28,28,1,randomize,
+c4120,亚人首领,血条名(多: 2),Basic,model,15,8,534,1745,1,randomize,keep_maps
+c4201,圣咏翼蝠贵妇,血条名,Basic,model,15,15,492,2000,1,randomize,keep_maps
+c5541,White Wolf,ModelName,Basic,exact,15,1,409,409,1,randomize,
+c3210,Merchant's Donkey,ModelName,None,exact,14,14,747,747,1,keep,class.silo=false
+c3600,石肤黑王,血条名,Basic,model,14,8,755,755,1,randomize,keep_maps
+c3704,“战场魔法师”邓肯,血条名(多: 2),Basic,model,14,9,630,630,1,randomize,keep_maps
+c4460,Flame Chariot,ModelName,Basic,model,14,10,438,438,1,randomize,keep_maps
+c4505,Small Flying Dragon,ModelName,Basic,model,14,2,1019,1019,1,randomize,keep_maps
+c4620,“黑暗弃子”艾丝缇,血条名(多: 2),Helper,exact,14,7,611,3250,1,keep,class.silo=false
+c4820,恶兆猎人,血条名,Basic,model,14,11,400,429,1,randomize,keep_maps
+c3910,火焰大主教,血条名,Basic,model,13,10,873,1500,1,randomize,keep_maps
+c3971,法魂杂兵（c3971）,generic,Basic,auto:noname,13,9,250,250,1,randomize,
+c4251,法魂杂兵（c4251）,generic,Basic,auto:noname,13,1,105,105,1,randomize,
+c4381,Guilty,ModelName,Basic,model,13,3,162,162,1,randomize,keep_maps
+c5880,Catacombs Sorcerer,ModelName,Basic,model,13,5,210,210,1,randomize,keep_maps
+c6201,Scarab,ModelName,Scarab,exact,13,7,41,154,1,keep,class.silo=false
+c6240,Lightning Ball,ModelName,Basic,model,13,2,187,187,1,randomize,
+c0130,Balloon,ModelName,None,exact,12,1,39,39,1,keep,class.silo=false
+c4020,王室幽魂,血条名,Basic,model,12,12,679,679,1,randomize,keep_maps
+c4260,归树看门犬,血条名(多: 3),Basic,model,12,9,1052,1052,1,randomize,keep_maps
+c4377,Highwayman,ModelName,Basic,exact,12,3,147,147,1,randomize,
+c4441,Giant Land Squirt,ModelName,Basic,exact,12,2,1429,1429,1,randomize,
+c5320,Fat Hornsent Inquisitor,ModelName,Basic,model,12,5,576,576,1,randomize,keep_maps
+c5522,Large Shadow Stray,ModelName,Basic,exact,12,4,338,338,1,randomize,
+c6300,Snail,ModelName,Basic,exact,12,1,126,126,1,randomize,
+c6320,Wandering Noble,ModelName,Basic,exact,12,5,85,85,1,randomize,class.silo=false
+c7100,萨米尔的古英雄,血条名,Basic,model,12,5,851,1745,1,randomize,keep_maps
+c2300,法魂杂兵（c2300）,generic,Basic,auto:noname,11,9,750,900,1,randomize,
+c3150,Night's Cavalry,ModelName,NightMiniboss,model,11,9,1006,1006,1,randomize,取不到数值：不碰
+c3160,Night's Cavalry Horse,ModelName,Helper,model,11,9,1089,1089,1,keep,class.silo=false
+c3302,法魂杂兵（c3302）,generic,Basic,auto:noname,11,3,339,339,1,randomize,
+c4060,Kaiden Sellsword's Horse,ModelName,Helper,exact,11,1,371,371,1,keep,class.silo=false
+c4242,法魂杂兵（c4242）,generic,Basic,auto:noname,11,1,747,747,1,randomize,
+c4980,死之鸟,血条名(多: 2),NightMiniboss,exact,11,9,2079,2447,1,randomize,class.silo=false
+c5340,DLC Dummy 3,ModelName,Helper,exact,11,1,1939,1939,1,keep,class.silo=false
+c6082,Great Dragonfly,ModelName,Wildlife,model,11,2,17,17,1,randomize,keep_maps
+c3310,风暴呼召者塔兰,血条名(多: 2),Boss,auto:bossbar,10,8,339,1418,1,randomize,
+c4151,法魂杂兵（c4151）,generic,Basic,auto:noname,10,1,338,338,1,randomize,
+c4502,“辉石龙”亚杜拉,血条名,Basic,exact,10,4,1639,1639,1,randomize,
+c4640,腐烂树灵,血条名(多: 2),Basic,exact,10,8,2713,2713,1,randomize,evt:anim
+c4670,祖灵,血条名(多: 2),Boss,model,10,4,1939,2327,1,randomize,取不到数值：不碰
+c5640,Giant Crab,ModelName,Basic,exact,10,4,357,357,1,randomize,
+c5690,Dragon-Faced Flamethrower,ModelName,Helper,exact,10,1,441,441,1,keep,class.silo=false
+c5750,Living Jar Warrior,ModelName,Basic,exact,10,10,449,449,1,randomize,
+c5850,Giant Ram,ModelName,Basic,exact,10,4,448,448,1,randomize,
+c3061,Giant Beast Skeleton,ModelName,Basic,model,9,3,613,671,1,randomize,keep_maps
+c3181,拉达冈的红狼,血条名(多: 2),Basic,model,9,8,973,973,1,randomize,keep_maps
+c4270,Elder Lion,ModelName,Basic,model,9,5,1280,1280,1,randomize,keep_maps
+c4362,Cuckoo Knight's Horse,ModelName,Helper,exact,9,2,448,448,1,keep,class.silo=false
+c4770,黑剑眷属,血条名,Basic,model,9,8,260,1745,1,randomize,class.silo=false
+c5170,Furnace Golem,ModelName,DupeOnly,exact,9,7,12800,16000,1,keep,class.silo=false
+c5180,DLC Dummy,ModelName,None,exact,9,3,1939,1939,1,keep,class.silo=false
+c5280,Aging Untouchable,ModelName,Basic,model,9,1,323,323,1,randomize,
+c5890,Black Knight Horse,ModelName,Helper,exact,9,2,448,448,1,keep,class.silo=false
+c2160,Finger Reader,ModelName,None,exact,8,7,902,1939,1,keep,class.silo=false
+c3550,鲜血贵族,血条名,Basic,model,8,5,582,582,1,randomize,keep_maps
+c4442,Giant Rotten Land Squirt,ModelName,Basic,exact,8,1,1429,1429,1,randomize,
+c4601,“卡利亚骑士”波尔斯,血条名,Basic,model,8,6,1800,2737,1,randomize,keep_maps
+c4650,诺克史黛拉的龙人士兵,血条名(多: 2),Basic,exact,8,6,272,2239,1,randomize,evt:pair
+c4960,Giant Skeleton Torso,ModelName,Basic,exact,8,2,1918,1918,1,randomize,class.silo=false
+c5141,Messmer Serpent,ModelName,Helper,exact,8,1,2963,2963,1,keep,class.silo=false
+c5380,Miranda Blossom,ModelName,Basic,exact,8,5,1939,1939,1,randomize,
+c5600,Catacombs Skeleton,ModelName,Basic,exact,8,6,281,281,1,randomize,
+c6232,Glintstone Sorcerer,ModelName,Basic,exact,8,1,267,267,1,randomize,
+c2120,“米凯拉的锋刃”玛莲妮亚,血条名(多: 2),Helper,exact,7,2,2489,2738,1,keep,multiphase:malenia
+c3630,Fat Oracle Envoy,ModelName,Basic,model,7,3,768,768,1,randomize,keep_maps
+c3665,Gatekeeper Gostoc,ModelName,None,exact,7,7,1570,1570,1,keep,class.silo=false
+c4164,Large Bloodbane Stray,ModelName,Basic,exact,7,3,162,338,1,randomize,
+c4192,Extra Large Scarab,ModelName,Scarab,exact,7,7,154,271,1,keep,class.silo=false
+c4290,“猎犬骑士”哥廷,血条名,Basic,model,7,7,438,438,1,randomize,keep_maps
+c4450,Walking Mausoleum,ModelName,None,exact,7,6,0,0,1,keep,class.silo=false
+c4690,“接肢”贵族后裔,血条名(多: 2),Basic,exact,7,6,1146,1745,1,randomize,keep_maps
+c5011,发狂河马,血条名,Basic,model,7,5,1408,2000,1,randomize,keep_maps
+c5081,血怪之首,血条名(多: 2),Basic,model,7,5,1094,1500,1,randomize,keep_maps
+c5471,Yellow Dragonfly,ModelName,Wildlife,exact,7,3,17,17,1,randomize,
+c0110,Caravan Dummy,ModelName,None,exact,6,1,1939,1939,1,keep,class.silo=false
+c3460,混种圣骑士,血条名(多: 3),Basic,exact,6,6,664,850,1,randomize,keep_maps
+c3620,Tall Oracle Envoy,ModelName,Basic,exact,6,2,471,471,1,randomize,
+c3705,夏玻利利的选民,血条名,Boss,auto:bossbar,6,3,630,1200,1,randomize,keep_maps
+c3903,法魂杂兵（c3903）,generic,Basic,auto:noname,6,2,594,594,1,randomize,
+c4072,法魂杂兵（c4072）,generic,Basic,auto:noname,6,1,409,409,1,randomize,
+c4493,法魂杂兵（c4493）,generic,Basic,auto:noname,6,1,449,449,1,randomize,
+c5192,巨大蜘蛛蝎,血条名,Basic,exact,6,4,422,1000,1,randomize,
+c5220,“米凯拉的王”拉塔恩,血条名(多: 2),Helper,exact,6,3,3168,3168,1,keep,multiphase:radahn_consort
+c5230,幽影树的化身,血条名,Helper,exact,6,6,640,1152,1,keep,evt:pair;anim
+c5662,法魂杂兵（c5662）,generic,Basic,auto:noname,6,2,153,153,1,randomize,
+c5790,Guardian Golem,ModelName,Basic,exact,6,3,2442,5236,1,randomize,
+c5931,Giant Beast Skeleton,ModelName,Basic,exact,6,3,613,671,1,randomize,
+c5960,Ulcerated Tree Spirit,ModelName,Basic,exact,6,4,2713,2713,1,randomize,class.silo=false
+c2110,“黑剑”玛利喀斯,血条名(多: 2),Boss,model,5,3,1588,1906,1,keep,取不到数值：不碰
+c2130,“恶兆妖鬼”玛尔基特,血条名(多: 2),Boss,exact,5,4,2521,5000,1,randomize,取不到数值：不碰
+c3100,“铁棘”艾隆梅尔,血条名(多: 2),NightMiniboss,exact,5,5,1507,1507,1,randomize,
+c3560,神皮使徒,血条名,Helper,exact,5,4,2033,2033,1,keep,class.silo=false
+c3570,神皮贵族,血条名,Helper,exact,5,4,2439,2683,1,keep,class.silo=false
+c3664,墓地影子,血条名,MinorBoss,model,5,5,305,450,1,randomize,keep_maps
+c3805,密契女猎手,人工指定,Boss,auto:bossbar,5,3,437,2150,1,randomize,
+c4363,Leyndell Knight's Horse,ModelName,Helper,exact,5,2,448,448,1,keep,class.silo=false
+c4950,提比亚的唤声船,血条名,Miniboss,exact,5,4,1918,1918,1,randomize,
+c5391,Troll Knight,ModelName,Basic,exact,5,2,1901,1901,1,randomize,
+c5700,Demi-Human,ModelName,Basic,exact,5,3,119,119,1,randomize,
+c5780,Runebear,ModelName,Basic,exact,5,1,2585,2585,1,randomize,
+c5885,法魂杂兵（c5885）,generic,Basic,auto:noname,5,1,210,210,1,randomize,
+c6091,Giant Turtle,ModelName,None,exact,5,3,378,37818,1,keep,class.silo=false
+c2031,“满月女王”蕾娜菈,血条名,Boss,exact,4,1,3187,3187,1,keep,multiphase:rennala
+c3371,法魂杂兵（c3371）,generic,Basic,auto:noname,4,1,450,450,1,randomize,
+c3666,Goldmask,ModelName,None,exact,4,4,1042,1042,1,keep,class.silo=false
+c4130,“亚人女王”姬丽卡,血条名,MinorBoss,model,4,4,911,1222,1,randomize,keep_maps
+c4190,Large Scarab,ModelName,Scarab,exact,4,4,213,213,1,keep,class.silo=false
+c4241,Colossal Fingercreeper,ModelName,Basic,exact,4,1,1493,1493,1,randomize,
+c4281,Skull Plate Giant Ant,ModelName,Basic,model,4,2,327,327,1,randomize,keep_maps
+c4510,“古龙”兰斯桑克斯,血条名,Basic,exact,4,4,1876,3128,1,randomize,
+c4910,“熔岩土龙”马卡尔,血条名(多: 2),Basic,exact,4,4,2968,2968,1,randomize,
+c5061,Large Lamprey,ModelName,Basic,exact,4,1,210,210,1,randomize,
+c5271,Large Jar Innards,ModelName,Basic,exact,4,3,666,666,1,randomize,
+c5350,Basilisk Eyes,ModelName,None,exact,4,2,0,0,1,keep,class.silo=false
+c5472,Great Dragonfly,ModelName,Wildlife,exact,4,2,17,17,1,randomize,
+c5513,Cemetery Shade,ModelName,Basic,model,4,2,305,750,1,randomize,
+c5526,Large Bloodbane Stray,ModelName,Basic,exact,4,1,338,338,1,randomize,
+c5630,Giant Crayfish,ModelName,Basic,exact,4,3,876,876,1,randomize,
+c5841,法魂杂兵（c5841）,generic,Basic,auto:noname,4,3,512,512,1,randomize,
+c5860,灵火龙,血条名,DragonMiniboss,exact,4,3,3661,3661,1,randomize,
+c5930,Giant Skeleton,ModelName,Basic,exact,4,2,613,671,1,randomize,
+c6233,Page,ModelName,Basic,exact,4,1,353,353,1,randomize,
+c7101,黄金树看护者,血条名,Basic,ref,4,3,1418,1745,1,randomize,
+c2030,“满月女王”蕾娜菈,血条名,None,exact,3,2,1452,2102,1,keep,multiphase:rennala
+c2050,Ranni,ModelName,None,exact,3,3,1939,1939,1,keep,class.silo=false
+c2272,Giant Black Crab,ModelName,Basic,exact,3,2,357,357,1,randomize,
+c2276,Giant Death Crab,ModelName,Basic,exact,3,2,357,357,1,randomize,
+c2278,巨大结晶蟹,血条名(多: 2),Boss,auto:bossbar,3,3,400,950,1,randomize,
+c3250,龙装大树守卫,血条名,Miniboss,exact,3,2,2036,2036,1,randomize,
+c3251,大树守卫,血条名,Miniboss,exact,3,3,1454,1745,1,randomize,
+c4171,Large Putrid Flesh,ModelName,Basic,model,3,3,1250,1893,1,randomize,keep_maps
+c4361,Godrick Knight's Horse,ModelName,Helper,exact,3,2,448,448,1,keep,class.silo=false
+c4365,Mausoleum Knight's Horse,ModelName,Helper,exact,3,1,448,448,1,keep,class.silo=false
+c4375,Mausoleum Foot Soldier,ModelName,Basic,exact,3,1,147,147,1,randomize,
+c4484,法魂杂兵（c4484）,generic,Basic,auto:noname,3,1,1939,1939,1,randomize,
+c4500,“飞龙”亚基尔,血条名,DragonMiniboss,exact,3,3,1639,1639,1,randomize,class.silo=false
+c4580,蚯蚓脸,血条名,Basic,model,3,3,1587,1745,1,randomize,keep_maps
+c4603,挖石山妖,血条名,MinorBoss,model,3,3,1135,1135,1,randomize,keep_maps
+c4604,Iji,ModelName,None,exact,3,3,1914,1914,1,keep,class.silo=false
+c4635,“梦之灾厄”哥拉斯,血条名,Boss,auto:bossbar,3,2,2585,2585,1,randomize,
+c4680,坠星兽物,血条名,Miniboss,exact,3,3,1893,3154,1,randomize,
+c4800,“恶兆之子”蒙格,血条名(多: 2),Boss,exact,3,2,2553,3064,1,randomize,取不到数值：不碰
+c5181,DLC Dummy 2,ModelName,None,exact,3,3,1939,1939,1,keep,class.silo=false
+c5210,神兽舞狮,血条名,Miniboss,exact,3,2,2330,2330,1,randomize,
+c5251,Hornsent Shaman,ModelName,Basic,exact,3,1,141,141,1,randomize,
+c5300,“双月骑士”蕾菈娜,血条名,Boss,model,3,2,2765,2765,1,keep,声音/演出占位（非战斗实体）
+c5524,Large Stray,ModelName,Basic,exact,3,1,338,338,1,randomize,
+c5580,尖刺山的飞龙,血条名,DragonMiniboss,model,3,3,2704,2704,1,randomize,
+c5800,Crucible Knight Devonia,ModelName,Basic,model,3,2,840,1000,1,randomize,
+c5810,“亚人剑圣”翁吉,血条名,MinorBoss,model,3,3,1056,1056,1,randomize,keep_maps
+c5820,大红熊拉鲁瓦,血条名,Miniboss,exact,3,2,2585,2585,1,randomize,
+c6270,Royal Revenant,ModelName,Helper,exact,3,1,679,679,1,keep,class.silo=false
+c6291,Scaly Misbegotten,ModelName,Basic,exact,3,2,531,531,1,randomize,
+c8120,Merciless Chariot,ModelName,None,exact,3,1,0,0,1,keep,class.silo=false
+c2180,Melina,ModelName,None,exact,2,1,1920,1920,1,keep,class.silo=false
+c3050,老将尼奥,血条名,Miniboss,exact,2,2,2834,2834,1,randomize,
+c4162,Large Farum Azula Stray,ModelName,Basic,model,2,2,338,338,1,keep,keep_maps
+c4342,法魂杂兵（c4342）,generic,Basic,auto:noname,2,1,650,650,1,randomize,
+c4400,受封印神祇之嗣,血条名,Boss,auto:bossbar,2,2,2500,2500,1,keep,multiphase:godskin_scion
+c4710,“亵渎君王”拉卡德,血条名(多: 2),Boss,exact,2,2,5000,7500,1,keep,multiphase:rykard_serpent
+c4720,Godfrey,ModelName,Boss,exact,2,1,1721,1721,1,keep,multiphase:godfrey_horah
+c4760,Fire Giant,ModelName,Boss,exact,2,2,3489,9095,1,keep,multiphase:fire_giant
+c4811,腐败化身,血条名,Basic,exact,2,2,1745,1745,1,randomize,
+c5020,融泥骑士,血条名,Boss,exact,2,2,1745,1745,1,keep,multiphase:putrescent
+c5030,“花蕾圣女”萝蜜娜,血条名,Boss,exact,2,1,2540,2540,1,randomize,
+c5070,“葛德文骑士”阿莱德,血条名(多: 2),MinorBoss,model,2,2,1120,1120,1,randomize,
+c5130,“恶之蛇”梅瑟莫,血条名(多: 2),Boss,exact,2,2,2963,2963,1,keep,multiphase:messmer
+c5520,Large Messmerfire Stray,ModelName,Basic,exact,2,1,338,338,1,randomize,
+c5701,Large Demi-Human,ModelName,Basic,exact,2,1,233,233,1,randomize,
+c5970,Abductor Virgin,ModelName,Basic,exact,2,2,829,1418,1,randomize,
+c5980,Omenkiller,ModelName,Basic,exact,2,2,429,429,1,randomize,
+c6251,Tree Sentinel,ModelName,Miniboss,exact,2,2,1454,1745,1,randomize,
+c8007,圆桌厅堂训练假人（c8007）,人工指定,Dummy,auto:dummy,2,1,1939,1939,1,keep,class.silo=false
+c8008,圆桌厅堂训练假人（c8008）,人工指定,None,ref,2,1,1939,1939,1,keep,class.silo=false
+c8009,圆桌厅堂训练假人（c8009）,人工指定,Dummy,auto:dummy,2,1,1939,1939,1,keep,class.silo=false
+c120,弹丸假人（c120）,人工指定,Dummy,auto:dummy,1,0,0,0,0,keep,class.silo=false
+c2035,神皮女族长,血条名,Boss,auto:bossbar,1,1,3703,3703,1,randomize,
+c2060,The Two Fingers,ModelName,None,exact,1,1,5818,5818,1,keep,class.silo=false
+c2105,闪电球变体（c2105）,人工指定,Dummy,auto:dummy,1,1,2765,2765,1,keep,evt:pair;anim
+c2131,Defeated Morgott,ModelName,None,exact,1,1,0,0,1,keep,class.silo=false
+c2151,闪电球变体（c2151）,人工指定,Dummy,auto:dummy,1,1,2765,2765,1,keep,evt:pair;anim
+c2170,Finger Reader Enia,ModelName,None,exact,1,1,902,902,1,keep,class.silo=false
+c2190,“黄金律法”拉达冈,血条名,Boss,exact,1,1,2612,2612,1,keep,multiphase:radagon_eldenbeast
+c2195,法魂杂兵（c2195）,generic,Basic,auto:noname,1,1,3130,3130,1,keep,keep_places:9 个劳弗仪卫变体共用的竞技场实体
+c2200,艾尔登之兽,血条名,Boss,exact,1,1,3768,3768,1,keep,multiphase:radagon_eldenbeast
+c2501,“背叛熔炉者”斯卡德,血条名,Boss,auto:bossbar,1,1,1209,1209,1,randomize,
+c3015,焦黑失乡骑士,血条名(多: 2),Boss,auto:bossbar,1,1,1500,1500,1,randomize,
+c3062,咒死的诺克斯先祖,血条名,Boss,auto:bossbar,1,1,1000,1000,1,randomize,
+c3155,“卡利亚典范”里斯,血条名,Boss,auto:bossbar,1,1,1750,1750,1,randomize,
+c3171,Phillia,ModelName,None,exact,1,1,487,487,1,keep,class.silo=false
+c3252,“圣树骑士”罗蕾塔,血条名,Boss,exact,1,1,2232,2232,1,randomize,
+c3301,“黑夜的女主人”蒂尔娜,血条名,Boss,auto:bossbar,1,1,1745,1745,1,randomize,
+c3401,“黑夜骑兵长官”西古尔,血条名,Boss,auto:bossbar,1,1,2478,2478,1,randomize,
+c3480,“剥尸王”迪鲁,血条名,Boss,auto:bossbar,1,1,3500,3500,1,randomize,
+c3580,“神皮欺诈者”伊德里斯,血条名,Boss,auto:bossbar,1,1,2800,2800,1,randomize,
+c3710,Azur,ModelName,None,exact,1,1,9999,9999,1,keep,class.silo=false
+c3720,Lusat,ModelName,None,exact,1,1,9999,9999,1,keep,class.silo=false
+c3902,腐败习武修士,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
+c3911,恶兵长官,血条名,Boss,auto:bossbar,1,1,3000,3000,1,randomize,
+c3920,“冰之守卫”艾纳尔,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
+c4051,“唤星领主”达克,血条名,Boss,auto:bossbar,1,1,1450,1450,1,randomize,
+c4135,腐败容器,血条名,Boss,auto:bossbar,1,1,2500,2500,1,keep,evt:pair;anim
+c4261,癫火归树看门犬,血条名,Boss,auto:bossbar,1,1,1052,1052,1,randomize,
+c4271,“古龙之剑”希拉,血条名,Boss,auto:bossbar,1,1,2340,2340,1,randomize,
+c4364,Redmane Knight's Horse,ModelName,Helper,exact,1,1,448,448,1,keep,class.silo=false
+c4384,Large Glintstone Miner,ModelName,Basic,exact,1,1,180,180,1,randomize,
+c4390,“地底大法师”达格拉夫,血条名,Boss,auto:bossbar,1,1,2100,2100,1,keep,multiphase:daergraf
+c4391,“伪龙王”达格拉夫,血条名,Boss,auto:bossbar,1,1,3000,3000,1,keep,multiphase:daergraf
+c4492,Greatjar,ModelName,None,exact,1,1,0,0,1,keep,class.silo=false
+c4501,“步入腐败”艾格基斯,血条名,DragonMiniboss,exact,1,1,5753,5753,1,randomize,
+c4503,Borealis the Freezing Fog,ModelName,DragonMiniboss,exact,1,1,1639,1639,1,randomize,
+c4504,Greyoll,ModelName,None,exact,1,1,12440,12440,1,keep,class.silo=false
+c4511,“死龙”弗尔桑克斯,血条名,Boss,exact,1,1,3910,3910,1,randomize,
+c4520,“龙王”普拉顿桑克斯,血条名,Boss,exact,1,1,4538,4538,1,randomize,
+c4561,Bloodbane Giant Crow,ModelName,Basic,exact,1,1,900,900,1,randomize,
+c4711,Rykard's Corpse,ModelName,None,exact,1,1,12691,12691,1,keep,class.silo=false
+c4721,“初始之王”葛孚雷,血条名(多: 2),Boss,exact,1,1,4396,4396,1,keep,multiphase:godfrey_horah
+c4730,Starscourge Radahn,ModelName,Boss,exact,1,1,3102,3102,1,randomize,
+c4740,“艾格蕾大祭司”维戈,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
+c4750,“接肢”葛瑞克,血条名,Boss,exact,1,1,5500,5500,1,randomize,
+c4751,Defeated Godrick,ModelName,None,exact,1,1,2521,2521,1,keep,class.silo=false
+c4810,黄金树的化身,血条名,Miniboss,exact,1,1,1745,1745,1,randomize,
+c4850,“塑灵者”凯玛,血条名,Boss,auto:bossbar,1,1,3200,3200,1,randomize,
+c4911,“大土龙”席欧朵利克,血条名,Miniboss,exact,1,1,3561,3561,1,randomize,
+c5000,老将盖乌斯,血条名,Boss,exact,1,1,2765,2765,1,randomize,
+c5010,黄金河马,血条名,Boss,exact,1,1,2957,2957,1,randomize,
+c5050,Mini Midra,ModelName,Basic,exact,1,1,416,416,1,keep,multiphase:midra
+c5051,“癫火之王”米德拉,血条名,Boss,exact,1,1,3347,3347,1,keep,multiphase:midra
+c5120,“狂龙”贝勒,血条名,Boss,exact,1,1,2712,2712,1,randomize,
+c5140,Large Messmer Serpent,ModelName,Helper,exact,1,1,2963,2963,1,keep,evt:pair;anim
+c5165,“纯血骑士”康拉德,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
+c5200,"Metyr, Mother of Fingers",ModelName,Boss,exact,1,1,3072,3072,1,randomize,
+c5312,“拷问老者”约里,血条名,MinorBoss,exact,1,1,2239,2239,1,randomize,
+c5330,St. Trina,ModelName,None,exact,1,1,173,173,1,keep,class.silo=false
+c5370,“古龙”瑟涅桑克斯,血条名,DragonMiniboss,model,1,1,3128,3128,1,randomize,
+c5390,Troll,ModelName,Basic,exact,1,1,1901,1901,1,randomize,
+c5551,Colossal Fingercreeper,ModelName,Basic,exact,1,1,1493,1493,1,randomize,
+c5591,Large Putrid Flesh,ModelName,Basic,exact,1,1,1893,1893,1,randomize,
+c5620,Tibia Mariner,ModelName,Basic,exact,1,1,1918,1918,1,randomize,
+c5680,Ballista,ModelName,Helper,exact,1,1,679,679,1,keep,class.silo=false
+c5720,Demi-Human Chief,ModelName,Basic,exact,1,1,534,534,1,randomize,
+c5861,“血焰龙”桑吉瓦罗斯,血条名,Boss,auto:bossbar,1,1,2500,2500,1,randomize,
+c5871,Large Bigmouth Imp,ModelName,Basic,exact,1,1,172,172,1,randomize,
+c5872,Massive Bigmouth Imp,ModelName,Basic,exact,1,1,172,172,1,randomize,
+c5910,Hornsent Grandam,ModelName,None,exact,1,1,173,173,1,keep,class.silo=false
+c5920,Magma Wyrm,ModelName,Basic,exact,1,1,2968,2968,1,randomize,
+c5950,Leonine Misbegotten,ModelName,Basic,exact,1,1,564,564,1,randomize,
+c6210,Albinauric Archer,ModelName,Basic,exact,1,1,487,487,1,randomize,
+c6220,Archer's Wolf,ModelName,Helper,exact,1,1,774,774,1,keep,class.silo=false
+c6260,Death Rite Bird,ModelName,Miniboss,exact,1,1,2447,2447,1,randomize,
+c6310,Fallingstar Beast,ModelName,Miniboss,exact,1,1,1893,1893,1,randomize,
+c7102,法魂杂兵（c7102）,generic,Basic,auto:noname,1,1,1418,1418,1,randomize,
+c8003,圆桌厅堂训练假人（c8003）,人工指定,Dummy,auto:dummy,1,1,1939,1939,1,keep,class.silo=false
+c8004,圆桌厅堂训练假人（c8004）,人工指定,Dummy,auto:dummy,1,1,1939,1939,1,keep,class.silo=false
+c8005,圆桌厅堂训练假人（c8005）,人工指定,Dummy,auto:dummy,1,1,1939,1939,1,keep,class.silo=false
+c8006,圆桌厅堂训练假人（c8006）,人工指定,Dummy,auto:dummy,1,1,1939,1939,1,keep,class.silo=false
+c8099,圆桌厅堂训练假人（c8099）,人工指定,Dummy,auto:dummy,1,1,1939,1939,1,keep,class.silo=false

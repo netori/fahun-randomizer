@@ -1,5 +1,5 @@
 # inventory_gaps.py — 量化"说明书跟着变"这件事还差什么
-import collections, csv, html, importlib.util, json, os, re
+import collections, csv, html, importlib.util, json, os, re, sys
 import openpyxl
 
 APPLY = os.path.dirname(os.path.abspath(__file__))
@@ -7,7 +7,9 @@ spec = importlib.util.spec_from_file_location("ug", os.path.join(APPLY, "update_
 ug = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(ug)
 
-MOD = os.path.join(os.path.dirname(ug.ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）")
+sys.path.insert(0, APPLY)
+import modpaths                                                   # noqa: E402
+MOD = modpaths.require_mod_root(APPLY)
 XLSX = os.path.join(ug.ROOT, "法魂资料整合表.xlsx")
 
 

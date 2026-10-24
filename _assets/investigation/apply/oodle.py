@@ -1,15 +1,31 @@
 # oodle.py — 通过游戏自带的 oo2core*.dll 做 Oodle(Kraken) 解压/压缩（ctypes，无需任何第三方工具）
-import ctypes, sys, glob, os, struct
+import ctypes, sys, glob, os, re, struct
 
-DLL_CANDIDATES = [
-    # 常见 Steam / 常见安装位置（覆盖大多数玩家）
-    r"C:\Program Files (x86)\Steam\steamapps\common\ELDEN RING\Game",
-    r"D:\SteamLibrary\steamapps\common\ELDEN RING\Game",
-    r"E:\SteamLibrary\steamapps\common\ELDEN RING\Game",
-    r"F:\SteamLibrary\steamapps\common\ELDEN RING\Game",
-    r"C:\Games\ELDEN RING\Game",
-    r"D:\Games\ELDEN RING\Game",
-]
+
+def _fallback_dirs():
+    """兜底用的常见安装位置 —— 全部从环境变量 / Steam 库列表推出来，不写死某台机器。"""
+    out = []
+    for ev in ("ProgramFiles(x86)", "ProgramFiles", "ProgramW6432"):
+        p = os.environ.get(ev)
+        if p:
+            out.append(os.path.join(p, "Steam", "steamapps", "common", "ELDEN RING", "Game"))
+    # Steam 库列表：游戏装在别的盘也能推出来
+    for base in list(out):
+        # ...\Steam\steamapps\common\ELDEN RING\Game → ...\Steam
+        steam = os.path.dirname(os.path.dirname(os.path.dirname(base)))
+        try:
+            txt = open(os.path.join(steam, "steamapps", "libraryfolders.vdf"),
+                       encoding="utf-8", errors="ignore").read()
+        except OSError:
+            continue
+        for m in re.finditer(r'"path"\s+"([^"]+)"', txt):
+            out.append(os.path.join(m.group(1).replace("\\\\", "\\"),
+                                    "steamapps", "common", "ELDEN RING", "Game"))
+    # 非 Steam 的常见搬法（绿色版 / 免安装版）
+    for drv in ("C:", "D:", "E:", "F:", "G:"):
+        for sub in ("SteamLibrary", "Games", "Game"):
+            out.append(os.path.join(drv + os.sep, sub, "ELDEN RING", "Game"))
+    return out
 
 
 def _guess_game_dirs(start):
@@ -60,6 +76,14 @@ def find_dll(extra_dirs=()):
     for d in [os.environ.get("CONVERGENCE_GAME_DIR")]:
         if d:
             dirs.append(d)
+    # 统一解析器先找一遍（它认「旁边任意一层有 Game/eldenring.exe」）
+    try:
+        import modpaths
+        _g = modpaths.find_game_dir(exe_dir)
+    except Exception:
+        _g = None
+    if _g:
+        dirs.append(_g)
     for base in (root, exe_dir, here):
         if base:
             dirs += [os.path.join(base, "oodle"), os.path.join(base, "game"),
@@ -75,7 +99,7 @@ def find_dll(extra_dirs=()):
                 dirs.insert(0, c)
         except OSError:
             pass
-    dirs += DLL_CANDIDATES
+    dirs += _fallback_dirs()
 
     seen = set()
     for d in dirs:

@@ -13,10 +13,11 @@ sys.path.insert(0, APPLY)
 import erio      # noqa
 import oodle     # noqa
 import fmg as F  # noqa
+import modpaths  # noqa: E402
 
 ZWSP = "\u200b"
-MOD = os.path.normpath(os.path.join(os.path.dirname(os.path.dirname(APPLY)), "..",
-                                    "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"))
+# MOD 根目录：统一问 modpaths（别再按目录名拼 —— 换个整合包名字就废了）
+MOD = modpaths.find_mod_root(APPLY) or ""
 GUIDE_IDS = list(range(8800, 8827)) + list(range(8870, 8896))
 
 
@@ -140,7 +141,9 @@ def write_raw(path, raw, kind="KRAK", template=None):
 
 def apply_guide(old_xml, new_xml, source=None, out=None, quiet=False):
     """原地改写：只替换 FMG 里等长的文本，容器尺寸完全不变"""
-    source = source or os.path.join(MOD, "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx")
+    if not source:
+        source = os.path.join(modpaths.require_mod_root(APPLY),
+                              "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx")
     out = out or source
     raw, kind, data = raw_and_bnd(source)
     bnd = erio.Bnd4.parse(raw)

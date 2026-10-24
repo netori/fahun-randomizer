@@ -23,6 +23,10 @@ investigation/*/work/
 investigation/*/out/
 investigation/*/logs/
 investigation/**/__pycache__/
+# 计划层产物：30 MB、可由种子 + 数据表 5 秒重建，不入库
+investigation/enemy_plan*.json
+# 每层写盘时用的计划快照（复验要用；同样 30+ MB、可重建）
+investigation/plans/
 **/__pycache__/
 *.pyc
 *.pyo
@@ -76,3 +80,15 @@ investigation/**/evidence/
 
 # 运行时缓存（程序自动找 Oodle 压缩库的位置，写完才知道）
 oodle_dir.txt
+
+# ── 本地临时产物 / 备份 / 探针（不进仓库；2026-10-24 整理）──
+/temp/
+/plans/
+/undefined/
+investigation/_tmp*
+investigation/_bak*
+investigation/_launch_test_*/
+investigation/_phase_backup/
+investigation/apply/_tmp*
+investigation/audit_enemy_*/
+/_tmp*

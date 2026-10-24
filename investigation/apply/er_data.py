@@ -23,9 +23,14 @@ sys.path.insert(0, HERE)
 
 
 def _find_dirs():
-    """找游戏目录与钥匙/词典目录（都能用环境变量覆盖）"""
-    game = os.environ.get("ER_GAME_DIR") or \
-        r"F:\game\studygame\elden ring\ELDEN RING Tarnished Edition v1.17\Game"
+    """找游戏目录与钥匙/词典目录（都能用环境变量覆盖；没给就按相对位置找）"""
+    game = os.environ.get("ER_GAME_DIR") or os.environ.get("CONVERGENCE_GAME_DIR")
+    if not game:
+        try:
+            import modpaths
+            game = modpaths.find_game_dir(HERE) or ""
+        except Exception:
+            game = ""
     keys = os.environ.get("ER_KEYS_DIR")
     if not keys:
         for c in (os.path.join(os.environ.get("TEMP", ""), "binderkeys", "EldenRing_PC"),

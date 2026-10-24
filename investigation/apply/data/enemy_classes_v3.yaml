@@ -1,0 +1,406 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# enemy_classes_v3.yaml —— 敌人分类与政策（v1 的单一权威源）
+#
+# 谁读它：只被离线构建器 investigation/apply/enemy_data_build.py 读（--build）。
+#         运行期读的是 investigation/enemy_places.csv（由本文件 + MSB 扫描 + 参考基线合成）。
+# 改它的流程：改本文件 → python investigation/apply/enemy_data_build.py --build → --check
+# 设计来源：docs/敌人随机_分类与平衡_设计v0.md
+# ─────────────────────────────────────────────────────────────────────────────
+version: 3
+updated: "2026-10-24"
+
+meta:
+  key: "(map, part_name, occurrence)"          # 位置主键；entity_id 有 69% 是 0，不能当键
+  reference: "thefifthmatt SoulsRandomizers diste/Base/enemy.txt（Classes 块）"
+  note: |
+    L1 类名沿用参考实现的 14 个值。2026-10-24 起按作者要求收成两档：
+      · 参与随机 / 界面上出现的 9 类：Basic Wildlife HostileNPC Boss MinorBoss
+        Miniboss NightMiniboss DragonMiniboss Evergaol
+      · 内部标记类（ui: false，不进界面、不参与随机、不当来源）：
+        None / Helper / DupeOnly / Dummy / Scarab / CaravanTroll
+    法魂新增的无名杂兵（旧 Mob 类）已并入 Basic（见 class_aliases）：它们的 silo/tier
+    与普通杂兵同一套，不再单列一类。
+    类名只做显示与 silo 第一维；真正的池边界是 silo（见 l2_silo）。
+
+# ── L1：类别 ────────────────────────────────────────────────────────────────
+# silo=true  → 参与随机，且按 (类 × 本体/DLC) 分 silo（候选集 = 同 silo 内）
+# silo=false → 该类整体不参与随机（policy 兜底 keep）
+l1_classes:
+  # ── 参与随机、界面可见的 9 类 ──
+  Basic:          {silo: true,  policy: randomize, note: "普通杂兵（人数最多的一类；含旧 Mob 法魂无名杂兵）"}
+  Wildlife:       {silo: true,  policy: randomize, note: "野兽/野生生物；几乎都没有实体 ID"}
+  HostileNPC:     {silo: true,  policy: randomize, note: "敌对 NPC（红灵/入侵者一类）"}
+  MinorBoss:      {silo: true,  policy: randomize, note: "按 Boss 装配的小 Boss（有血条）"}
+  Boss:           {silo: true,  policy: randomize, note: "具名 Boss"}
+  Miniboss:       {silo: true,  policy: randomize}
+  NightMiniboss:  {silo: true,  policy: randomize}
+  DragonMiniboss: {silo: true,  policy: randomize}
+  Evergaol:       {silo: true,  policy: randomize, note: "封印监牢"}
+  # ── 内部标记类（ui: false）：只用来把「不能动」的位置分类，不参与随机、不当来源、不进界面 ──
+  None:           {silo: false, policy: keep, ui: false, note: "参考基线标 None：占位空壳/剧情对象/拟态复制体等，没有可战斗的身份"}
+  Helper:         {silo: false, policy: keep, ui: false, note: "跟随主人的 helper（召唤物/炮台/剧情随从）：单独换 = 与主人断链"}
+  DupeOnly:       {silo: false, policy: keep, ui: false, note: "参考实现里只能被强制映射的「分身/复制品」实体"}
+  Dummy:          {silo: false, policy: keep, ui: false, note: "训练假人/弹丸假人/危害物"}
+  Scarab:         {silo: false, policy: keep, ui: false, note: "粪金龟：只是掉落容器，换了没意义（2026-10-24 起不随）"}
+  CaravanTroll:   {silo: false, policy: keep, ui: false, note: "商队巨魔：跟着商队路线走，换了会断商队（2026-10-24 起不随）"}
+
+# ── 类合并 ──────────────────────────────────────────────────────────────────
+# 法魂新增、游戏里没有名字的杂兵（旧 Mob 类：统一名「法魂杂兵（cXXXX）」）并入 Basic：
+# 它们本来就和普通杂兵同一档强度、同一类位置，单列一类只会把池拆小。
+class_aliases:
+  Mob: Basic
+
+# ── L2：silo = 类 × 区域 ────────────────────────────────────────────────────
+l2_silo:
+  rule: "{class}|{area}"          # area ∈ base | dlc
+  area_values: [base, dlc]
+  # DLC 地图前缀（依据 diste/Names/MapName.txt 逐图名核对，2026-10-20）
+  #   m61  = 幽影地大地图（Scaduview / Gravesite Plain / Cerulean Coast / Rauh …）
+  #   m20  = 塔之镇贝鲁纳特 / 艾尼尔·伊利姆     m21 = 幽影城（含圣堂）
+  #   m22  = 石棺裂隙                          m25 = 指头产房
+  #   m28  = 米德拉宅邸                        m40-m43 = DLC 墓地/监牢/锻造遗迹/洞窟
+  # ⚠️ m60 是**本体**大地图分块（Liurnia/Caelid/Mountaintops…），不是 DLC。
+  dlc_map_prefixes: [m20, m21, m22, m25, m28, m40, m41, m42, m43, m61]
+  note: "同 silo 内才可能互换；本体与 DLC 不混（DLC 敌人不会被扔进本体地图，反之亦然）"
+
+# ── L3：强度档 ──────────────────────────────────────────────────────────────
+l3_tier:
+  # 复合分位：hp 权重 0.75、魂量权重 0.25（魂量大量为 0，权重给低）
+  metric: "0.75*rank(log10(max(hp,1))) + 0.25*rank(log10(max(get_soul,1)))"
+  scope: silo                 # 在 silo 内算分位 → tier 1..4 = 该 silo 内由弱到强
+  cuts: [0.25, 0.50, 0.75]
+  source: "investigation/enemy_table.csv（npc_id → row_id，命中 27,724/27,780 = 99.8%）"
+  note: |
+    tier 只用于"换同档 / 报告 / 界面显示"。真正的数值对齐按**位置原敌人的强度**缩放
+    （docs/敌人随机_分类与平衡_设计v0.md §5），不靠 tier。
+
+# ── L4：政策 ────────────────────────────────────────────────────────────────
+l4_policy:
+  values: [randomize, keep, source_only, hazard, story]
+  # 按顺序求值，第一条命中即生效。**顺序必须与 enemy_data_build.apply_layer 一致**
+  rules:
+    - {when: "place in overrides.places",     policy: "见 overrides", reason: "人工覆盖"}
+    - {when: "npc_id in never_touch_npc_ids", policy: keep, reason: "换了就永久失效（传送门本体物件）"}
+    - {when: "place in multiphase.groups",    policy: keep, reason: "多阶段 Boss：换一阶段 = 半只 Boss"}
+    - {when: "实体被 EMEVD 脚本绑定（evt 非空）", policy: keep, reason: "pair 坐骑/受击对、anim 强制动画、copy 外观复制、aiid 脚本 AI —— 换模型会崩游戏或让 AI 失效（232 行）"}
+    - {when: "model == c0000",                policy: keep, reason: "占位空壳，真身由事件生成（约 390 行）"}
+    - {when: "part 名含 Sound",               policy: keep, reason: "声音/演出占位，舞台上不战斗（6 行）"}
+    - {when: "class.silo == false",           policy: keep, reason: "该类不参与随机"}
+    - {when: "model in keep_models",          policy: keep, reason: "v1 人工判定不参与"}
+    - {when: "map in keep_maps",              policy: keep, reason: "枢纽/安全区"}
+    - {when: "npc_id in keep_npc_ids",        policy: keep, reason: "人工指定（见 note）"}
+    - {when: "place in keep_places",          policy: keep, reason: "人工指定"}
+    - {when: "hp 无数值",                     policy: keep, reason: "取不到数值 → 不碰"}
+    - {else: randomize}
+  keep_models:   # v1 不参与随机：8 个圆桌训练假人 + 弹丸假人 + 2 个闪电球变体（危害物）
+    - c8003
+    - c8004
+    - c8005
+    - c8006
+    - c8007
+    - c8008
+    - c8009
+    - c8099
+    - c120
+    - c2105
+    - c2151
+  keep_maps:
+    - m11_10_00_00          # 圆桌厅堂（178 个位置：NPC、训练假人、剧情对象）
+  keep_npc_ids:
+    526100965: "希芙拉河诺克隆广场的拟态泪：换掉会破拟态机制"
+  never_touch_npc_ids:
+    506010050: "黄金树传送门本体（物件，不是敌人 part）；换它 = 传送门彻底失效"
+  keep_places:
+    # 蕾娜菈二阶段的法术分身：只负责放技能，不是可战斗对象，换模型会让她的招式变成别的怪
+    - {map: m14_00_00_00, entity: 14000890, reason: "蕾娜菈二阶段法术分身（Comet Azur/Moon 等）"}
+    - {map: m14_00_00_00, entity: 14000891, reason: "蕾娜菈二阶段法术分身（Comet Azur/Moon 等）"}
+    # 指头之母尤弥尔：MSB 里是占位模型 c0000，真模型由事件挂 SpEffect 生成，换掉就崩
+    - {map: m61_51_45_00, entity: 2051450720, reason: "占位模型 c0000，真身由事件生成"}
+    # 劳弗圣龛竞技场：一个实体承载 9 个仪卫变体（用 spEffect 切换）——换掉 9 个变体全变一只、阶段二断链
+    - {map: m31_81_00_00, entity: 31810800, reason: "9 个劳弗仪卫变体共用的竞技场实体"}
+    # 拟态泪的可见壳（entity 12070810）：事件 12078850 里 X16 = 它，ForceAnimationPlayback(20010) 摆尸体造型、
+    # 真身 X0=12070805 由 CopyPlayerCharacterData 复制玩家。换掉壳 = 玩家看到「蝙蝠尸体」，拟态本体不出现。
+    - {map: m12_07_00_00, entity: 12070810, reason: "拟态泪可见壳（事件 X16 / ForceAnimationPlayback 20010），换掉后看到的是壳"}
+    # 「梦之灾厄」哥拉斯（entity 12020850）：用户 2026-10-21 确认可随（Copy Slime 的复制只影响外观，
+    # 换来的身份/数值/AI 仍然生效），所以不再 keep；同图 12020860 是它的尸体壳（npc 0，已按「取不到数值」keep）。
+
+# ── 多阶段 Boss：一场战斗的两个阶段（v1 一律 keep）──────────────────────────
+# 只换其中一阶段 = 半只 Boss：血条名、换阶段事件、站位/无敌帧全都会错。
+# v1 不动；v1.1 按参考实现的 NextPhase/Phases/RemoveGroup 当一组整体替换。
+# 判据与逐条证据：docs/敌人随机_M0_对齐报告.md §5.2（m17 那条已在 EMEVD 里核到换阶段指令）
+multiphase:
+  # kind： phase = 真阶段（换阶段事件按顺序绑）；helper = 血条/辅助实体；mount = 坐骑；dummy = HP 壳
+  # swap： true = 允许 v1.1「整组替换」。只给**无 pair 绑定**的 5 组开；
+  #        有 CreateReferredDamagePair 的 4 组（godfrey/maliketh/radahn/fire_giant）保持 false
+  #        —— pair 是 2026-10-21 安塞尔河坏档的根因（骑手/坐骑互换后读档崩溃）。
+  groups:
+    - {id: godfrey_horah,       map: m11_05_00_00, phases: [11050800, 11050801], kind: phase, swap: false}  # 葛孚雷 → 荷莱·露（pair）
+    - {id: maliketh_beast,      map: m13_00_00_00, phases: [13000801, 13000800], kind: phase, swap: false}  # 野兽祭司 → 玛利喀斯（pair）
+    - {id: rennala,             map: m14_00_00_00, phases: [14000801, 14000800], kind: phase, swap: true}   # 蕾娜菈：一阶段 800 / 二阶段 801
+    - {id: rykard_serpent,      map: m16_00_00_00, phases: [16000801, 16000800], kind: phase, swap: true}   # 噬神大蛇 801 → 拉卡德 800
+    - {id: daergraf,            map: m17_00_00_00, phases: [17000800, 17000810], kind: phase, swap: true}   # 地底大法师 → 伪龙王
+    - {id: radagon_eldenbeast,  map: m19_00_00_00, phases: [19000810, 19000800], kind: phase, swap: true}   # 拉达冈 810 → 艾尔登之兽 800
+    - {id: radahn_consort,      map: m20_01_00_00, phases: [20010800, 20010801], kind: phase, swap: false}  # 拉塔恩 两阶段（pair）
+    - {id: messmer,             map: m21_01_00_00, phases: [21010800, 21010801], kind: phase, swap: false}  # 梅瑟莫 两阶段（pair）
+    - {id: malenia,             map: m15_00_00_00, phases: [15000800, 15000806], kind: phase, swap: true}   # 玛莲妮亚 → 腐败女神（15000806 注释 "Phase 2 Malenia"）
+    - {id: godskin_scion,       map: m12_01_00_00, phases: [12010810, 12010812], kind: dummy, swap: false}  # 12010812 真身，12010810 是 ScionHpDummy
+    - {id: fire_giant,          map: m60_13_13_02, phases: [1052520800, 1052520801], kind: phase, swap: false}  # pair + 拆 NPCPart
+    - {id: scadutree,           map: m61_50_48_00, phases: [2050480810, 2050480811, 2050480812], kind: helper, swap: false}  # 三阶段血条助手
+    - {id: putrescent,          map: m22_00_00_00, phases: [22000800, 22000801], kind: mount, swap: false}   # 融泥骑士 + 坐骑
+    - {id: midra,               map: m28_00_00_00, phases: [28000800, 28000801], kind: helper, swap: false}  # 同场实体被事件共享
+
+# ── 池（法魂专属；只决定"界面给玩家勾哪一行"，不限制候选）─────────────────────
+pools:
+  - id: waygate
+    name: 黄金树传送门守门
+    default_on: true
+    status: ready
+    note: |
+      奖励（露滴残渣/黄金精华）由地图事件按 **MSB 实体 ID** 发放，与 npc 无关
+      （docs/敌人随机_传送门_可换性验证.md）。所以只换 npc/think/chara/model、保留实体 ID。
+      硬条件：换入必须敌对+会出现+可击杀；换完必须自检（实体都在、npc 确实变了、能打死）。
+      三个口径：EMEVD 开锁实体 30 / 有奖励行 27 / wiki 中文名 28。
+      下面 27 个是"能在 MSB 里找到的敌人 part"；另 2 个开锁实体不是敌人 part（见 unresolved）。
+    members:
+      - {map: m12_01_00_00, entity: 12010805, npc_id: 33001050, model: c3300, name: "黄金树哨兵 / 诺克斯虫骑", area: base}
+      - {map: m12_03_00_00, entity: 12030860, npc_id: 46400050, model: c4640, name: 溃烂树灵, area: base}
+      - {map: m12_07_00_00, entity: 12070805, npc_id: 526100965, model: c1000, name: 拟态泪, area: base}
+      - {map: m60_33_43_00, entity: 1033430800, npc_id: 46604150, model: c4660, name: "黄金树化身 / 卡利亚魔像", area: base}
+      - {map: m60_36_52_00, entity: 1036520800, npc_id: 41200950, model: c4120, name: 亚人酋长, area: base}
+      - {map: m60_37_54_00, entity: 1037540810, npc_id: 30151000, model: c3015, name: 焦黑流放骑士, area: base}
+      - {map: m60_38_48_00, entity: 1038480800, npc_id: 38050050, model: c3805, name: 密契女猎手, area: base}
+      - {map: m60_39_42_00, entity: 1039420800, npc_id: 22700065, model: c2278, name: 巨型结晶蟹, area: base}
+      - {map: m60_41_37_00, entity: 1041370800, npc_id: 46900050, model: c4690, name: 接肢贵种, area: base}
+      - {map: m60_41_53_00, entity: 1041530800, npc_id: 45800030, model: c4580, name: 黄金树守卫（北·亚坛）, area: base}
+      - {map: m60_43_33_00, entity: 1043330800, npc_id: 48100012, model: c4810, name: 黄金树化身（南·盖利德）, area: base}
+      - {map: m60_43_50_00, entity: 1043500800, npc_id: 71010004, model: c7101, name: 黄金树看护者, area: base}
+      - {map: m60_44_53_00, entity: 1044530810, npc_id: 21400650, model: c2140, name: 枯萎恶兆, area: base}
+      - {map: m60_45_37_10, entity: 1045370800, npc_id: 36502100, model: c3650, name: 黄金树守卫, area: base}
+      - {map: m60_47_40_00, entity: 1047400800, npc_id: 44907275, model: c4490, name: 壶战士冠军, area: base}
+      - {map: m60_48_37_00, entity: 1048370810, npc_id: 39020032, model: c3902, name: 腐朽僧, area: base}
+      - {map: m60_49_52_00, entity: 1049520850, npc_id: 49801010, model: c4980, name: 死仪鸟, area: base}
+      - {map: m60_49_57_00, entity: 1049570800, npc_id: 31700100, model: c3170, name: 白金之子女狼骑手, area: base}
+      - {map: m60_51_40_00, entity: 1051400800, npc_id: 48110042, model: c4811, name: 腐朽化身, area: base}
+      - {map: m60_51_53_00, entity: 1051530800, npc_id: 46020100, model: c4602, name: 山巨魔, area: base}
+      - {map: m60_52_56_00, entity: 1052560800, npc_id: 39101200, model: c3910, name: 大焰主教, area: base}
+      - {map: m61_47_40_00, entity: 2047400800, npc_id: 51920100, model: c5192, name: 巨蛛蝎, area: dlc}
+      - {map: m61_47_47_10, entity: 2047470800, npc_id: 52500200, model: c5250, name: 神鸟战士, area: dlc}
+      - {map: m61_48_38_00, entity: 2048380860, npc_id: 50811100, model: c5081, name: 血魔秘术师, area: dlc}
+      - {map: m61_49_41_00, entity: 2049410850, npc_id: 50900390, model: c5090, name: 墓鸟猛禽, area: dlc}
+      - {map: m61_49_45_00, entity: 2049450850, npc_id: 51600250, model: c5160, name: 火骑士十字军, area: dlc}
+      - {map: m61_51_44_00, entity: 2051440850, npc_id: 50110100, model: c5011, name: 疯狂河马, area: dlc}
+      - {map: m61_51_47_00, entity: 2051470800, npc_id: 58400250, model: c5840, name: 黑骑士队长, area: dlc}
+    unresolved:     # EMEVD 里有开锁调用，但 MSB 里不是敌人 part（多半是物件/门）
+      - {map: m12_02_00_00, entity: 12020805, note: "Siofra 的传送门：换不了（不是敌人 part）"}
+      - {map: m60_47_37_00, entity: 1047370800, note: "该图 MSB 只有 1047370400 / 1047370300"}
+
+  - id: keystone
+    name: 楔石首领（大锅钥石）
+    default_on: true
+    status: ready
+    note: |
+      13 个 Boss / 18 个位置 / 5 组，组内任杀其一掉钥石（钥石物品 8060-8064「大锅的第一块…第五块钥石」）。
+      钥石挂在事件/位置上，换人后照样掉（作者确认）。组名见每行的 group 字段；界面按组显示。
+      出处：docs/archive/敌人随机_2026-10/敌人随机_Boss分类.md:42-48（"12 个"是没算 1.4.1.1 追加的封印神嗣，含它是 13）。
+    members:
+      # ── 第一块钥石：葛瑞克 / 蕾娜菈 / 祖灵之王
+      - {map: m10_00_00_00, entity: 10000800, npc_id: 47500014, model: c4750, name: "接肢葛瑞克", area: base, group: keystone_1}
+      - {map: m14_00_00_00, entity: 14000800, npc_id: 20310024, model: c2031, name: "满月女王蕾娜菈", area: base, group: keystone_1}
+      - {map: m14_00_00_00, entity: 14000801, npc_id: 20300024, model: c2030, name: "满月女王蕾娜菈（二阶段）", area: base, group: keystone_1}
+      - {map: m12_09_00_00, entity: 12090800, npc_id: 46700065, model: c4670, name: "祖灵之王", area: base, group: keystone_1}
+      # ── 第二块钥石：拉塔恩 / 拉卡德 / 黑暗弃子
+      - {map: m60_13_09_02, entity: 1052380800, npc_id: 47300040, model: c4730, name: "碎星拉塔恩", area: base, group: keystone_2}
+      - {map: m16_00_00_00, entity: 16000800, npc_id: 47101038, model: c4710, name: "亵渎君王拉卡德", area: base, group: keystone_2}
+      - {map: m16_00_00_00, entity: 16000801, npc_id: 47100038, model: c4710, name: "亵渎君王拉卡德（二阶段）", area: base, group: keystone_2}
+      - {map: m12_04_00_00, entity: 12040800, npc_id: 46200062, model: c4620, name: "黑暗弃子阿斯特尔", area: base, group: keystone_2}
+      # ── 第三块钥石：玛莲妮亚 / 蒙格 / 死龙 / 龙王（+ 追加封印神嗣）
+      - {map: m15_00_00_00, entity: 15000800, npc_id: 21200056, model: c2120, name: "腐败女神玛莲妮亚", area: base, group: keystone_3}
+      - {map: m15_00_00_00, entity: 15000806, npc_id: 21200056, model: c2120, name: "腐败女神玛莲妮亚（二阶段）", area: base, group: keystone_3}
+      - {map: m12_05_00_00, entity: 12050800, npc_id: 48000068, model: c4800, name: "鲜血君王蒙格", area: base, group: keystone_3}
+      - {map: m12_03_00_00, entity: 12030850, npc_id: 45110066, model: c4511, name: "死龙弗尔桑克斯", area: base, group: keystone_3}
+      - {map: m13_00_00_00, entity: 13000830, npc_id: 45200072, model: c4520, name: "龙王普拉顿桑克斯", area: base, group: keystone_3}
+      - {map: m12_01_00_00, entity: 12010810, npc_id: 44000000, model: c4400, name: "受封印神祇之嗣", area: base, group: keystone_3}
+      - {map: m12_01_00_00, entity: 12010812, npc_id: 44000001, model: c4400, name: "受封印神祇之嗣", area: base, group: keystone_3}
+      # ── 第四块钥石：蒙葛特
+      - {map: m11_00_00_00, entity: 11000800, npc_id: 21300534, model: c2130, name: "恶兆王蒙葛特", area: base, group: keystone_4}
+      # ── 第五块钥石：玛利喀斯
+      - {map: m13_00_00_00, entity: 13000800, npc_id: 21101072, model: c2110, name: "黑剑玛利喀斯", area: base, group: keystone_5}
+      - {map: m13_00_00_00, entity: 13000801, npc_id: 21100072, model: c2110, name: "黑剑玛利喀斯（二阶段）", area: base, group: keystone_5}
+
+  - id: remembrance
+    name: 追忆首领
+    default_on: true
+    status: ready
+    note: |
+      32 件追忆（本体 22 = 原版 15 + 法魂新增 7；DLC 10），落在 48 个位置上（多阶段 Boss 每阶段一行；
+      萝蜜娜有"已封印/未封印"两份 MSB，各一行）。追忆是"该位置的奖励"，可换。
+      出处：GoodsName 2950-2971 与 GoodsName_dlc01 2002900-2002910 逐条读名后按名字/血条名对到位置
+      （12 个中文译名差异是人工确认的，见 docs/敌人随机_M0_对齐报告.md §5.1）。
+    members:
+      - {map: m10_00_00_00, entity: 10000800, npc_id: 47500014, model: c4750, name: "接肢葛瑞克", area: base}
+      - {map: m60_13_09_02, entity: 1052380800, npc_id: 47300040, model: c4730, name: "碎星拉塔恩", area: base}
+      - {map: m11_00_00_00, entity: 11000800, npc_id: 21300534, model: c2130, name: "恶兆王蒙葛特", area: base}
+      - {map: m16_00_00_00, entity: 16000800, npc_id: 47101038, model: c4710, name: "亵渎君王拉卡德", area: base}
+      - {map: m16_00_00_00, entity: 16000801, npc_id: 47100038, model: c4710, name: "亵渎君王拉卡德（二阶段）", area: base}
+      - {map: m15_00_00_00, entity: 15000800, npc_id: 21200056, model: c2120, name: "腐败女神玛莲妮亚", area: base}
+      - {map: m15_00_00_00, entity: 15000806, npc_id: 21200056, model: c2120, name: "腐败女神玛莲妮亚（二阶段）", area: base}
+      - {map: m12_05_00_00, entity: 12050800, npc_id: 48000068, model: c4800, name: "鲜血君王蒙格", area: base}
+      - {map: m13_00_00_00, entity: 13000800, npc_id: 21101072, model: c2110, name: "黑剑玛利喀斯", area: base}
+      - {map: m13_00_00_00, entity: 13000801, npc_id: 21100072, model: c2110, name: "黑剑玛利喀斯（二阶段）", area: base}
+      - {map: m11_05_00_00, entity: 11050800, npc_id: 47210070, model: c4721, name: "荷莱·露", area: base}
+      - {map: m11_05_00_00, entity: 11050801, npc_id: 47200070, model: c4720, name: "荷莱·露（二阶段）", area: base}
+      - {map: m13_00_00_00, entity: 13000830, npc_id: 45200072, model: c4520, name: "龙王普拉顿桑克斯", area: base}
+      - {map: m14_00_00_00, entity: 14000800, npc_id: 20310024, model: c2031, name: "满月女王蕾娜菈", area: base}
+      - {map: m14_00_00_00, entity: 14000801, npc_id: 20300024, model: c2030, name: "满月女王蕾娜菈（二阶段）", area: base}
+      - {map: m12_03_00_00, entity: 12030850, npc_id: 45110066, model: c4511, name: "死龙弗尔桑克斯", area: base}
+      - {map: m60_13_13_02, entity: 1052520800, npc_id: 47601050, model: c4760, name: "火焰巨人", area: base}
+      - {map: m60_13_13_02, entity: 1052520801, npc_id: 47600050, model: c4760, name: "火焰巨人（同场实体）", area: base}
+      - {map: m12_09_00_00, entity: 12090800, npc_id: 46700065, model: c4670, name: "祖灵之王", area: base}
+      - {map: m19_00_00_00, entity: 19000800, npc_id: 22000078, model: c2200, name: "艾尔登之兽", area: base}
+      - {map: m19_00_00_00, entity: 19000810, npc_id: 21900078, model: c2190, name: "拉达冈", area: base}
+      - {map: m12_04_00_00, entity: 12040800, npc_id: 46200062, model: c4620, name: "黑暗弃子阿斯特尔", area: base}
+      - {map: m11_05_00_00, entity: 11050850, npc_id: 25010000, model: c2501, name: "背叛熔炉者斯卡德", area: base}
+      - {map: m34_11_00_00, entity: 34110800, npc_id: 20350000, model: c2035, name: "神皮女族长", area: base}
+      - {map: m12_01_00_00, entity: 12010812, npc_id: 44000001, model: c4400, name: "受封印神祇之嗣", area: base}
+      - {map: m12_01_00_00, entity: 12010810, npc_id: 44000000, model: c4400, name: "受封印神祇之嗣（血条 dummy）", area: base}
+      - {map: m60_43_30_00, entity: 1043300800, npc_id: 34800000, model: c3480, name: "剥尸王迪鲁", area: base}
+      - {map: m60_35_50_00, entity: 1035500850, npc_id: 39200000, model: c3920, name: "冰之守卫艾纳尔", area: base}
+      - {map: m12_02_00_00, entity: 12020800, npc_id: 48500000, model: c4850, name: "塑灵者凯玛", area: base}
+      - {map: m17_00_00_00, entity: 17000810, npc_id: 43910000, model: c4391, name: "伪龙王达格拉夫", area: base}
+      - {map: m17_00_00_00, entity: 17000800, npc_id: 43900000, model: c4390, name: "地底大法师达格拉夫（一阶段）", area: base}
+      - {map: m61_49_48_00, entity: 2049480800, npc_id: 50000092, model: c5000, name: "山猪骑士盖乌斯", area: dlc}
+      - {map: m21_01_00_00, entity: 21010801, npc_id: 51300099, model: c5130, name: "穿刺者梅瑟莫", area: dlc}
+      - {map: m21_01_00_00, entity: 21010800, npc_id: 51301099, model: c5130, name: "穿刺者梅瑟莫（一阶段）", area: dlc}
+      - {map: m61_50_48_00, entity: 2050480810, npc_id: 52300596, model: c5230, name: "幽影树的化身", area: dlc}
+      - {map: m61_50_48_00, entity: 2050480811, npc_id: 52300496, model: c5230, name: "幽影树的化身（二阶段）", area: dlc}
+      - {map: m61_50_48_00, entity: 2050480812, npc_id: 52300196, model: c5230, name: "幽影树的化身（三阶段）", area: dlc}
+      - {map: m61_48_44_00, entity: 2048440800, npc_id: 53000082, model: c5300, name: "双月骑士蕾菈娜", area: dlc}
+      - {map: m61_44_45_00, entity: 2044450800, npc_id: 50300094, model: c5030, name: "花蕾圣女萝蜜娜", area: dlc}
+      - {map: m61_44_45_10, entity: 2044450800, npc_id: 50300094, model: c5030, name: "花蕾圣女萝蜜娜（未封印副本）", area: dlc}
+      - {map: m20_00_00_00, entity: 20000800, npc_id: 52100088, model: c5210, name: "神兽舞狮", area: dlc}
+      - {map: m20_01_00_00, entity: 20010800, npc_id: 52201089, model: c5220, name: "神祇与王（拉塔恩）", area: dlc}
+      - {map: m20_01_00_00, entity: 20010801, npc_id: 52200089, model: c5220, name: "神祇与王（二阶段）", area: dlc}
+      - {map: m28_00_00_00, entity: 28000800, npc_id: 50510086, model: c5051, name: "癫火之王米德拉", area: dlc}
+      - {map: m28_00_00_00, entity: 28000801, npc_id: 50500086, model: c5050, name: "癫火之王米德拉（同场实体）", area: dlc}
+      - {map: m61_51_45_00, entity: 2051450720, npc_id: 524200190, model: c0000, name: "指头之母尤弥尔", area: dlc}
+      - {map: m22_00_00_00, entity: 22000800, npc_id: 50200087, model: c5020, name: "融泥骑士", area: dlc}
+      - {map: m22_00_00_00, entity: 22000801, npc_id: 50200187, model: c5020, name: "融泥骑士（坐骑）", area: dlc}
+
+  - id: reliquary
+    name: 劳弗圣龛首领（秘宝祭坛）
+    default_on: true
+    status: ready
+    note: |
+      9 座圣龛（全 DLC）共用 **1 个竞技场实体** 31810800：EMEVD 事件 31812810 用 9 组
+      (typeFlag 2055559111..9, spEffect 18781..9, nameId 121911..9) 切出 9 个「劳弗仪卫」变体，
+      阶段二事件 31812811 等 CharacterHasSpEffect(BossEntityId, 18770)。
+      → 换掉这一个实体 = 9 个变体全变一只 + 阶段二断链，所以该位置 policy=keep（见 l4_policy.keep_places）。
+      池子里仍记 1 行，界面显示"劳弗圣龛（9 变体，v1 不换）"。
+    members:
+      - {map: m31_81_00_00, entity: 31810800, npc_id: 21950001, model: c2195, name: "劳弗仪卫（9 变体共用）", area: base}
+
+# ── 随机化规则：任意类 → 任意类（M1 的唯一候选来源）─────────────────────────────
+# 规则表按顺序求值，**第一条命中的规则生效**；没命中任何规则 = 保持原样（default_rate 兜底）。
+# 每条规则：
+#   id                     规则名（唯一；写进各位置的 reason 与界面开关）
+#   match                  谁适用：cls（类名列表，空=所有类）/ pools（池名，命中任一即算）/
+#                          area（base|dlc|any）/ tier（可选，1..4）
+#   rate                   这条规则管的位置参与随机的百分比（0..1）；界面可逐类再覆盖
+#   targets                候选来源：cls（类名列表，或 "all"）/ areas（same=同区域，或 any/[base,dlc]）/
+#                          tier（可选，限定来源强度档）/ pools（可选，限定来源所属池）
+#   size_max / size_max_height   可选：体型上限倍数（默认取 options.constraints 的 3.0）
+#   clamp_hp / clamp_soul        可选：缩放系数上下限（默认 0.6–2.5）；跨类大跨度时按规则放宽
+#
+# 语义提醒：
+#   · 池开关（keystone/remembrance/waygate/reliquary）在规则之前判定 —— 关掉池 = 该池位置保持原样，
+#     不会因为它的类被某条规则覆盖又换掉。
+#   · keep 的位置永远不会被换；它们也不会被当来源（include_keep_as_source: false），
+#     所以多阶段 Boss（荷莱露/拉塔恩约定/梅瑟莫…）不会被丢进别的坑位。
+#   · **难度怎么守恒**：hp 与魂用「位置原值」直接写进该位置的克隆 NpcParam 行（M2 为每个位置
+#     复制一条新行），不是把换入者的值乘系数 —— 所以换进来的是谁都不影响这一格的强度。
+#     换入者自己的血量只出现在 coef_hp（记录用）与观感里。
+#   · 可选 hp_band（默认不写 = 不限）：只想从「强度相近」的敌人里抽时加一条，如 [0.5, 2.0]。
+#     它只收窄候选、不参与难度计算；测试过 0.5–2.0 时三条主规则都还有候选（零空池）。
+randomization:
+  default_rate: 0.0
+
+  # 捐赠者黑名单（模型级）：这些模型「能被换掉」，但不能被推进别人的位置。
+  # 判据 = 它的战斗方式依赖自己的位置/脚本，换到别处会变成废人（不会攻击、原地传送、复制玩家）。
+  donor_deny:
+    - {model: c4140, reason: "唤灵蜗牛：本体不动，只靠召唤物作战"}
+    - {model: c4480, reason: "「病花」米兰达：扎根不动，靠孢子和缠绕"}
+    - {model: c1000, reason: "仿身泪滴：CopyPlayerCharacterData 复制玩家，换到普通位置只剩一具尸体壳"}
+    - {model: c4950, reason: "提比亚的唤声船：传送是 AI goal 495000 + 地图事件配合的行为；换到别处会原地循环传送（改通用 AI 的尝试失败，见 ai_fallback）"}
+
+  # 战斗 AI 兜底（实验性开关，当前为空）：给模型克隆 think 行、把 battleGoalID 换成通用 AI，
+  # 用途是让「换到别处会变废人」的敌人至少能打。
+  # 2026-10-21 实测（c4950 唤声船 → goal 11000）：换完**完全不动**，比原来的"原地循环传送"更糟。
+  # 结论：换 AI goal 不是"去掉传送"，而是把整只怪换成另一套行为树，通用近战 goal 并不适配这类体型/模型。
+  # → 已回退：c4950 挪回 donor_deny，这里清空。以后要重试别的模型，先在小范围加一条再验证。
+  ai_fallback: []
+
+  rules:
+    # ⓪ 多阶段 Boss 整组替换（v1.1，实验性；默认关，界面勾「多阶段整体替换」才生效）
+    #    不是逐位置抽：把一整组阶段当成一个单位，去换另一整组阶段
+    #    （一阶段换一阶段、二阶段换二阶段），否则会出现「一阶段是 A、二阶段还是原 Boss」。
+    #    只对 multiphase.groups 里 kind=phase 且 swap=true 的 5 组生效；
+    #    targets 必须覆盖这些组的类（玛莲妮亚二阶段在参考表里是 Helper）。
+    - id: multiphase_boss
+      name: 多阶段 Boss 整组替换
+      match: {multiphase: true}
+      rate: 1.0
+      targets: {cls: [Boss, Helper, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss, Evergaol], areas: any}
+      note: "整组互换：阶段数必须相同；有 pair 绑定的组不开（安塞尔河坏档的根因）"
+
+    # ① 黄金树传送门守门位：一律按 Boss 抽（「传送门 boss 也是 boss」，用户 2026-10-20）
+    - id: waygate_guardian
+      name: 黄金树传送门守门
+      match: {pools: [waygate]}
+      rate: 1.0
+      targets: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss], areas: same}
+      note: "守门位只换 boss 级身份；换成杂兵会让「守门战」变成无害路人，奖励链仍在但观感全无"
+
+    # ② 有 Boss 血条的位置：不管它在参考表里被标成什么类，一律按 Boss 抽
+    #    （判据：位置表 bar=1，来自地图 EMEVD 的 DisplayBossHealthBar / 90005870 / 90005876 等模板调用）
+    #    反例（修之前）：m18 的「猎犬骑士哥廷」参考类=Basic，被 fauna 换成了普通杂兵 —— 双 Boss 战变成单 Boss。
+    - id: bossbar_position
+      name: 有血条的位置按 Boss 抽
+      match: {bar: true}
+      rate: 1.0
+      targets: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss, Evergaol], areas: same}
+      note: "血条是位置给的（EMEVD），不是模型给的：这里换成杂兵 = 一场 Boss 战变成无害路人"
+
+    # ③ Boss 六类互换成任意 Boss —— 你要的「某类 boss 随全种类 boss」
+    - id: boss_any
+      name: 全部 Boss 互换
+      match: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss, Evergaol]}
+      rate: 1.0
+      targets: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss, Evergaol], areas: same}
+      note: "具名 Boss 与各类小 Boss 同一池；换入后按位置原强度缩放（系数见 clamp）"
+
+    # ④ 杂兵三族互换（普通怪 / 野兽 / 法魂无名杂兵）—— 玩家最常遇到的那一层
+    - id: fauna
+      name: 杂兵互换
+      match: {cls: [Basic, Wildlife]}
+      rate: 1.0
+      targets: {cls: [Basic, Wildlife], areas: same}
+      note: "野生生物几乎没有实体 ID 但同样能换（换的是身份层，不是脚本点名）；法魂无名杂兵已并入 Basic"
+
+    # ⑤ 粪金龟 / 商队巨魔：2026-10-24 起不再随机（类别保留为内部标记，policy=keep）
+
+# ── 覆盖层：人工改判（优先于所有自动规则）────────────────────────────────────
+overrides:
+  models: {}      # 例： c3300: {class: Basic, policy: randomize, note: "..."}
+  places: []      # 例： {map: m60_45_37_10, part_name: c3650_9000, occurrence: 1, policy: keep, reason: "..."}
+
+# ── 构建期断言（--check 会验；对不上就是数据/配置漂移）─────────────────────────
+assertions:
+  total_places: 27780
+  # "同一物理位置的两份 MSB"（已封印/未封印成对）：M1 必须同步替换，否则同一地点两种状态看到两只不同的敌人
+  linked_pairs: 2124
+  linked_rows: 4248
+  physical_positions: 25656
+  # 我们自己扫 634 个 msb.dcx 得到 519 张图；参考 enemy.txt 只覆盖 483 张（差的是法魂新增图）
+  distinct_maps: 519
+  no_unknown_class: true        # cls_src 里不允许再有 unknown
+  allowed_policy_values: [randomize, keep, source_only, hazard, story]

@@ -1,6 +1,6 @@
 # 法魂随机器 GUI（法魂随机器.exe）
 
-放在 `随机mod\` 目录下双击即可（也可放任意子目录，程序会向上找存在 `investigation\randomization-dryrun` 的目录当工作区）。
+放在 `随机mod` 目录下双击即可（也可放任意子目录，程序会向上找存在 `investigation\randomization-dryrun` 的目录当工作区）。
 
 ## 一、怎么用
 
@@ -32,7 +32,7 @@
 - `mod\msg\zhocn\item_dlc02.msgbnd.dcx`（职业说明书文本）
 
 回滚：把同名 `.bak_<时间戳>` 改回原名即可。investigation 侧备份在
-`investigation\apply\backup\`，回执在 `backup\deploy_<时间戳>.json`。
+`investigation\apply\backup`，回执在 `backup\deploy_<时间戳>.json`。
 
 ## 四、这套流水线的硬规矩（都是排查出来的）
 

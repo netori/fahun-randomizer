@@ -21,8 +21,10 @@ sys.path.insert(0, HERE)
 import enemy_randomizer as ER          # noqa
 import msb_read as M                   # noqa
 
-MAPDIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(ER._mod_reg()))),
-                      "mod", "map", "MapStudio")
+def mapdir():
+    """地图目录 —— 用到时才解析（import 时不要碰路径：打包版隔离自检没有法魂包）"""
+    return os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(ER._mod_reg()))),
+                        "mod", "map", "MapStudio")
 HB_CSV = os.path.join(HERE, "..", "boss_healthbar.csv")
 OUT_ENEMIES = os.path.join(HERE, "..", "map_enemies.csv")
 OUT_BOSS = os.path.join(HERE, "..", "boss_rows.csv")
@@ -39,16 +41,17 @@ def main():
         etypes = ET.enemy_type_of
     except Exception:
         pass
-    print(f"法魂 NpcParam 行：{len(units)}｜地图目录：{MAPDIR}")
+    _mapdir = mapdir()
+    print(f"法魂 NpcParam 行：{len(units)}｜地图目录：{_mapdir}")
 
-    maps = sorted(f for f in os.listdir(MAPDIR) if f.endswith(".msb.dcx"))
+    maps = sorted(f for f in os.listdir(_mapdir) if f.endswith(".msb.dcx"))
     print(f"地图文件：{len(maps)} 张")
 
     rows, ok_npc, bad_npc, models = [], 0, [], {}
     failed = []
     for i, fn in enumerate(maps):
         try:
-            d = M.read_msb(os.path.join(MAPDIR, fn))
+            d = M.read_msb(os.path.join(_mapdir, fn))
         except Exception as e:
             failed.append((fn, f"{type(e).__name__}: {e}"))
             continue

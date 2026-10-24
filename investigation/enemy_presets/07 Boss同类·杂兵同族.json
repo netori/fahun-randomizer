@@ -1,0 +1,246 @@
+{
+ "name": "07 Boss同类·杂兵同族",
+ "rate_mode": "independent",
+ "classes": {
+  "Basic": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "Basic"
+   ],
+   "donor_weights": {
+    "Basic": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "Boss": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "Boss"
+   ],
+   "donor_weights": {
+    "Boss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "DragonMiniboss": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "DragonMiniboss"
+   ],
+   "donor_weights": {
+    "DragonMiniboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "Evergaol": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "Evergaol"
+   ],
+   "donor_weights": {
+    "Evergaol": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "HostileNPC": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "HostileNPC"
+   ],
+   "donor_weights": {
+    "HostileNPC": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "Miniboss": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "Miniboss"
+   ],
+   "donor_weights": {
+    "Miniboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "MinorBoss": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "MinorBoss"
+   ],
+   "donor_weights": {
+    "MinorBoss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "NightMiniboss": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "NightMiniboss"
+   ],
+   "donor_weights": {
+    "NightMiniboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "Wildlife": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "Wildlife"
+   ],
+   "donor_weights": {
+    "Wildlife": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  }
+ },
+ "pools": {
+  "waygate": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "@sameboss"
+   ],
+   "donor_weights": {
+    "@sameboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "keystone": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "@sameboss"
+   ],
+   "donor_weights": {
+    "@sameboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "remembrance": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "@sameboss"
+   ],
+   "donor_weights": {
+    "@sameboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  },
+  "reliquary": {
+   "enabled": true,
+   "rate": 1,
+   "weight": 100,
+   "targets": [
+    "@sameboss"
+   ],
+   "donor_weights": {
+    "@sameboss": 100
+   },
+   "source_areas": [
+    "base",
+    "dlc"
+   ],
+   "target_areas": "same",
+   "size_max": null
+  }
+ },
+ "bar": {
+  "enabled": true,
+  "rate": 1,
+  "weight": 100,
+  "targets": [
+   "@sameboss"
+  ],
+  "donor_weights": {
+   "@sameboss": 100
+  },
+  "source_areas": [
+   "base",
+   "dlc"
+  ],
+  "target_areas": "same",
+  "size_max": null
+ }
+}

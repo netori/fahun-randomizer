@@ -106,6 +106,8 @@ def _meta(doc):
         "engine_version": doc.get("engine_version"),
         "cfg": doc.get("cfg") or {},
         "layer_dir": doc.get("layer_dir") or "",
+        "kind": doc.get("kind") or "",
+        "built": doc.get("built") or {},
         "broken": doc.get("_broken", False),
         "error": doc.get("_error", ""),
     }
@@ -144,10 +146,16 @@ def get_plan(pid, ws=None):
     return doc
 
 
-def save_plan(rows, name, cfg=None, seed=None, note="", tags=None, star=False, ws=None):
-    """保存一份方案。rows 是计划行（dict 列表），会完整存下来。"""
-    if not rows:
-        raise PlanError("没有可保存的方案（先点「① 生成随机方案」）")
+def save_plan(rows, name, cfg=None, seed=None, note="", tags=None, star=False, ws=None,
+              kind=None):
+    """保存一份方案。rows 是计划行（dict 列表），会完整存下来。
+
+    2026-10-23：允许只随机敌人的方案（rows 为空）—— 以前必须有物品行才能存，
+    于是「开始随机敌人」只能当场写层；现在敌人方案也只存方案库，覆盖层等开玩时再生成。
+    """
+    _enemy = bool(((cfg or {}).get("enemy_v1") or {}).get("on"))
+    if not rows and not _enemy:
+        raise PlanError("没有可保存的方案（先点底部的「开始随机…」）")
     name = (name or "").strip() or time.strftime("方案 %m-%d %H:%M")
     pid = _safe_id(name)
     now = time.time()
@@ -162,6 +170,7 @@ def save_plan(rows, name, cfg=None, seed=None, note="", tags=None, star=False, w
         "modified": now,
         "seed": seed,
         "cfg": dict(cfg or {}),
+        "kind": kind or ("both" if (rows and _enemy) else "enemy" if _enemy else "item"),
         "engine_version": (rows[0].get("engine_version") if rows else "") or "",
         "fingerprint": fingerprint(rows),
         "fields": PLAN_FIELDS,
@@ -182,7 +191,7 @@ def rename_plan(pid, new_name, ws=None):
     return _meta(doc)
 
 
-def set_meta(pid, star=None, note=None, tags=None, layer_dir=None, ws=None):
+def set_meta(pid, star=None, note=None, tags=None, layer_dir=None, built=None, ws=None):
     doc = get_plan(pid, ws)
     if star is not None:
         doc["star"] = bool(star)
@@ -193,6 +202,9 @@ def set_meta(pid, star=None, note=None, tags=None, layer_dir=None, ws=None):
     if layer_dir is not None:
         # 这个方案对应的"覆盖层"目录（YAFSML 用；由部署时产出并回写到这里）
         doc["layer_dir"] = layer_dir or ""
+    if built is not None:
+        # 这份覆盖层是按哪个版本的方案生成的（指纹不同 = 设置改过，下次开玩要重建）
+        doc["built"] = dict(built or {})
     doc["modified"] = time.time()
     _atomic_write(_path(pid, ws), json.dumps(doc, ensure_ascii=False, indent=1))
     return _meta(doc)

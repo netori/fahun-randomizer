@@ -97,8 +97,10 @@ def main():
     rec("说明书行数守恒（583 行）", len(go) == len(gn) == 583, f"{len(go)} / {len(gn)}")
 
     print("\n=== ⑥ 关键文件完整性 ===")
-    for label, p in (("MOD regulation.bin", os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）", "mod", "regulation.bin")),
-                     ("MOD msgbnd(zhocn)", os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）", "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx"))):
+    import modpaths
+    _m = modpaths.require_mod_root(APPLY)
+    for label, p in (("MOD regulation.bin", os.path.join(_m, "mod", "regulation.bin")),
+                     ("MOD msgbnd(zhocn)", os.path.join(_m, "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx"))):
         if os.path.exists(p):
             h = hashlib.sha256(open(p, "rb").read()).hexdigest()
             rec(f"{label} 可读", True, f"{os.path.getsize(p)} B  sha256 {h[:16]}…")

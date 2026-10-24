@@ -9,8 +9,8 @@ sys.path.insert(0, APPLY)
 import erio
 from bnd4_locate import entries
 
-MOD = os.path.normpath(os.path.join(os.path.dirname(os.path.dirname(APPLY)), "..",
-                                    "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"))
+import modpaths
+MOD = modpaths.require_mod_root(APPLY)
 
 
 def find_params(raw):

@@ -6,7 +6,9 @@ import argparse, hashlib, json, os, shutil, subprocess, sys, time
 
 APPLY = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(os.path.dirname(APPLY))
-MOD = os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）")
+sys.path.insert(0, APPLY)
+import modpaths                                                    # noqa: E402
+MOD = modpaths.require_mod_root(APPLY)
 TOOL = os.path.join(APPLY, "tools", "witchybnd", "WitchyBND.exe")
 CONPTY = os.path.join(ROOT, "investigation", "weapon-baseline", "logs", "_conpty_run.py")
 PY = sys.executable

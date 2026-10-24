@@ -57,7 +57,6 @@ import erio                      # noqa: E402
 import enemy_randomizer as bt     # noqa: E402
 
 ROOT = os.path.abspath(os.path.join(WS, os.pardir, os.pardir, os.pardir))
-DEFAULT_MOD = "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"
 CSV_OUT = os.path.normpath(os.path.join(WS, os.pardir, "enemy_table.csv"))
 
 # ── FMG v2 头字段 ─────────────────────────────────────────────────────────
@@ -205,7 +204,13 @@ def fmg_structure_ok(data):
 
 # ── 读 mod 里的 msgbnd ───────────────────────────────────────────────────
 def default_mod_dir():
-    return os.environ.get("MOD_ROOT") or os.path.join(ROOT, DEFAULT_MOD)
+    """法魂包根目录：环境变量 → modpaths 相对定位 → 开发期的相对约定（最后兜底）"""
+    for env in ("CONVERGENCE_MOD_ROOT", "MOD_ROOT"):
+        v = os.environ.get(env)
+        if v and os.path.isdir(v):
+            return v
+    import modpaths
+    return modpaths.require_mod_root(WS)
 
 
 def find_msgbnd(mod_dir=None):

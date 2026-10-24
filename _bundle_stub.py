@@ -9,6 +9,10 @@ import planlib  # noqa
 import native_apply, native_deploy, native_guide, fix_guide            # noqa
 import _guide_rebuild, _guide_fit, _guide_audit                        # noqa
 import randomizer                                                      # noqa
+# 敌人 v1 新管线（2026-10-21 M5）：GUI 的预览/部署会在运行时 import 这些
+import enemy_plan, enemy_write, param_bin, msb_edit, evd_edit, enemy_gate  # noqa
+import bar_names                                                       # noqa
+import yaml                                                            # noqa
 import zstandard, cryptography                                         # noqa
 # 管线里用到、但 randgui.py 自己没用的标准库
 import argparse, csv, ctypes, glob, hashlib, html, json, re, struct    # noqa

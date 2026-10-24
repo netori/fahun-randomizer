@@ -6,11 +6,12 @@ APPLY = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, APPLY)
 import native_deploy as nd
 
-MOD = nd.MOD
+import modpaths
+MOD = nd.MOD or modpaths.require_mod_root(APPLY)
 REG = os.path.join(MOD, "mod", "regulation.bin")
 MSG = os.path.join(MOD, "mod", "msg", "zhocn", "item_dlc02.msgbnd.dcx")
-LOG = r"F:\game\studygame\elden ring\THE_COVERAGE-随机开发\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）\yafsml\log\YAFSML.log"
 MODDIR = MOD          # yafsml 就在 MOD 目录里
+LOG = os.path.join(MODDIR, "yafsml", "log", "YAFSML.log")
 
 
 def pids():
@@ -41,7 +42,8 @@ def run(reg_src, msg_src=None, label=""):
     print(f"   启动前：进程 {before_pids} | 日志 {before_lines} 行")
     # 绕过启动脚本的进程检查，直接调 YAFSML 注入
     yaf = os.path.join(MODDIR, "yafsml")
-    er_root = r"F:\game\studygame\elden ring\ELDEN RING Tarnished Edition v1.17"
+    er_root = (os.environ.get("ER_GAME_ROOT")
+               or os.path.dirname(modpaths.find_game_dir(APPLY) or ""))
     subprocess.Popen([os.path.join(yaf, "YAFSML.exe"), "--game-path", er_root], cwd=yaf,
                      stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     time.sleep(75)

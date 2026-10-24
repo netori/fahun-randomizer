@@ -55,22 +55,68 @@ KEEP_FIELDS = ("teamType", "npcType")
 # 另外可选保留的字段：换 Boss 时"卢恩跟不跟新 Boss 走"（参考实现的 Change boss runes…）
 KEEP_FIELDS_KEEP_RUNE = ("teamType", "npcType", "getSoul")
 
-# 跟**模型**绑定的字段：动作 id、行为变体、判定框、部位伤害、状态特效……
-# 为什么必须留原值：这些字段描述的是"这个模型怎么动、打哪儿疼"。
-# 只换行（不换外观）时若把它们也换掉 ⇒ 模型还是老模型、动作却来自别的敌人
+# 跟**模型**绑定的字段：动作 id、行为变体、判定框、部位伤害、状态特效、材质/声音/相机引用……
+# 为什么必须留原值：这些字段描述的是"这个模型怎么动、打哪儿疼、用哪套声音/材质"。
+# 只换行（不换外观）时若把它们也换掉 ⇒ 模型还是老模型、动作/声音却来自别的敌人
 #   → 表现就是"Boss 的 AI/动作坏掉了"（作者实测遇到的正是这个）。
 # 反过来，**换了外观**时它们必须跟着新行走（新模型的 anibnd 里才有那些动作），所以按需启用。
+#
+# 2026-10-17 审计（P0-5）：原集合漏了 modelDispMask*/materialSe*/normalChange*/ghostModelId/
+# lockCameraParamId/hitRadius/hitHeight/spEffectID9..31/multiPlayCorrectionParamId/resistCorrectId_* 等
+# 模型与资源绑定字段（实测 modelDispMask0 被搬 4448 行、materialSe1 3654、lockCameraParamId 1729），
+# 于是"安全模式"下模型没换、部件显隐/材质/相机却换了。这里按"没换模型的行需要原值"补齐。
+# 注意：itemLotId_enemy/getSoul 不在这里 —— 掉落/卢恩跟被换的敌人走是设计使然（N6）。
 SAFE_KEEP_FIELDS = (
+    # 阵营 / 生成类型（永远不跟新行走）
     "teamType", "npcType",
+    # 动作 / 行为 / 判定 / 骨骼
     "animIdOffset", "animIdOffset2", "normalChangeAnimChrId", "behaviorVariationId",
     "moveType", "isMoveAnimWait", "isSkipWeakDamageAnim",
     "chrHitRadius", "chrHitHeight", "chrHitGroupAndNavimesh",
+    "hitRadius", "hitHeight", "turnVellocity", "specialTurnType",
+    "specialTurnDistanceThreshold", "lockGazePoint0", "lockGazePoint1", "lockGazePoint2",
+    "lockGazePoint3", "lockGazePoint4", "lockGazePoint5", "lockGazePoint6", "lockGazePoint7",
+    "maxAnkleRollAngle", "maxAnklePitchAngle", "footIkErrorHeightLimit",
+    "footIkErrorOnGain", "footIkErrorOffGain",
     "partsDamageRate1", "partsDamageRate2", "partsDamageRate3", "partsDamageRate4",
     "partsDamageRate5", "partsDamageRate6", "partsDamageRate7", "partsDamageRate8",
     "weakPartsDamageRate", "partsDamageType",
     "spEffectID0", "spEffectID1", "spEffectID2", "spEffectID3", "spEffectID4",
-    "spEffectID5", "spEffectID6", "spEffectID7", "spEffectID8", "GameClearSpEffectID",
+    "spEffectID5", "spEffectID6", "spEffectID7", "spEffectID8", "spEffectID9",
+    "spEffectID10", "spEffectID11", "spEffectID12", "spEffectID13", "spEffectID14",
+    "spEffectID15", "spEffectID16", "spEffectID17", "spEffectID18", "spEffectID19",
+    "spEffectID20", "spEffectID21", "spEffectID22", "spEffectID23", "spEffectID24",
+    "spEffectID25", "spEffectID26", "spEffectID27", "spEffectID28", "spEffectID29",
+    "spEffectID30", "spEffectID31", "GameClearSpEffectID",
+    "toughness", "toughnessRecoverCorrection", "superArmorRecoverCorrection",
+    "superArmorBrakeKnockbackDist", "superArmorDurability",
     "weight", "npcPlayerWeightType",
+    # 模型 / 材质 / 声音 / 相机 / 联机 引用
+    "modelDispMask0", "modelDispMask1", "modelDispMask2", "modelDispMask3",
+    "modelDispMask4", "modelDispMask5", "modelDispMask6", "modelDispMask7",
+    "modelDispMask8", "modelDispMask9", "modelDispMask10", "modelDispMask11",
+    "modelDispMask12", "modelDispMask13", "modelDispMask14", "modelDispMask15",
+    "modelDispMask16", "modelDispMask17", "modelDispMask18", "modelDispMask19",
+    "modelDispMask20", "modelDispMask21", "modelDispMask22", "modelDispMask23",
+    "modelDispMask24", "modelDispMask25", "modelDispMask26", "modelDispMask27",
+    "modelDispMask28", "modelDispMask29", "modelDispMask30", "modelDispMask31",
+    "materialSe1", "materialSe2", "materialSfx1", "materialSfx2",
+    "materialSe_Weak1", "materialSe_Weak2", "materialSfx_Weak1", "materialSfx_Weak2",
+    "normalChangeModelId", "normalChangeTexChrId", "normalChangeResouceId",
+    "ghostModelId", "WanderGhostPhantomId", "isGhost", "isChangeWanderGhost",
+    "lockCameraParamId", "multiPlayCorrectionParamId",
+    "resistCorrectId_poison", "resistCorrectId_disease", "resistCorrectId_blood",
+    "resistCorrectId_curse", "resistCorrectId_freeze", "resistCorrectId_sleep",
+    "resistCorrectId_madness",
+    "SoundBankId", "SoundAddBankId", "SfxResBankId", "autoFootEffectSfxId",
+    "autoFootEffectDecalBaseId1", "autoFootEffectDecalBaseId2", "autoFootEffectDecalBaseId3",
+    "burnSfxType", "sfxSize", "phantomShaderId", "drawType", "defaultLodParamId",
+    "loadAssetId", "RetargetReferenceChrId",
+    # 身份 / 显示（模型没换时名字/血条名必须还是原来的；T1 实测 nameId 被源行覆盖 86 行）
+    "nameId",
+    # 其它"这个模型怎么活动"的开关
+    "isEnableNeckTurn", "isSmoothTurn", "doesAlwaysUseSpecialTurn", "isCrowd",
+    "disableRespawn", "disableInitializeDead", "attachHitInitializeDead",
 )
 
 # 类别划分的默认口径（纯字段，不依赖名字；名字表可用 CSV 补充）
@@ -81,7 +127,13 @@ CLASS_ZH = {"boss": "Boss", "elite": "精英", "normal": "普通敌人", "skip":
 # ────────────────────────── Paramdex / 行表 ──────────────────────────
 
 def paramdef_fields(name):
-    """Paramdex 的 ER 定义 → ([(字段名, 类型, 行内偏移, 字节大小)], 行大小)"""
+    """Paramdex 的 ER 定义 → ([(字段名, 类型, 行内偏移, 字节大小)], 行大小)
+
+    2026-10-22：ER 的 SpEffectParam 表在 Paramdex 里的定义文件名是 `SpEffect.xml`
+    （不是 `SpEffectParam.xml`），这里做别名，避免以后按表名调用时误报“缺定义”。
+    """
+    if name in ("SpEffectParam", "SpEffectParam.param"):
+        name = "SpEffect"
     p = os.path.join(PARAMDEX, name + ".xml")
     if not os.path.isfile(p):
         return None, 0
@@ -111,6 +163,28 @@ def paramdef_fields(name):
             out.append((nm, typ, bit_off // 8, sz))
             bit_off += sz * 8
     return out, (bit_off + 7) // 8
+
+
+def bit_field_map(fields):
+    """{字段名: (字节偏移, 位序号)} —— paramdef 的 `u8 xxx:1` 位域。
+
+    2026-10-17 审计（P0-4/P0-5）：
+      * 以前 `paramdef_fields` 对位域返回 size=0、`Unit.g()` 读整个 u8 ⇒
+        `isSoulGetByBoss == 1` 实际是「整字节 == 1」：真实 bit=1 的 396 行里有 226 行被漏判；
+      * SAFE 集里的 isMoveAnimWait/isSkipWeakDamageAnim 按 0 字节切片保留 = no-op，整个 flag 字节跟着源行走。
+    这里把同字节组内第 0 个位域记为 bit0（与 Paramdex 定义顺序一致），
+    读取/保留都按 `(byte >> bit) & 1` / 单 bit 掩码做。
+    """
+    out, cur_off, bit = {}, None, 0
+    for nm, _typ, off, size in fields:
+        if size == 0:                       # 位域：偏移=所在字节，大小 0
+            if off != cur_off:
+                cur_off, bit = off, 0
+            out[nm] = (off, bit)
+            bit += 1
+        else:
+            cur_off, bit = None, 0
+    return out
 
 
 MIN_RUN = 100        # 一个"段"至少多大才算真 param 表（见 scan_rows 注释）
@@ -164,20 +238,26 @@ def size_bucket(radius, height):
 class Unit(object):
     """一种敌人 = NpcParam 的一行"""
 
-    __slots__ = ("rid", "off", "row_size", "hp", "soul", "is_boss", "radius", "height",
+    __slots__ = ("rid", "off", "row_size", "hp", "soul", "is_boss", "soul_boss",
+                 "radius", "height",
                  "npc_type", "team_type", "cls", "source", "sha", "name", "name_id",
                  "boss_like_name", "model", "enemy_type",
                  # 参考实现（thefifthmatt）的模型级人工标注
                  "ref_class", "multi", "unkillable", "ref_names", "ref_size")
 
-    def __init__(self, rid, off, row_size, fields, plain):
+    def __init__(self, rid, off, row_size, fields, plain, bits=None):
         self.rid, self.off, self.row_size = rid, off, row_size
         # 参考实现的模型级标注（后面 classify 时填）
         self.ref_class, self.multi, self.unkillable = "", False, False
         self.ref_names, self.ref_size = "", ""
+        self.soul_boss = False
         p = off
+        bits = bits or {}
 
         def g(k):
+            if k in bits:                       # 位域：读那一位，不读整个字节（P0-4）
+                o, b = bits[k]
+                return (plain[p + o] >> b) & 1
             f = fields.get(k)
             if not f:
                 return None
@@ -195,7 +275,9 @@ class Unit(object):
 
         self.hp = g("hp") or 0
         self.soul = g("getSoul") or 0
-        self.is_boss = (g("isSoulGetByBoss") == 1)
+        # isSoulGetByBoss 是位域（0x15d bit0）—— 旧代码读整字节 ==1，漏判 226 行
+        self.soul_boss = bool(g("isSoulGetByBoss"))
+        self.is_boss = self.soul_boss
         self.radius = g("chrHitRadius")
         self.height = g("chrHitHeight")
         self.npc_type = g("npcType")
@@ -216,6 +298,7 @@ def load_units(plain, table="NpcParam"):
     fields, row_size = paramdef_fields(table)
     if not fields:
         raise RuntimeError(f"读不到 Paramdex 定义：{table}")
+    bits = bit_field_map(fields)
     base = na.file_start(plain, table)
     if not base:
         raise RuntimeError(f"regulation 里找不到 {table}")
@@ -228,7 +311,7 @@ def load_units(plain, table="NpcParam"):
     fmap = {f[0]: (f[2], f[1], f[3]) for f in fields}
     units = {}
     for rid, rel in rows.items():
-        u = Unit(rid, _off + rel, row_size, fmap, plain)
+        u = Unit(rid, _off + rel, row_size, fmap, plain, bits)
         if u.hp > 0 and u.hp < 10 ** 8:
             units[rid] = u
     return units
@@ -464,10 +547,48 @@ def infer_hostile_teams(units, cover=0.95):
     return out
 
 
+# isSoulGetByBoss 单独当 Boss 的证据门槛（2026-10-17 审计 T1 S1）：
+# 这个位只表示"击杀给 Boss 魂"，友好 NPC / 低血行也会命中；位读取修好后全库有 396 行命中，
+# 其中 181 行不在 EMEVD 血条链里。只有"血量够高 + 模型人工档位不否证"才允许单独升 Boss。
+SOUL_BOSS_MIN_HP = 1000
+
+
+# 特殊机制 Boss：换掉会失去原有 AI/机制，默认不参与随机（**源与目标都不进池**）。
+# 仿身泪滴（Mimic Tear，m12_07 的 526100965）：AI 是"复制玩家"，用户 2026-10-18 实测——
+# 被替换后它本身失去了 AI。这类"机制不可分离"的 Boss 不能只换行/模型，留给后续单独处理。
+SPECIAL_BOSS_EXCLUDE = {526100965}
+
+# 通用人型/NPC 基底模型：它们带 multi 标签也不可信（多阶段是按模型+阶段分的，
+# 通用模型一行可以是任意 NPC/Boss —— 把 323 行 c0000 并成一组会整组误升 Boss）。
+GENERIC_MODELS = {"c0000", "c0100", "c1000"}
+
+
+def _ref_class_allows_boss(u):
+    """模型级人工档位是否**不否证** Boss 身份。
+
+    ref_class 是模型级 top 档（None / Helper / Basic / Wildlife / Boss / Miniboss…）。
+    为什么需要它：c0000 是通用人型基底（None:273/HostileNPC:54/Helper:22/…），
+    单凭 isSoul 升 Boss 会把低血 NPC 也拉进 Boss 池。
+    规则：没标注（"" / "None"）→ 不否证（交给数值判）；Boss 系 → 不否证；
+    Basic / Wildlife / Scarab / Helper 等 → 否证。
+    """
+    rc = (u.ref_class or "").strip()
+    if not rc or rc == "None":
+        return True
+    return any(x in rc for x in ("Boss", "Miniboss", "MinorBoss", "NightMiniboss",
+                                 "DragonMiniboss", "Evergaol"))
+
+
 def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
              boss_names=None, row_types=None, new_rows=None, ref=None):
     """给每个 unit 定 cls（boss / elite / normal）与 source（old / new）。
-    可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）"""
+    可选 table：{row_id: {"cls":…, "source":…, "name":…}}（由名字表导出，人工可改）
+
+    2026-10-17 审计后的 Boss 判据（P0-4）：
+      * EMEVD 血条链（boss_rows）优先 —— 解包实测，是最强证据；
+      * isSoulGetByBoss 位域不再**单独**当 Boss：要求 hp >= SOUL_BOSS_MIN_HP 且模型档位不否证；
+      * 名字 id 命中血条名单只当标签（帕奇反例）；有名字的行仍默认 skip。
+    """
     if names:
         for rid, nm in names.items():
             u = units.get(int(rid))
@@ -479,13 +600,36 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
     _hb_ids = healthbar_ids if healthbar_ids is not None else load_healthbar_nameids()
     _boss_rows = boss_rows if boss_rows is not None else load_boss_rows()
     boss_names = boss_names if boss_names is not None else load_boss_names()
+    # ── 模型级人工标注必须先贴到行上：isSoul 的 Boss 判据要参考模型档位 ──
+    _ref = ref if ref is not None else load_ref()
+    _r2m = {}                                  # 行 → 模型（用于接上模型级标注）
+    try:
+        with open(os.path.join(HERE, "..", "row_models.csv"), encoding="utf-8-sig", newline="") as f:
+            for r in csv.DictReader(f):
+                if r.get("model") and str(r.get("npc_id", "")).isdigit():
+                    _r2m[int(r["npc_id"])] = r["model"]
+    except Exception:
+        pass
+    if _ref and _r2m:
+        for rid, u in units.items():
+            r = _ref.get(_r2m.get(rid, ""))
+            u.model = _r2m.get(rid, "")          # 行→模型写回：多阶段分组/告警都要用（审计 T1 B3）
+            if not r:
+                continue
+            u.ref_class = r["class"]
+            u.multi = bool(r["multi"])
+            u.unkillable = bool(r["unkillable"])
+            u.ref_names = r["names"]
+            u.ref_size = r["size"]
+    # ── 分类（证据顺序：EMEVD 血条 > isSoul(+hp/档位) > 血条名标签 > 名字 > 敌对阵营）──
     for rid, u in units.items():
         if rid in _boss_rows:
             # **解包实测**的 Boss：地图实体 → 行，且该实体有 Boss 血条（EMEVD）
             # —— 这条比 isSoulGetByBoss 更准（那条只表示"击杀给 Boss 魂"），也比名字靠谱
             u.cls = "boss"
-        elif u.is_boss:
-            u.cls = "boss"                      # Boss 按游戏自己的标记（友好 NPC 不会有）
+        elif u.soul_boss and u.hp >= SOUL_BOSS_MIN_HP and _ref_class_allows_boss(u):
+            # isSoul 不再单独当 Boss：要求 hp 达标、模型档位不否证（见 SOUL_BOSS_MIN_HP 注释）
+            u.cls = "boss"
         elif u.name_id and u.name_id in _hb_ids:
             # 名字 id 命中血条名单 —— 只能当**标签**，不能当证据！
             # 实测反例：帕奇（130900）是友好 NPC，他的名字 id 也出现在血条名单里
@@ -504,15 +648,6 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
         for rid, u in units.items():
             if u.cls == "boss" and not u.name and rid in boss_names:
                 u.name = boss_names[rid]        # Boss 的名字来自血条名单
-    _ref = ref if ref is not None else load_ref()
-    _r2m = {}                                  # 行 → 模型（用于接上模型级标注）
-    try:
-        with open(os.path.join(HERE, "..", "row_models.csv"), encoding="utf-8-sig", newline="") as f:
-            for r in csv.DictReader(f):
-                if r.get("model") and str(r.get("npc_id", "")).isdigit():
-                    _r2m[int(r["npc_id"])] = r["model"]
-    except Exception:
-        pass
     _new = new_rows if new_rows is not None else load_new_rows()
     if _new:
         # 法魂新增 / 原版就有 —— 这是「只随机法魂敌人」的依据
@@ -531,11 +666,6 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
             r = _ref.get(_r2m.get(rid, ""))
             if not r:
                 continue
-            u.ref_class = r["class"]
-            u.multi = bool(r["multi"])
-            u.unkillable = bool(r["unkillable"])
-            u.ref_names = r["names"]
-            u.ref_size = r["size"]
             _c = r["class"]
             # 只有它明确标了档位才覆盖；"None/Helper" 这类我们不动（保留自己的判断）
             if _c in ("Basic", "Wildlife", "Scarab"):
@@ -558,6 +688,31 @@ def classify(units, table=None, names=None, healthbar_ids=None, boss_rows=None,
                 for r in members:
                     if _rank.get(units[r].cls, 0) < _rank[best]:
                         units[r].cls = best
+
+    # ── 终态规则（2026-10-18 用户实测补，必须在 ref 覆盖/整组升级**之后**）──
+    # ① 名字否决是终态：有中文名的行（任务/友好 NPC、独特角色）默认不参与随机。
+    #    以前 name→skip 会被模型级 Basic 覆盖 → "Boss 位被换成 NPC"（用户实测撞到）。
+    # ② 特殊机制 Boss（仿身泪滴）：源与目标都不进池 —— 换掉就失去它自己的 AI 机制。
+    for rid, u in units.items():
+        if rid in SPECIAL_BOSS_EXCLUDE:
+            u.cls = "skip"
+            continue
+        # 通用人型模型 + 有名字 ⇒ 是"人形 NPC/入侵者"，不是怪物 Boss（用户实测：
+        # "Boss 位置被换成 NPC"）。EMEVD 血条链里也有 19 行这种 DLC 人形 Boss 战，一并排除，
+        # 避免怪物 Boss 变成人形 NPC 那样站桩/不出招。
+        if u.name and (u.model or "") in GENERIC_MODELS:
+            u.cls = "skip"
+            continue
+        # 通用模型 + 无名但进了 Boss 池（isSoul/ref 升上来的，如 523560020）——
+        # 换过去就是"人形无名 NPC"且没有对应 AI/名字（用户实测双月骑士被换成这种行后 AI 失效）。
+        if u.cls == "boss" and not u.name and (u.model or "") in GENERIC_MODELS:
+            u.cls = "skip"
+            continue
+        if u.name and u.cls != "boss":
+            u.cls = "skip"
+            continue
+        if u.cls != "boss" and (u.ref_class or "").strip() == "Helper":
+            u.cls = "skip"
 
     if table:
         for rid, meta in table.items():
@@ -590,14 +745,35 @@ def load_class_table(path):
 
 
 def build_pools(units, cfg):
-    """按类别分池；再按"来源标签"过滤候选（只随机法魂敌人 / 全随机）"""
+    """按类别分池；再按"来源标签"过滤候选（只随机法魂敌人 / 全随机）
+
+    2026-10-18 用户实测后加：Boss 池默认只收**有 EMEVD 血条身份**的行（boss_rows）——
+    只用 isSoul/ref-Boss 升上来的行没有血条名字、也常没有配套 AI（实测：换过去后名字不变/
+    站桩不动/变成无名 NPC）。cfg["boss_only_emevd"]=False 可退回旧口径（大池但易出问题）。
+    """
     pools = {c: [] for c in CLASS_ORDER}
     keep_unk = bool(cfg.get("allow_unkillable"))     # 默认 False：打不死的先别动
+    # 非战斗/NPC 一律排除（商人/铁匠/任务人）—— 即使放开了"打不死的"也不动它们
+    skip_npc = bool(cfg.get("exclude_npc", True))
+    _emevd_boss = None
+    if cfg.get("boss_only_emevd", True):
+        try:
+            _emevd_boss = load_boss_rows()
+        except Exception:                                          # noqa: BLE001
+            _emevd_boss = set()
     n_unk = 0
+    n_npc = 0
+    n_boss_filtered = 0
     for u in units.values():
+        if skip_npc and (getattr(u, "enemy_type", "") or "") == "非战斗/NPC":
+            n_npc += 1
+            continue
         if u.unkillable and not keep_unk:
             n_unk += 1
             continue                        # 打不死的（174 个模型的 1910 行）：换掉可能卡剧情
+        if _emevd_boss is not None and u.cls == "boss" and u.rid not in _emevd_boss:
+            n_boss_filtered += 1
+            continue                        # 没有血条身份的行不当 Boss 目标（见 docstring）
         if u.cls in pools:                      # skip（友好 NPC/场景物）直接不进任何池
             pools[u.cls].append(u.rid)
     wanted = cfg.get("enemy_pools") or CLASS_ORDER
@@ -625,6 +801,11 @@ def build_pools(units, cfg):
     if n_unk:
         out.setdefault("_warn", []).append(
             "有 %d 行是参考实现标注的「打不死」，默认没动它们（想一起换就开 allow_unkillable）" % n_unk)
+    if n_boss_filtered:
+        out.setdefault("_warn", []).append(
+            "Boss 池只保留有 EMEVD 血条身份的行（名字/AI 才有保障）；另有 %d 行 isSoul/ref-Boss "
+            "升上来的行不参与（想放开用 cfg boss_only_emevd=False，但可能出现名字不变/站桩）"
+            % n_boss_filtered)
     return out
 
 
@@ -658,6 +839,11 @@ def multi_units(units, rids):
     for rid in rids:
         u = units[rid]
         if not getattr(u, "multi", False):
+            groups.setdefault(("single", rid), []).append(rid)
+            continue
+        # 通用模型（c0000/c0100/c1000）的 multi 标记不可信：一行可以是任意 NPC/Boss，
+        # 并成一组会把整组误升 Boss（审计 T1 B3：31 组 552 行就是这么被误升的）。
+        if (u.model or "") in GENERIC_MODELS:
             groups.setdefault(("single", rid), []).append(rid)
             continue
         names = [x.strip() for x in (u.ref_names or "").replace("、", ",").split(",") if x.strip()]
@@ -770,12 +956,46 @@ class EnemyPlanError(RuntimeError):
     """写前复核失败：现状与计划不符 → 立即中止（与物品侧的 H12 同一种纪律）"""
 
 
+def _keep_set(keep_rune, keep_model_fields, per_row):
+    """这一行要"保留原值"的字段集合（P0-5：全局安全模式 / 按行安全模式 / 只保阵营）。
+
+    * 安全模式（全局或按行）：保留 SAFE_KEEP_FIELDS 全部模型绑定字段；
+    * keep_rune：额外保留 getSoul（卢恩不跟新 Boss 走）—— 以前 keep_model_fields 和 keep_rune
+      同时给时 keep_rune 会被忽略，这里真正组合起来；
+    * 否则：只保留 teamType / npcType（原行为）。
+    """
+    if keep_model_fields or per_row:
+        s = set(SAFE_KEEP_FIELDS)
+        if keep_rune:
+            s.add("getSoul")
+        return s
+    return set(KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS)
+
+
+def _copy_keep(dst, src, keep_names, fmap, bits):
+    """把 src 行里 keep_names 的值写回 dst（等长就地改）。
+
+    位域（size=0）必须按单 bit 掩码处理：以前 `dst[o:o+0]=src[o:o+0]` 是空切片 = no-op，
+    于是 isMoveAnimWait/isSkipWeakDamageAnim/modelDispMask* 这些"保留"全是假的（P0-5）。
+    """
+    for k in keep_names:
+        if k in bits:
+            o, b = bits[k]
+            m = 1 << b
+            dst[o] = (dst[o] & (~m & 0xFF)) | (src[o] & m)
+        elif k in fmap:
+            o, _t, sz = fmap[k]
+            dst[o:o + sz] = src[o:o + sz]
+
+
 def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table="NpcParam",
-               keep_rune=False, keep_model_fields=False):
+               keep_rune=False, keep_model_fields=False, keep_model_rows=None):
     """把计划应用到 regulation：整行内容按计划置换（等长就地改写）
 
     keep_rune=True 时额外保留**原行的 getSoul**（卢恩不跟新 Boss 走）—— 对应界面上的
     「换 Boss 时一并换卢恩」取消勾选（参考实现里那条 Change boss runes when the boss changes）。
+    keep_model_rows 给了行集合时：**只有集合里的行**走安全模式（保留模型绑定字段）——
+    用于"外观只换到一部分 part"的降级/混合路径（P0-5）。
     """
     import erio
     import native_apply as na
@@ -783,6 +1003,7 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
     plain = bytearray(erio.dcx_decompress(erio.regulation_decrypt(source)))
     fields, row_size = paramdef_fields(table)
     fmap = {f[0]: (f[2], f[1], f[3]) for f in fields}
+    bits = bit_field_map(fields)
     _off, _size = 0, 0
     for name, off, size in na.bnd4_entries(bytes(plain)):
         if os.path.basename(name.replace("\\", "/")) == table + ".param":
@@ -812,18 +1033,18 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         base = _off + rows[rid]
         newb = bytearray(before_rows[nid])          # 源行的原始内容
-        _keep = SAFE_KEEP_FIELDS if keep_model_fields else (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS)
-        for k in _keep:
-            if k in fmap:
-                o, t, sz = fmap[k]
-                newb[o:o + sz] = before_rows[rid][o:o + sz]   # 保留字段取**原行**的值
+        _per_row = bool(keep_model_rows is not None and int(rid) in keep_model_rows)
+        _copy_keep(newb, before_rows[rid],
+                   _keep_set(keep_rune, keep_model_fields, _per_row), fmap, bits)
         if len(newb) != row_size:
             raise EnemyPlanError("行大小不一致，拒绝写入")
         plain[base:base + row_size] = newb
         changed += 1
 
     if verify:
-        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows, keep_rune=keep_rune, keep_model_fields=keep_model_fields)
+        _verify_plan_applied(bytes(plain), plan_rows, rows, _off, row_size, fmap, before_rows,
+                             keep_rune=keep_rune, keep_model_fields=keep_model_fields,
+                             keep_model_rows=keep_model_rows, bits=bits)
     # 回压：与现有工具完全相同的封装顺序（沿用原文件的 DCX 模板，保证帧参数不变）
     dcx = erio.dcx_compress(bytes(plain), getattr(na.erio_bnd_template(source), "dcx_template", None), 12)
     erio.regulation_encrypt(dcx, out_path)
@@ -834,16 +1055,20 @@ def apply_plan(plan_rows, source, out_path=None, verify=True, quiet=False, table
 
 
 def _verify_plan_applied(plain, plan_rows, rows, off0, row_size, fmap, before_rows, keep_rune=False,
-                         keep_model_fields=False):
-    """应用后自检：每行现在的内容 == **源行的原始内容**（保留字段除外），且长度不变"""
+                         keep_model_fields=False, keep_model_rows=None, bits=None):
+    """应用后自检：每行现在的内容 == **源行的原始内容**（保留字段除外），且长度不变
+
+    2026-10-17 审计（P0-5）：以前调用点没把 keep_model_rows 转发进来 —— 一旦有人用按行机制，
+    这里会按"没保留"去比，必然误报失败。现在调用点与函数口径都带上了。
+    """
+    bits = bits or {}
     for r in plan_rows:
         rid, nid = int(r["row_id"]), int(r["new_row_id"])
         a = bytes(plain[off0 + rows[rid]:off0 + rows[rid] + row_size])
         want = bytearray(before_rows[nid])
-        for k in (SAFE_KEEP_FIELDS if keep_model_fields else (KEEP_FIELDS_KEEP_RUNE if keep_rune else KEEP_FIELDS)):
-            if k in fmap:
-                o, _t, sz = fmap[k]
-                want[o:o + sz] = before_rows[rid][o:o + sz]
+        _per_row = bool(keep_model_rows is not None and int(r["row_id"]) in keep_model_rows)
+        _copy_keep(want, before_rows[rid],
+                   _keep_set(keep_rune, keep_model_fields, _per_row), fmap, bits)
         want = bytes(want)
         if a != want:
             bad = [i for i in range(row_size) if a[i] != want[i]]
@@ -896,8 +1121,9 @@ def examples(units, plan, n=3):
 # ────────────────────────── 自检 / 命令行 ──────────────────────────
 
 def _mod_reg():
-    root = os.environ.get("CONVERGENCE_MOD_ROOT") or r"F:\game\studygame\elden ring\THE_COVERAGE-随机开发\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"
-    return os.path.join(root, "mod", "regulation.bin")
+    """法魂本体 regulation.bin —— 路径解析统一问 modpaths（换机器 / 换盘符都成立）"""
+    import modpaths
+    return modpaths.mod_reg(HERE)
 
 
 def load_plain(reg_path=None):
@@ -937,6 +1163,12 @@ def plan_for_cfg(enemy_cfg, reg_path=None, plain=None, class_table=None, names=N
     if enemy_cfg.get("types"):
         cfg["types"] = list(enemy_cfg["types"])
     plan, warn = make_plan(units, cfg)
+    # isSoulGetByBoss 不再单独当 Boss 之后，按真实情况报出来（T1 S1 要求"单独告警"）
+    _soul_weak = sum(1 for u in units.values()
+                     if getattr(u, "soul_boss", False) and u.cls != "boss")
+    if _soul_weak:
+        warn.append("有 %d 行 isSoulGetByBoss 命中但未升 Boss（不在 EMEVD 血条链 / hp<%d / 模型档位否证）——"
+                    "已按精英/普通处理" % (_soul_weak, SOUL_BOSS_MIN_HP))
     if not names and not class_table:
         # 少了名字表就分不出"友好 NPC"，可能把它们也换掉 —— 必须说出来，不静默
         warn.append("名字表缺失（investigation/enemy_table.csv 不在）—— 无法识别友好 NPC，"

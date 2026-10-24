@@ -17,8 +17,9 @@ import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.normpath(os.path.join(HERE, os.pardir))
-REF = (r"C:\Users\20905\Downloads\Elden Ring Randomizer 428 v0.12.2 "
-       r"2026-09-09T07-25Z kRGZWDlvJ\randomizer\diste\Base\enemy.txt")
+sys.path.insert(0, HERE)
+import modpaths          # noqa: E402
+REF = os.path.join(modpaths.require_ref_dir(), "Base", "enemy.txt")
 OUT = os.path.join(DATA, "model_class_ref.csv")
 MD = os.path.join(DATA, "enemy_ref_overview.md")
 

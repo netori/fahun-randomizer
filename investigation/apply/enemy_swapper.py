@@ -79,8 +79,6 @@ import msb_write as W          # noqa: E402
 # ────────────────────────── 路径与常量 ──────────────────────────
 
 MOD_ENV = "CONVERGENCE_MOD_ROOT"
-MOD_DEFAULT = (r"F:\game\studygame\elden ring\THE_COVERAGE-随机开发"
-               r"\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）")
 
 DEFAULT_ROW_MODELS = os.path.join(INV, "row_models.csv")
 DEFAULT_ATLAS = os.path.join(INV, "map_enemies.csv")
@@ -93,7 +91,11 @@ REPORT_NAME = "report.md"
 WRITE_FIELDS = ("npc_id", "think_id", "chara_id", "model")
 
 #: 匹配轴。part 的这三个 id 里任意一个落在 pairs 的键上，就算"该换的 part"。
-MATCH_AXES = ("npc_id", "think_id", "chara_id")
+#: 2026-10-18（审计 T1 S2-1，用户实测"部分 Boss 没 AI/被改错对象"后改）：**默认只用 npc_id**。
+#: 为什么：NpcParam 行 id 与 NpcThinkParam id 数值空间重叠，think 轴会把"本来不该随机"的
+#: 敌人卷进来（被改 part 里 17.5%~23.8% 是 think 命中的；think 本身还有 12.32% 图间歧义）。
+#: 需要旧行为（更激进的覆盖）时显式传 match_axes=("npc_id","think_id","chara_id")。
+MATCH_AXES = ("npc_id",)
 
 #: think_id <= 这个值的**不当匹配轴**（实测 {-1,0,1} 是多行共用的通用 AI，会把一片无关敌人卷进来）。
 #: 注意：它只影响"匹配"，不影响"写入" —— 目标行的众数 think_id 哪怕是 1 也照写不误。
@@ -111,6 +113,9 @@ SKIP_TARGET_ROW_UNKNOWN = "target-row-unknown"
 SKIP_NO_REACH_SUB = "no-reachable-substitute"
 #: 替代行 == 源行 ⇒ 换了等于没换
 SUB_NOOP = "pool-only-self"
+#: 目标行与源行是**同一个模型** ⇒ 换了观感也没变；而且同模型的不同行常是无 AI 的副本/占位行
+#: （用户 2026-10-18 实测：双月骑士被换成同模型的无名行后 AI 失效）。默认直接跳过。
+SKIP_SAME_MODEL = "same-model-noop"
 
 #: 替代配对的层级（从最相称到最宽松）。报告里按这个顺序统计。
 SUB_TIER_CLS_BUCKET = "sub-cls+bucket"      # 同一个 cls，且体型桶相同
@@ -140,7 +145,9 @@ class SwapError(RuntimeError):
 # ────────────────────────── 路径解析 ──────────────────────────
 
 def mod_root():
-    return os.environ.get(MOD_ENV) or MOD_DEFAULT
+    """法魂包根目录：环境变量优先，其余交给 modpaths 按相对位置找"""
+    import modpaths
+    return os.environ.get(MOD_ENV) or modpaths.require_mod_root(_HERE)
 
 
 def default_map_dir():
@@ -319,7 +326,10 @@ def load_row_classes(log=None, reg_path=None, force=False, classes_csv=None):
         import enemy_randomizer as ER
         plain = ER.load_plain(reg_path)
         units = ER.load_units(plain)
-        ER.classify(units)
+        # 分类口径必须与**计划生成**一致：生产路径 plan_for_cfg 会带名字表/血条表，
+        # 这里不带就会把友好 NPC 当 normal 候选（替代行会挑到 NPC 模型）。2026-10-17 审计修。
+        ER.classify(units, names=ER.load_name_table(),
+                    healthbar_ids=ER.load_healthbar_nameids())
         for rid, u in units.items():
             if u.cls == "skip":
                 continue                    # 友好 NPC / 场景物不进候选池（换了会出事）
@@ -363,18 +373,19 @@ def _sub_hash(*parts):
 
 
 def _pick_substitute(pool, src_key, dst, map_name="", row_cls=None,
-                     sub_mode=DEFAULT_SUB_MODE):
+                     sub_mode=DEFAULT_SUB_MODE, prof=None, src_model=""):
     """从**该图可达行池**里挑一个替代目标行。返回 `(行id 或 None, 层级, 候选数)`。
 
     规则（确定性、分类一致、体型接近）：
       1. 池里剔掉**源行自己**（换回自己 = 空操作，没有意义）；
-      2. 优先**同一个 cls**（boss/elite/normal，由 `load_row_classes` 给）；
-      3. 其次**体型桶接近**（`chr_hit_radius`/`chr_hit_height` 的桶，差的绝对值最小）；
-      4. 同一层级里按 `sub_mode` 挑：`hash` = `_sub_hash(图, 源行, 首选目标行, 层级)` 取模
-         （确定性伪随机：不同源行/不同图会落到不同替代行，同一源行在同一张图里稳定命中同一个）；
-         `first` = 取行 id 最小的那个。
+      2. 2026-10-18 用户实测后加：同模型的候选也剔掉 —— 换过去模型不变（观感没换），
+         而且同模型的不同行常是"无 AI 的副本/占位行"（例：双月骑士→53000000 后 AI 失效）；
+      3. 优先**同一个 cls**（boss/elite/normal，由 `load_row_classes` 给）；
+      4. 其次**体型桶接近**；同一层级里按 `sub_mode` 挑（hash = 确定性伪随机；first = 行 id 最小）。
     """
     cands = [r for r in pool if r != src_key]
+    if src_model and prof:
+        cands = [r for r in cands if (prof.get(r) or {}).get("model") != src_model]
     if not cands:
         return None, SUB_NOOP, 0
     cands = sorted(cands)                       # 行 id 稳定排序 —— 取模的结果才可复现
@@ -468,28 +479,29 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
         if key is None:
             continue
         dst = pairs[key]
-        tgt = prof.get(dst)
-        if tgt is None or not tgt.get("model"):
-            skipped.append({"index": p["index"], "part_name": p["name"], "src_key": key,
-                            "axis": axis, "dst_row": dst, "reason": SKIP_TARGET_ROW_UNKNOWN})
-            continue
+        tgt = prof.get(dst) or {}
+        src_model = (prof.get(key) or {}).get("model") or ""
+        mi, used = None, ""
+        if tgt.get("model"):
+            # ── 硬规则：新 model_index 必须是**这张图 MODEL 段里已有的模型** ──
+            mi, used = nmidx.get(tgt["model"]), tgt["model"]
+            if mi is None and allow_model_fallback:
+                for alt in tgt.get("models") or ():
+                    if alt in nmidx:
+                        mi, used = nmidx[alt], alt
+                        break
 
-        # ── 硬规则：新 model_index 必须是**这张图 MODEL 段里已有的模型** ──
-        mi, used = nmidx.get(tgt["model"]), tgt["model"]
-        if mi is None and allow_model_fallback:
-            for alt in tgt.get("models") or ():
-                if alt in nmidx:
-                    mi, used = nmidx[alt], alt
-                    break
-
-        # ── 择优配对：首选落不下 → 从该图可达行池里挑替代行（整组换）──
+        # ── 择优配对：首选落不下（含"目标行没有模型画像"）→ 从该图可达行池里挑替代行 ──
+        # 2026-10-17 审计（P0-6）：以前 `tgt is None` 在替代逻辑**之前**就 skip，
+        # 于是 64.9% 没有模型画像的计划目标（elite 95%）永远走不到替代 —— 这是"随了一半"的主因。
         sub_tier = sub_cand = None
         if mi is None and prefer_reachable:
             ck = (key, dst)
             if ck not in sub_cache:
                 sub_cache[ck] = _pick_substitute(reach_pool or (), key, dst,
                                                  map_name=map_name, row_cls=row_cls,
-                                                 sub_mode=sub_mode)
+                                                 sub_mode=sub_mode,
+                                                 prof=prof, src_model=src_model)
             alt_row, sub_tier, sub_cand = sub_cache[ck]
             if alt_row is not None:
                 atgt = prof.get(alt_row) or {}
@@ -511,13 +523,30 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
                     tgt, dst, mi, used = atgt, alt_row, ami, atgt.get("model")
                 else:
                     sub_tier = "sub-model-missing"      # 池里的行居然也落不下（不该发生）
+        # 目标与源同模型 ⇒ 观感不变，且同模型副本行可能没有 AI（用户实测双月骑士）→ 跳过
+        if mi is not None and src_model and used == src_model:
+            _src_cls = ((row_cls or {}).get(key) or {}).get("cls", "") if axis == "npc_id" else ""
+            skipped.append({"index": p["index"], "part_name": p["name"], "src_key": key,
+                            "axis": axis, "dst_row": dst, "reason": SKIP_SAME_MODEL,
+                            "source_model": src_model, "src_cls": _src_cls})
+            if sub_log is not None:
+                sub_log.setdefault("skips", {})
+                sub_log["skips"][SKIP_SAME_MODEL] = \
+                    sub_log["skips"].get(SKIP_SAME_MODEL, 0) + 1
+            continue
         if mi is None:
-            reason = SKIP_NO_REACH_SUB if prefer_reachable else SKIP_TARGET_MODEL_MISSING
+            # 区分"目标行根本没有模型画像"与"有画像但落不下"——两种原因要分开报，别混成一团
+            if not tgt.get("model"):
+                reason = SKIP_TARGET_ROW_UNKNOWN
+            else:
+                reason = SKIP_NO_REACH_SUB if prefer_reachable else SKIP_TARGET_MODEL_MISSING
+            _src_cls = ((row_cls or {}).get(key) or {}).get("cls", "") if axis == "npc_id" else ""
             skipped.append({"index": p["index"], "part_name": p["name"], "src_key": key,
                             "axis": axis, "dst_row": dst, "reason": reason,
-                            "want_model": tgt["model"],
+                            "want_model": tgt.get("model"),
                             "preferred_row": pairs[key],
                             "sub_reason": sub_tier or SUB_NOOP,
+                            "src_cls": _src_cls,
                             "reach_pool": len(avail),
                             "candidates": list(tgt.get("models") or ())[:4]})
             if sub_log is not None:
@@ -547,6 +576,8 @@ def _plan_map(raw, pairs, prof, match_axes=MATCH_AXES, write_fields=WRITE_FIELDS
                "off": p["off"], "type_off": p["type_off"],
                "src_key": key, "axis": axis, "dst_row": dst, "model_used": used,
                "preferred_row": pairs[key], "sub_tier": sub_tier,
+               "src_cls": ((row_cls or {}).get(key) or {}).get("cls", "") if axis == "npc_id" else "",
+               "dst_cls": ((row_cls or {}).get(dst) or {}).get("cls", ""),
                "from": old, "to": want_named, "changed": sorted(ch),
                "ch": ch}
         if not ch:
@@ -610,6 +641,7 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         "maps_total": len(files), "maps_changed": 0, "maps_written": 0,
         "parts_matched": 0, "parts_changed": 0, "parts_skipped": 0, "parts_unchanged": 0,
         "parts_suppressed": 0, "parts_substituted": 0, "skip_reasons": {}, "files": [],
+        "skip_by_cls": {}, "parts_by_cls": {},
         "errors": [], "degraded": [], "sub_tiers": {}, "sub_rows_used": 0,
         "elapsed": 0.0,
     }
@@ -640,9 +672,16 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         for s in skipped:
             r = s["reason"]
             rep["skip_reasons"][r] = rep["skip_reasons"].get(r, 0) + 1
+            # 2026-10-17（P0-6）：按**源行类别**报 skip —— GUI/收据要能看出 Boss 被跳过了多少，
+            # 而不是只看到一个总数（以前 60 图 skip 2110 次、看起来仍然 ok）。
+            _c = s.get("src_cls") or "?"
+            _k = "%s|%s" % (_c, r)
+            rep["skip_by_cls"][_k] = rep["skip_by_cls"].get(_k, 0) + 1
         rep["parts_skipped"] += len(skipped)
         for pl in planned:
             ax_hist[pl["axis"]] += 1
+            _c = pl.get("src_cls") or "?"
+            rep["parts_by_cls"][_c] = rep["parts_by_cls"].get(_c, 0) + 1
             if pl.get("sub_tier"):
                 rep["parts_substituted"] += 1
 
@@ -708,6 +747,12 @@ def plan_swaps(pairs, map_dir=None, out_dir=None, log=print, *,
         if rep["skip_reasons"]:
             log("[产出] 跳过原因：%s" % ", ".join("%s=%d" % kv
                                                 for kv in sorted(rep["skip_reasons"].items())))
+        if rep["parts_by_cls"]:
+            log("[产出] 按源行类别：改 %s" % ", ".join("%s=%d" % kv
+                                                    for kv in sorted(rep["parts_by_cls"].items())))
+        if rep["skip_by_cls"]:
+            log("[产出] 按源行类别跳过：%s" % ", ".join("%s=%d" % kv
+                                                     for kv in sorted(rep["skip_by_cls"].items())))
         if rep["degraded"]:
             log("[产出] 降级：%d 张（见报告）" % len(rep["degraded"]))
     if report_path:

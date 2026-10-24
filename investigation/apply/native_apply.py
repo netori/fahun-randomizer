@@ -15,24 +15,12 @@ import param_patch as pp   # noqa
 def _resolve_mod_root():
     """MOD 根目录（含 mod/regulation.bin 的那一层）。
 
-    顺序：① 环境变量（界面解析并发布）→ ② exe 或脚本所在目录自己就是 MOD
-         → ③ 同级的 法魂mod* → ④ 开发期默认路径。
-    打包发给玩家走 ①②，在开发目录里走 ③④。
+    只做一层转发：查找规则在 modpaths.py（环境变量 → 起点/父目录/同级目录）——
+    换机器、换盘符、给整合包改名都不用改代码。找不到时返回 ""，
+    真正要读文件的地方会调 require，给出「怎么办」的提示。
     """
-    env = os.environ.get("CONVERGENCE_MOD_ROOT")
-    if env and os.path.isdir(os.path.join(env, "mod")):
-        return os.path.normpath(env)
-    bases = []
-    if getattr(sys, "frozen", False):
-        bases.append(os.path.dirname(os.path.abspath(sys.executable)))
-    bases.append(os.path.dirname(ROOT))
-    for base in bases:
-        if os.path.isfile(os.path.join(base, "mod", "regulation.bin")):
-            return os.path.normpath(base)
-        cand = [d for d in glob.glob(os.path.join(base, "法魂mod*")) if os.path.isdir(os.path.join(d, "mod"))]
-        if cand:
-            return os.path.normpath(sorted(cand)[0])
-    return os.path.normpath(os.path.join(os.path.dirname(ROOT), "法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）"))
+    import modpaths
+    return modpaths.find_mod_root(APPLY) or ""
 
 
 MOD = _resolve_mod_root()
@@ -84,6 +72,82 @@ def plan_by_table(plan_path):
 
 class PreconditionError(RuntimeError):
     """写前复核失败：目标格子的现状与计划不符 → 立即中止，绝不写半成品（硬约束 H12）"""
+
+
+# ── 「原始备份」自检（2026-10-23）────────────────────────────────────────────
+# 为什么需要：便携工作区（exe 旁边那套 investigation/）第一次运行会让人点
+# 「补一份原始备份」，而那时的本体如果已经被随机过，登记下来的"原始"就是错的。
+# 症状是写入时 766/766 条全不符，但报错只说"换过 MOD 版本？"—— 玩家根本想不到
+# 是自己那份备份错了（2026-10-23 实测：测试目录里备份的 2,998,496 B 本体其实是
+# 10-22 写过物品的版本；真正的原始是 2,984,544 B）。
+# 做法：拿工具自带的数据快照（建索引时的那份原始数据，随代码入库）抽样核对物品
+#      格子；对不上 ⇒ 不是原始版。
+_IDX_CACHE = {}
+_PROBE_CACHE = {}
+
+
+def _lot_index_path():
+    return os.path.join(ROOT, "investigation", "randomization-catalog", "evidence",
+                        "lot_reward_index.json")
+
+
+def _lot_index_cells():
+    p = _lot_index_path()
+    if p in _IDX_CACHE:
+        return _IDX_CACHE[p]
+    cells = []
+    try:
+        with open(p, encoding="utf-8") as f:
+            idx = json.load(f)
+        for L in idx.get("lots") or []:
+            for s in L.get("slots") or []:
+                cells.append((L.get("table"), str(L.get("lot_id")), str(s.get("slot")),
+                              int(s.get("item_id"))))
+    except Exception:
+        cells = []
+    _IDX_CACHE[p] = cells
+    return cells
+
+
+def pristine_probe(reg_path, sample=160):
+    """这份 regulation 的物品格子跟工具快照对不对得上 ⇒ 判断它像不像「原始版」。
+
+    返回 {"checked": n, "match": k, "rate": 0~1 或 None}。
+    · rate ≈ 1.0 → 原始版；
+    · rate 低     → 已经被物品随机动过（或者根本不是这一版 MOD）；
+    · checked = 0 → 没有快照/文件读不了，无法判断（别据此下结论）。
+    """
+    try:
+        _st = (os.path.abspath(reg_path), os.path.getsize(reg_path), os.path.getmtime(reg_path))
+    except OSError:
+        return {"checked": 0, "match": 0, "rate": None}
+    if _st in _PROBE_CACHE:
+        return _PROBE_CACHE[_st]
+    cells = _lot_index_cells()
+    if not cells:
+        return {"checked": 0, "match": 0, "rate": None}
+    step = max(1, len(cells) // max(1, int(sample)))
+    pick = cells[::step][:int(sample)]
+    plain = bytearray(erio.dcx_decompress(erio.regulation_decrypt(reg_path)))
+    tables, n, m = {}, 0, 0
+    for table, rid, slot, want in pick:
+        if table not in tables:
+            try:
+                tables[table] = find_row_table_in_plain(bytes(plain), table)
+            except Exception:
+                tables[table] = {}          # 认不出的表就当这格读不到（不猜）
+        try:
+            oi = pp.offset_of(table, tables[table], int(rid), "lotItemId", int(slot))
+        except Exception:
+            oi = None
+        if oi is None:
+            continue
+        n += 1
+        if pp.read_u32(plain, oi) == want:
+            m += 1
+    out = {"checked": n, "match": m, "rate": (float(m) / n if n else None)}
+    _PROBE_CACHE[_st] = out
+    return out
 
 
 def check_preconditions(plan_path, source, quiet=True):
@@ -138,7 +202,9 @@ def check_preconditions(plan_path, source, quiet=True):
 
 
 def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False):
-    source = source or os.path.join(MOD, "mod", "regulation.bin")
+    if not source:
+        import modpaths
+        source = modpaths.mod_reg(APPLY)
     out_path = out_path or source
     pre = check_preconditions(plan_path, source, quiet=quiet)   # ← 先复核，再动文件
     if not quiet and pre.get("checked"):
@@ -195,9 +261,16 @@ def apply_native(plan_path, source=None, out_path=None, verify=True, quiet=False
             print(f"  备份: {bak}")
     if verify:
         p2 = bytearray(erio.dcx_decompress(erio.regulation_decrypt(out_path)))
+        if len(p2) != len(plain):
+            raise PreconditionError(
+                f"回读校验失败：明文长度 {len(p2)} != 写入的 {len(plain)} —— 已中止（不当作成功）")
         same_elsewhere = sum(1 for i in range(len(p2)) if p2[i] != plain[i])
         if not quiet:
             print(f"  回读校验：与写入的明文差异 {same_elsewhere} 字节（应为 0）")
+        if same_elsewhere:
+            # 2026-10-17 审计：以前这里只 print 不 assert，上层照样报「回读校验通过」= 假承诺。
+            raise PreconditionError(
+                f"回读校验失败：有 {same_elsewhere} 字节与写入内容不一致 —— 已中止（不当作成功）")
     return {"stats": stats, "changed_bytes": changed, "skipped": [list(s) for s in skipped], "out": out_path}
 
 

@@ -521,9 +521,12 @@ def verify_roundtrip(path, out_kind="dflt", template=None, level=None):
 # ────────────────────────── CLI ──────────────────────────
 
 def _maps():
-    mod = (os.environ.get("CONVERGENCE_MOD_ROOT")
-           or r"F:\game\studygame\elden ring\THE_COVERAGE-随机开发"
-              r"\法魂mod V3.0.3 汉化本体（适配游戏版本1.17.1）（新YAFSML引擎V0.10.4）")
+    import modpaths
+    try:
+        mod = (os.environ.get("CONVERGENCE_MOD_ROOT")
+               or modpaths.require_mod_root(os.path.dirname(os.path.abspath(__file__))))
+    except RuntimeError as e:
+        raise MsbWriteError(str(e))
     d = os.path.join(mod, "mod", "map", "MapStudio")
     if not os.path.isdir(d):
         raise MsbWriteError("找不到地图目录: %s" % d)

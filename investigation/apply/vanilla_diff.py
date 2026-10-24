@@ -18,7 +18,22 @@ import enemy_randomizer as ER    # noqa: E402
 import native_apply as na        # noqa: E402
 import param_patch as pp         # noqa: E402
 
-VANILLA = r"F:\game\studygame\elden ring\ELDEN RING Tarnished Edition v1.17\Game\regulation.bin"
+def _find_vanilla():
+    """原版 regulation：环境变量 VANILLA_REG 优先，否则按 modpaths 找到的游戏目录推"""
+    p = os.environ.get("VANILLA_REG")
+    if p:
+        return p
+    try:
+        import modpaths
+        g = modpaths.find_game_dir(HERE)
+        if g and os.path.isfile(os.path.join(g, "regulation.bin")):
+            return os.path.join(g, "regulation.bin")
+    except Exception:
+        pass
+    return ""
+
+
+VANILLA = _find_vanilla()
 MOD = ER._mod_reg()
 OUT1 = os.path.join(HERE, "vanilla_vs_mod_diff.csv")
 OUT2 = os.path.join(HERE, "convergence_new_rows.csv")
@@ -57,6 +72,9 @@ def rows_of(plain, name, off, size):
 
 def main():
     print("原版:", VANILLA)
+    if not os.path.isfile(VANILLA):
+        print("找不到原版 regulation.bin —— 设环境变量 VANILLA_REG=<游戏目录>\\regulation.bin")
+        return 2
     print("法魂:", MOD)
     pv, tv = tables_of(VANILLA)
     pm, tm = tables_of(MOD)
