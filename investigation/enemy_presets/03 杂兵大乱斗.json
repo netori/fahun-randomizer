@@ -1,160 +1,151 @@
 {
- "name": "03 杂兵大乱斗",
- "rate_mode": "independent",
- "classes": {
-  "Basic": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 100.0,
-   "targets": [
-    "Basic",
-    "Wildlife"
-   ],
-   "donor_weights": {
-    "Basic": 145.0,
-    "Wildlife": 55.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Boss": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "Boss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "DragonMiniboss": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "DragonMiniboss"
-   ],
-   "donor_weights": {
-    "DragonMiniboss": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Evergaol": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "Evergaol"
-   ],
-   "donor_weights": {
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "HostileNPC": {
-   "enabled": false,
-   "rate": 0.0,
-   "weight": 0.0,
-   "targets": [],
-   "donor_weights": null,
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Miniboss": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "Miniboss"
-   ],
-   "donor_weights": {
-    "Miniboss": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "MinorBoss": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "MinorBoss"
-   ],
-   "donor_weights": {
-    "MinorBoss": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "NightMiniboss": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "NightMiniboss": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Wildlife": {
-   "enabled": true,
-   "rate": 1.0,
-   "weight": 50.0,
-   "targets": [
-    "Basic",
-    "Wildlife"
-   ],
-   "donor_weights": {
-    "Basic": 40.0,
-    "Wildlife": 60.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
+  "version": 1,
+  "name": "03 杂兵大乱斗",
+  "rate_mode": "independent",
+  "classes": {
+    "Basic": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 100.0,
+      "targets": [
+        "Basic",
+        "Wildlife"
+      ],
+      "donor_weights": {
+        "Basic": 72.5,
+        "Wildlife": 27.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Wildlife": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 100.0,
+      "targets": [
+        "Basic",
+        "Wildlife"
+      ],
+      "donor_weights": {
+        "Basic": 40.0,
+        "Wildlife": 60.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Boss": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "pool:keystone",
+        "pool:remembrance"
+      ],
+      "donor_weights": {
+        "Boss": 70.0,
+        "pool:remembrance": 20.0,
+        "pool:keystone": 10.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "MinorBoss": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "MinorBoss"
+      ],
+      "donor_weights": {
+        "MinorBoss": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Miniboss": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "Miniboss"
+      ],
+      "donor_weights": {
+        "Miniboss": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "NightMiniboss": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "NightMiniboss"
+      ],
+      "donor_weights": {
+        "NightMiniboss": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "DragonMiniboss": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "DragonMiniboss"
+      ],
+      "donor_weights": {
+        "DragonMiniboss": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Evergaol": {
+      "enabled": true,
+      "rate": 1.0,
+      "weight": 50.0,
+      "targets": [
+        "Evergaol"
+      ],
+      "donor_weights": {
+        "Evergaol": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
   }
- },
- "version": 1
 }

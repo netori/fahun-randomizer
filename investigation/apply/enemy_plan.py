@@ -2023,17 +2023,16 @@ def build_plan(data, options=None, seed=1):
         groups = rule_donors.get(rule["id"]) or {}
         cand = size_candidates(u, rule, groups, options, size_cache, named_models)
         cand = _boss_cap_filter(cand, boss_use, boss_cap, cap_stats)
-        # 逐类来源百分比：普通位置用「这一类自己的组成」；特殊规则（传送门/血条/
-        # 多阶段）没有自己的组成时回落到规则/全局权重，不会因为目标池不同被抽空。
+        # 逐类来源百分比：每个位置都用「它自己的类」的组成。v1.3.17 起特殊规则（传送门 /
+        # 血条位 / 多阶段）没有显式组成时也沿用类组成 —— 这是「难目标多抽追忆·楔石池、
+        # 简单目标多抽野外池」的落地方式：血条位按位置原类取组成，追忆位（Boss 类）自然
+        # 抽难池。预设的池/血条位条目自带显式组成（rule.donor_weights），它们优先于类组成；
+        # 类组成在候选池里一个都没有时 pick_donor 会退回候选池内等概率，不会抽空。
         _cw = preset_class_weights.get(u["cls"])
         _rw = rule.get("donor_weights")
-        _fb = _rw or donor_weight_map
-        if _cw and not _fb and not str(rule["id"]).startswith("preset:"):
-            _weights = None
-        else:
-            _weights = _cw or _fb
+        _weights = _rw or _cw or donor_weight_map
         d = pick_donor(u, cand, rng, bool(constraints.get("require_model_change", True)),
-                       weights=_weights, fallback_weights=_fb)
+                       weights=_weights, fallback_weights=donor_weight_map)
         if d is None:
             stats["no_candidate_units"] += 1
             why = _no_candidate_reason(u, groups.get(_donor_group_key(u, rule)) or [],
@@ -2995,6 +2994,30 @@ def _selftest():
     print("PASS 多阶段 Boss 当来源：来源池 %d → %d（+%d，%d 组）；关掉后 0 个、%d 个替换也没抽到"
           % (len(_d_off), len(_d_on), len(_mp_donors), len(set(_mp_map.values())),
              len(_p_nosrc["units"])))
+
+    # ㉑ v1.3.17：特殊规则（传送门/血条位）没有自己的组成时，沿用「目标位置原类」的组成
+    pr_in = default_preset(data["cfg"], unitize(data["places"]))
+    pr_in["rate_mode"] = "independent"
+    for _e in pr_in["classes"].values():
+        _e["enabled"] = False
+    for _e in pr_in["pools"].values():
+        _e["enabled"] = False
+    pr_in["bar"] = {"enabled": False, "rate": 0.0, "weight": 0.0,
+                    "targets": [], "donor_weights": None}
+    pr_in["classes"]["Boss"].update({
+        "enabled": True, "rate": 1.0,
+        "targets": ["pool:remembrance"], "donor_weights": {"pool:remembrance": 100.0},
+        "source_areas": ["base", "dlc"], "target_areas": "same", "size_max": None})
+    p_in = build_plan(data, {"preset": pr_in, "constraints": {"boss_usage_cap": 0}}, seed)
+    assert not validate_plan(p_in, data)[:5]
+    _in_spec = [e for e in p_in["units"]
+                if e["rule"] in ("waygate_guardian", "bossbar_position")
+                and e["cls"] == "Boss" and not e.get("manual")]
+    assert _in_spec, "特殊规则沿用类组成：一个 Boss 类传送门/血条位都没接管"
+    _in_bad = [e["key"] for e in _in_spec if "remembrance" not in (e.get("new_pools") or [])]
+    assert not _in_bad, "特殊规则没沿用目标类组成：%s" % _in_bad[:5]
+    print("PASS 特殊规则沿用目标类组成：Boss 类传送门/血条位 %d 个，全部抽自追忆池"
+          % len(_in_spec))
 
     print("RESULT: PASS")
 

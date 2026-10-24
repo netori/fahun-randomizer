@@ -1,216 +1,219 @@
 {
- "name": "05 保守半随机",
- "rate_mode": "independent",
- "classes": {
-  "Basic": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 100.0,
-   "targets": [
-    "Basic"
-   ],
-   "donor_weights": {
-    "Basic": 200.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Boss": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "DragonMiniboss": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Evergaol": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "HostileNPC": {
-   "enabled": false,
-   "rate": 0.0,
-   "weight": 0.0,
-   "targets": [],
-   "donor_weights": null,
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Miniboss": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "MinorBoss": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "NightMiniboss": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Boss",
-    "DragonMiniboss",
-    "Evergaol",
-    "Miniboss",
-    "MinorBoss",
-    "NightMiniboss"
-   ],
-   "donor_weights": {
-    "Boss": 100.0,
-    "MinorBoss": 100.0,
-    "Miniboss": 100.0,
-    "NightMiniboss": 100.0,
-    "DragonMiniboss": 100.0,
-    "Evergaol": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
-  },
-  "Wildlife": {
-   "enabled": true,
-   "rate": 0.5,
-   "weight": 50.0,
-   "targets": [
-    "Wildlife"
-   ],
-   "donor_weights": {
-    "Wildlife": 100.0
-   },
-   "source_areas": [
-    "base",
-    "dlc"
-   ],
-   "target_areas": "same",
-   "size_max": null
+  "version": 1,
+  "name": "05 保守半随机",
+  "rate_mode": "independent",
+  "classes": {
+    "Basic": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 100.0,
+      "targets": [
+        "Basic"
+      ],
+      "donor_weights": {
+        "Basic": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Wildlife": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 100.0,
+      "targets": [
+        "Wildlife"
+      ],
+      "donor_weights": {
+        "Wildlife": 100.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Boss": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 24.0,
+        "pool:remembrance": 14.0,
+        "pool:keystone": 9.0,
+        "MinorBoss": 20.0,
+        "Miniboss": 14.0,
+        "pool:waygate": 12.0,
+        "NightMiniboss": 4.0,
+        "DragonMiniboss": 2.0,
+        "Evergaol": 1.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "MinorBoss": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 20.0,
+        "pool:remembrance": 9.0,
+        "pool:keystone": 6.0,
+        "MinorBoss": 30.0,
+        "Miniboss": 16.0,
+        "pool:waygate": 13.0,
+        "NightMiniboss": 3.0,
+        "DragonMiniboss": 2.0,
+        "Evergaol": 1.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Miniboss": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "MinorBoss": 30.0,
+        "Miniboss": 30.0,
+        "pool:waygate": 18.0,
+        "Boss": 8.0,
+        "pool:keystone": 4.0,
+        "NightMiniboss": 5.0,
+        "DragonMiniboss": 3.0,
+        "Evergaol": 2.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "NightMiniboss": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "NightMiniboss": 30.0,
+        "Miniboss": 26.0,
+        "MinorBoss": 18.0,
+        "pool:waygate": 14.0,
+        "DragonMiniboss": 6.0,
+        "Boss": 6.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "DragonMiniboss": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "DragonMiniboss": 32.0,
+        "MinorBoss": 22.0,
+        "Miniboss": 18.0,
+        "pool:waygate": 12.0,
+        "Boss": 10.0,
+        "NightMiniboss": 6.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Evergaol": {
+      "enabled": true,
+      "rate": 0.5,
+      "weight": 50.0,
+      "targets": [
+        "Boss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Evergaol": 30.0,
+        "MinorBoss": 24.0,
+        "Miniboss": 20.0,
+        "Boss": 12.0,
+        "pool:waygate": 10.0,
+        "pool:keystone": 4.0
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
   }
- },
- "version": 1
 }
