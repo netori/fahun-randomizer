@@ -71,6 +71,11 @@ DEFAULT_OPTIONS = {
         # v1.1：多阶段 Boss 整组替换（一阶段→一阶段，二阶段→二阶段）。
         # 默认关：只有显式打开时才处理 multiphase 组，其它单元一个字节都不受影响。
         "multiphase_swap": False,
+        # v1.3.14：多阶段 Boss 也能当「来源」——位置仍然 keep（不动那场战斗），
+        # 只把 yaml multiphase.groups 的 sources（缺省 = phases）身份拉进来源池。
+        # 参考实现里每个阶段都是一个可分配 source；我们没有相位配对需求
+        # （目标都是单阶段位置），所以直接用它的四元组身份即可。
+        "multiphase_as_source": True,
         # 参考实现的放置安全项（默认按参考的 safe mode 走，可在界面关掉）
         "ignore_size": False,          # 忽略「场地档 vs 模型体型」限制
         "arena_safety": True,           # 位置有 arena 标签时，只允许 size <= arena 的换入者
@@ -228,6 +233,26 @@ def load_multiphase(cfg):
         for e in g["phases"]:
             members.add((g["map"], _i(e)))
     return members, groups
+
+
+def multiphase_source_units(units, groups):
+    """多阶段 Boss 里「可以当来源」的单元：{unit_key: 组 id}。
+
+    yaml 的 sources 缺省 = phases（真阶段；v1.3.14 起当来源用，位置本身仍 keep）。
+    个别组的真身不在 phases 里（幽影树化身 800 / 米德拉 800 / 融泥骑士 800），
+    yaml 里显式写；HP 壳、坐骑、血条助手不列 —— 它们不是能独立出战的身份。
+    """
+    ent2gid = {}
+    for g in groups or []:
+        gid = g.get("id") or "multiphase"
+        for ent in (g.get("sources") or g.get("phases") or []):
+            ent2gid[(g["map"], _i(ent))] = gid
+    out = {}
+    for u in units:
+        gid = ent2gid.get((u["map"], u["entity_id"]))
+        if gid:
+            out[u["key"]] = gid
+    return out
 
 
 def load_rules(cfg):
@@ -1286,19 +1311,25 @@ def _donor_group_key(unit, rule):
     return unit["area"] if rule["targets"]["areas"] == "same" else "*"
 
 
-def donor_units(units, options, deny=None):
+def donor_units(units, options, deny=None, extra_ok=None):
     """所有可当来源的单元（扁平，顺序固定 = (类, npc_id, key)）。
 
     只收 policy=randomize：keep 的位置不写，同模型在别处若仍是 randomize 就自然还在候选里
     —— 这是设计 §4「keep 可以作为源」的落地方式；要让 keep 也当源，
     把 constraints.include_keep_as_source 打开（多阶段 Boss 会被拉进来源池，默认关）。
+
+    extra_ok：额外允许当来源的 unit_key 集合（v1.3.14 用来放多阶段 Boss 的身份：
+    位置 keep 不动，但身份可以当别的位置的来源）。仍然走下面全部资格过滤。
     """
     include_keep = bool(options["constraints"].get("include_keep_as_source"))
     ok_policy = ("randomize", "keep", "source_only") if include_keep else ("randomize",)
+    extra_ok = extra_ok or ()
     deny = deny or {}
     out = []
     for u in units:
-        if u["policy"] not in ok_policy or not u["cls"]:
+        if u["policy"] not in ok_policy and u["key"] not in extra_ok:
+            continue
+        if not u["cls"]:
             continue
         if u["model"] in deny:
             continue          # 位置依赖型敌人：换到别处会不攻击/原地传送/只剩壳
@@ -1826,7 +1857,19 @@ def build_plan(data, options=None, seed=1):
     deny = data.get("donor_deny") or {}
     ai_fallback = data.get("ai_fallback") or {}
     manual = data.get("manual") or {}
-    donors = donor_units(units, options, deny)
+    # v1.3.14：多阶段 Boss 的身份也能当来源（位置仍然 keep，那场战斗不动）。
+    constraints = options["constraints"]
+    mp_src_map = {}
+    if constraints.get("multiphase_as_source", True):
+        mp_src_map = multiphase_source_units(units, groups)
+        for u in units:
+            if u["key"] in mp_src_map:
+                u["mp_source"] = mp_src_map[u["key"]]
+    donors = donor_units(units, options, deny, extra_ok=mp_src_map)
+    mp_donor_units = [d for d in donors if d.get("mp_source")]
+    mp_donor_groups = {}
+    for d in mp_donor_units:
+        mp_donor_groups[d["mp_source"]] = mp_donor_groups.get(d["mp_source"], 0) + 1
     manual_pool = [x for x in units
                    if x["npc_id"] and x["model"] != "c0000"
                    and int(x.get("think_id") or 0) > 0 and x["hp"] > 0]
@@ -1836,7 +1879,6 @@ def build_plan(data, options=None, seed=1):
     size_cache = {}
     base_seed = seed_material(options, seed, data["hashes"])
     enabled_pools = {k for k, v in options["pools"].items() if v}
-    constraints = options["constraints"]
     # v1.3.13：Boss 使用上限（同一个 Boss 最多被随到几次）。
     boss_cap = int(constraints.get("boss_usage_cap") or 0)
     boss_use = {}
@@ -2022,6 +2064,11 @@ def build_plan(data, options=None, seed=1):
                 "cap": boss_cap,
                 "relaxed": cap_stats.get("relaxed", 0),
                 "max_used": max(boss_use.values()) if boss_use else 0,
+            },
+            "multiphase_sources": {
+                "enabled": bool(constraints.get("multiphase_as_source")),
+                "units": len(mp_donor_units),
+                "groups": mp_donor_groups,
             },
         },
         "rules": rules,
@@ -2797,6 +2844,35 @@ def _selftest():
           % (len(_bar_units),
              sum(1 for e in _bar_units if e["cls"] in AREA_BOSSISH),
              sum(1 for e in _bar_units if e["cls"] not in AREA_BOSSISH)))
+
+    # ⑳ v1.3.14：多阶段 Boss 也能当来源（yaml sources；位置仍然 keep 不动）
+    _mp_units = unitize(data["places"])
+    for _x in _mp_units:
+        _s = data["npc"].get(_x["npc_id"])
+        if _s:
+            _x["hp"], _x["soul"] = _s["hp"], _s["soul"]
+            _x["radius"], _x["height"] = _s["radius"], _s["height"]
+            _x["name"] = _s["name"]
+    _mp_map = multiphase_source_units(_mp_units, data["multiphase"][1])
+    assert len(_mp_map) >= 20, "多阶段来源实体太少：%d" % len(_mp_map)
+    _mp_deny = data.get("donor_deny") or {}
+    _d_on = donor_units(_mp_units, merge_options({}), _mp_deny, extra_ok=_mp_map)
+    _d_off = donor_units(_mp_units, merge_options({}), _mp_deny)
+    _mp_donors = [d for d in _d_on if d["key"] in _mp_map]
+    _mp_npcs = {d["npc_id"] for d in _mp_donors}
+    assert len(_d_on) > len(_d_off), "多阶段 Boss 没进来源池：%d vs %d" % (len(_d_on), len(_d_off))
+    for _n in (21200056, 21900078, 22000078, 47200070, 44000001, 52300396, 50200087, 50510086):
+        assert _n in _mp_npcs, "多阶段 Boss 的 npc 不在来源池：%s" % _n
+    assert plan["meta"]["counts"]["multiphase_sources"]["units"] == len(_mp_donors), (
+        plan["meta"]["counts"]["multiphase_sources"], len(_mp_donors))
+    _p_nosrc = build_plan(data, {"constraints": {"multiphase_as_source": False}}, seed)
+    assert not validate_plan(_p_nosrc, data)[:5]
+    assert _p_nosrc["meta"]["counts"]["multiphase_sources"]["units"] == 0
+    _leak = [e["key"] for e in _p_nosrc["units"] if e["new_npc_id"] in _mp_npcs]
+    assert not _leak, "关掉多阶段来源后仍抽到了多阶段 Boss：%s" % _leak[:3]
+    print("PASS 多阶段 Boss 当来源：来源池 %d → %d（+%d，%d 组）；关掉后 0 个、%d 个替换也没抽到"
+          % (len(_d_off), len(_d_on), len(_mp_donors), len(set(_mp_map.values())),
+             len(_p_nosrc["units"])))
 
     print("RESULT: PASS")
 

@@ -1165,9 +1165,32 @@ def check(yaml_path=None):
         if grp.get("swap") and str(grp.get("kind") or "phase") != "phase":
             fails.append("多阶段组 %s 开了 swap，但 kind=%s（只有 phase 组能整组换）" % (
                 gid, grp.get("kind")))
+        # v1.3.14：sources = 允许当「来源」的实体（缺省 = phases）。真身不在 phases 里的组
+        # （幽影树化身 800）显式写；这些位置也必须 keep（当来源 != 可当目标）。
+        src_ents = grp.get("sources")
+        if src_ents is not None:
+            if not src_ents:
+                fails.append("多阶段组 %s 的 sources 是空的（要么不写，缺省用 phases）" % gid)
+            src_seen = set()
+            for ent in src_ents:
+                k = (gmap, int(ent))
+                if k in src_seen:
+                    fails.append("多阶段组 %s 的 sources 重复：%s/%s" % (gid, gmap, ent))
+                src_seen.add(k)
+                hit = [r for r in tab.values()
+                       if r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)]
+                if not hit:
+                    fails.append("多阶段组 %s 的 sources 实体 %s/%s 在位置表里找不到" % (
+                        gid, gmap, ent))
+                for r in hit:
+                    if r["policy"] != "keep":
+                        fails.append("多阶段组 %s 的 sources 实体 %s 被标成 %s"
+                                     "（当来源的身份必须 keep：它不能同时是随机目标）" % (
+                                         gid, r["part_name"], r["policy"]))
     swap_n = sum(1 for g in mp_groups if g.get("swap"))
-    print("multiphase: %d 组 / %d 个位置（必须全部 keep；其中 %d 组开了整组替换）"
-          % (len(mp_groups), len(seen_mp), swap_n))
+    src_n = sum(len(g.get("sources") or g.get("phases") or []) for g in mp_groups)
+    print("multiphase: %d 组 / %d 个位置（必须全部 keep；其中 %d 组开了整组替换，"
+          "%d 个实体可当来源）" % (len(mp_groups), len(seen_mp), swap_n, src_n))
 
     # ⑤c 重复 MSB（已封印/未封印两份）：同一物理位置必须成组，且 link 列自洽
     kg = collections.defaultdict(list)
