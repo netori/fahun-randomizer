@@ -215,6 +215,68 @@ _AIID_RE = re.compile(r"SetCharacterAIId\s*\(\s*(\d+)\s*,")
 _EVT_ORDER = ("pair", "copy", "aiid", "anim")
 
 
+_EVENT_HEAD_RE = re.compile(r"(?m)^\$Event\((\d+)\s*,")
+_INIT_EVENT_RE = re.compile(r"Initialize(?:Common)?Event\(\s*\d+\s*,\s*(\d+)")
+
+
+def _strip_js_comments(txt):
+    """去掉 EMEVD 反编译 js 里的 // 行注释（引号内的 // 不动），其余原样。"""
+    out = []
+    for line in txt.split("\n"):
+        q = False
+        esc = False
+        cut = len(line)
+        i = 0
+        while i < len(line):
+            ch = line[i]
+            if q:
+                if esc:
+                    esc = False
+                elif ch == "\\":
+                    esc = True
+                elif ch == '"':
+                    q = False
+            else:
+                if ch == '"':
+                    q = True
+                elif ch == "/" and i + 1 < len(line) and line[i + 1] == "/":
+                    cut = i
+                    break
+            i += 1
+        out.append(line[:cut])
+    return "\n".join(out)
+
+
+def _js_events(txt):
+    """{event id: body} —— 按 $Event(id, ... 切块（已去注释）。"""
+    txt = _strip_js_comments(txt)
+    ms = list(_EVENT_HEAD_RE.finditer(txt))
+    out = collections.defaultdict(str)
+    for i, m in enumerate(ms):
+        end = ms[i + 1].start() if i + 1 < len(ms) else len(txt)
+        out[int(m.group(1))] += txt[m.start():end]
+    return out
+
+
+def _active_event_text(events):
+    """只保留「真的会被启动」的事件文本：从 $Event(0) 沿 InitializeEvent /
+    InitializeCommonEvent 的字面量实参做闭包。
+
+    2026-10-24：脚本里常有整段被注释掉的初始化（如 m60_52_56 的 $Event(1052562820)），
+    旧实现纯正则扫全文，会把死事件里的 CreateReferredDamagePair 当成运行时绑定（误 keep）。
+    """
+    seen = set()
+    stack = [0]
+    while stack:
+        eid = stack.pop()
+        if eid in seen or eid not in events:
+            continue
+        seen.add(eid)
+        for m in _INIT_EVENT_RE.finditer(events[eid]):
+            stack.append(int(m.group(1)))
+    return "".join(events[e] for e in sorted(seen))
+
+
 def scan_events():
     """{(map, entity_id): "pair;anim;..."} —— 被 EMEVD 脚本绑死的实体。
 
@@ -225,6 +287,8 @@ def scan_events():
             换模型后动画槽对不上 → 站着不动（禁域传送门的玛尔基特就是这样）。
       copy  CopyPlayerCharacterData(10000, 实体)：外观被事件覆盖成玩家，换模型看不到。
       aiid  SetCharacterAIId(实体, AI)：AI 被脚本换成特定行为树，换模型后可能原地发呆。
+
+    扫描范围 = **会被启动的事件**（见 _active_event_text）；注释掉的初始化事件不算。
     """
     d = event_dir()
     out = collections.defaultdict(set)
@@ -236,6 +300,11 @@ def scan_events():
         if stem.startswith("common"):
             continue
         txt = io.open(os.path.join(d, fn), encoding="utf-8", errors="replace").read()
+        events = _js_events(txt)
+        if 0 in events:
+            txt = _active_event_text(events)
+        else:
+            txt = _strip_js_comments(txt)   # 极少数没有 $Event(0) 的图：退回全文（去注释）
         for m in _PAIR_RE.finditer(txt):
             for x in m.groups():
                 if int(x):
@@ -505,10 +574,12 @@ def apply_layer(rows, cfg, npc=None):
             # （休眠/起身那套）才必须保持原模型。
             policy, reason = "keep", "evt:%s" % r["evt"]
         elif model == "c0000":
-            # MSB 里的 c0000 part 是"空壳"：真正的身体由事件/生成器按 npc_id 另配（永恒监牢、
-            # 部分 DLC Boss、入侵者等）。换它的 npc 要么无效、要么换掉一个玩家根本看不见的对象，
-            # 反过来（把它当捐赠者）也会换进一只空壳 —— 两边都不碰。
-            policy, reason = "keep", "占位模型 c0000（真身由事件生成）"
+            # c0000 = MSB 里的「玩家模型」part。2026-10-24 调查（docs/敌人随机_不可随Boss调查）：
+            # 它**不是**空壳 —— 外观由 part 的 chara_id → CharaInitParam 决定，EMEVD 里没有任何
+            # CreateNPC/SpawnEnemy；换 model/npc/think/chara 四字段即可换掉（enemy_write.patch_map）。
+            # 仍然默认 keep：这些位置多是剧情/状态机复杂的 Boss（菲雅英雄战、帕奇），个别已用
+            # overrides.places 放开（红熊/舞娘/孤牢/罗刹/哥瑞斯/喟叹者/古龙人/艾斯加）。
+            policy, reason = "keep", "占位模型 c0000（默认不碰；可用 overrides.places 放开）"
         elif _SOUND_RE.search(r["part_name"]):
             # MSB 里有专门的声音/演出占位 part（如 "c5300 Rellana Twin Moon Knight Sound"）：
             # 它带 Boss 的 npc/think，但舞台上并不战斗。当成敌人换掉/拿来当捐赠者，

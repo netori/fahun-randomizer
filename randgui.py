@@ -1441,6 +1441,9 @@ class App:
         self.ev1_bgm = tk.BooleanVar(value=False)
         self.ev1_soul = tk.BooleanVar(value=False)
         self.ev1_rainbow = tk.BooleanVar(value=False)
+        # v1.4.0：双人 Boss 的第二只（Helper）也参与随机（单只互换，实验）。
+        # 默认开 = yaml 里 A 批 6 组；B/C 批在 yaml 里 enabled:false，待实机确认后再放。
+        self.ev1_duo = tk.BooleanVar(value=True)
         _rf = tk.Frame(b0, bg=BG)
         _rf.pack(fill="x", pady=(px(6), 0))
         GoldCheck(_rf, text="改BOSS血条名", variable=self.ev1_bar_names,
@@ -1456,6 +1459,8 @@ class App:
         GoldCheck(_rf2, text="卢恩跟新BOSS", variable=self.ev1_soul,
                   command=self._ev1_status_refresh).pack(side="left", padx=(0, px(16)))
         GoldCheck(_rf2, text="随机化敌人颜色", variable=self.ev1_rainbow,
+                  command=self._ev1_status_refresh).pack(side="left", padx=(0, px(16)))
+        GoldCheck(_rf2, text="双人BOSS第二只也随机（实验）", variable=self.ev1_duo,
                   command=self._ev1_status_refresh).pack(side="left")
         # 参考实现的全局数值倍率 + Oops All（全替换为某一类）
         _rf3 = tk.Frame(b0, bg=BG)
@@ -1711,6 +1716,7 @@ class App:
                     "bgm_follow": bool(getattr(self, "ev1_bgm", None) and self.ev1_bgm.get()),
                     "soul_follow": bool(getattr(self, "ev1_soul", None) and self.ev1_soul.get()),
                     "rainbow": bool(getattr(self, "ev1_rainbow", None) and self.ev1_rainbow.get()),
+                    "duo_second": bool(getattr(self, "ev1_duo", None) and self.ev1_duo.get()),
                     "onslaught": float(getattr(self, "ev1_ons", None).get())
                                  if getattr(self, "ev1_ons", None) else 1.0,
                 },
@@ -5555,9 +5561,9 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
           if hasattr(app, a)]
     ck("敌人页：旧管线（v0）的死表单已删干净", not _v0, f"残留={_v0}")
     _v1 = ("ev1_pools", "ev1_mult", "ev1_bar_names", "ev1_night",
-           "ev1_ignore_size", "ev1_bgm", "ev1_soul", "ev1_rainbow", "ev1_scale",
-           "ev1_oops", "ev1_ons", "ev1_seed", "ev1_overlay", "ev1_hint")
-    ck("敌人页：v1 控件齐（特殊池 4 个 + 8 个开关 + 3 个滑块 + 种子）",
+           "ev1_ignore_size", "ev1_bgm", "ev1_soul", "ev1_rainbow", "ev1_duo",
+           "ev1_scale", "ev1_oops", "ev1_ons", "ev1_seed", "ev1_overlay", "ev1_hint")
+    ck("敌人页：v1 控件齐（特殊池 4 个 + 9 个开关 + 3 个滑块 + 种子）",
        all(hasattr(app, a) for a in _v1), "少控件")
     ck("敌人页：不再有自己的生成按钮（唯一入口是底栏的开始随机）",
        (not hasattr(app, "b_ev1_apply"))
@@ -5597,6 +5603,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and app._ev1_options()["constraints"]["multiphase_swap"] is True
        and app._ev1_options()["constraints"]["multiphase_as_source"] is True
        and app.ev1_night.get() is False and app.ev1_ignore_size.get() is False
+       and app.ev1_duo.get() is True
+       and app._ev1_options()["features"]["duo_second"] is True
        and app.ev1_overlay.get() is True, "默认值不对")
     app.ev1_mult.set(0.4); app.ev1_scale.set(1.5); root.update()
     _o1 = app._ev1_options()

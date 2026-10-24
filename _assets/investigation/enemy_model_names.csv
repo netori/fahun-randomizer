@@ -12,7 +12,7 @@ c5490,Springhare,ModelName,Wildlife,exact,650,18,27,27,1,randomize,
 c4300,Wandering Noble,ModelName,Basic,exact,536,108,85,85,1,randomize,class.silo=false
 c3661,Putrid Corpse,ModelName,Basic,exact,521,34,376,376,1,randomize,取不到数值：不碰
 c0100,水银躯壳,血条名,None,exact,455,15,39,2765,1,keep,class.silo=false
-c0000,“指头之母”尤弥尔,血条名(多: 13),None,exact,417,325,1,2000,1,keep,占位模型 c0000（真身由事件生成）
+c0000,“指头之母”尤弥尔,血条名(多: 13),None,exact,417,325,1,2000,1,keep,占位模型 c0000（默认不碰；可用 overrides.places 放开）
 c3500,Skeleton,ModelName,Basic,model,404,58,148,350,1,randomize,keep_maps
 c4070,Wolf,ModelName,Basic,model,329,16,78,225,1,randomize,class.silo=false
 c4481,Miranda Sprout,ModelName,Basic,exact,309,17,0,119,1,randomize,class.silo=false

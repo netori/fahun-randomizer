@@ -414,8 +414,13 @@ def load_bar_fallback(path=BAR_FALLBACK):
 
 
 def _rel_of(unit):
-    """位置与捐赠者的 boss 属性关系：same / b2m（boss 进杂兵位）/ m2b"""
-    p = unit.get("cls") in BOSSISH
+    """位置与捐赠者的 boss 属性关系：same / b2m（boss 进杂兵位）/ m2b
+
+    v1.4.0：双人 Boss 的第二只数据层是 Helper，但它站在**boss 侧**（有血条、有
+    事件死亡条件）。不把它算成 boss 侧的话会被判成 m2b，克隆行写
+    disableInitializeDead=1（「不按事件 flag 初始化死亡」），第二只可能出场即死/不生成。
+    """
+    p = unit.get("cls") in BOSSISH or bool(unit.get("duo"))
     d = (unit.get("new_cls") or unit.get("donor_cls")) in BOSSISH
     if p == d:
         return "same"
@@ -1687,6 +1692,26 @@ def verify_layer(layer_dir, plan_path=None, log=print):
             n_bar += len(tgts)
         n_real = (man.get("counts") or {}).get("bar_name_targets", n_bar)
         log("    复验血条名：%d 张图 / %d 个位置实际改名（manifest 记录）" % (len(bmap), n_real))
+
+    # v1.4.0：双人 Boss 的第二只 —— 必须与主人换出来的不是同一只，且血条名覆盖到它
+    # （第二只是 Helper，事件里的名字槽按实体改；漏了会顶着原 helper 的名字）。
+    duo_units = [u for u in plan["units"] if u.get("duo")]
+    if duo_units:
+        by_key = {u["key"]: u for u in plan["units"]}
+        bmap2 = man.get("bar_names") or {}
+        for u in duo_units:
+            du = u.get("duo") or {}
+            own = by_key.get(du.get("owner_key"))
+            if own and own.get("new_model") == u.get("new_model"):
+                bad.append("双人第二只 %s 与主人换成了同一只（%s）"
+                           % (u["key"], u.get("new_model")))
+            if (man.get("features") or {}).get("bar_names", True):
+                for pl in u.get("places") or []:
+                    if str(pl["entity_id"]) not in (bmap2.get(pl["map"]) or {}):
+                        bad.append("双人第二只 %s（%s/%s）没有血条名目标"
+                                   % (u["key"], pl["map"], pl["entity_id"]))
+        log("    复验双人第二只：%d 个实体（与主人不同、血条名已覆盖）"
+            % len(duo_units))
 
     # regulation：克隆行的 hp/魂/关键位
     bnd = erio.read_regulation(os.path.join(data_dir, "regulation.bin"))

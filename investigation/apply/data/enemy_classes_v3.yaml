@@ -157,6 +157,57 @@ multiphase:
     - {id: scadutree,          map: m61_50_48_00, phases: [2050480800, 2050480801, 2050480802, 2050480810, 2050480811, 2050480812], bosses: [[2050480800, 2050480801, 2050480802, 2050480810, 2050480811, 2050480812]], pair: true, swap: true, sources: [2050480800]}  # 全 c5230 = 1 Boss（3 个身体 + 3 个血条壳）
     - {id: putrescent,         map: m22_00_00_00, phases: [22000800, 22000801], bosses: [[22000800, 22000801]], pair: true, swap: true, sources: [22000800]}            # 同模型 c5020（骑士 800 + 坐骑 801）= 1 Boss
     - {id: midra,              map: m28_00_00_00, phases: [28000801, 28000800], bosses: [[28000801], [28000800]], swap: true, sources: [28000801, 28000800]}          # c5050 人形 / c5051 癫火之王 = 2 Boss
+    # v1.4.0：诺克史黛拉的龙人士兵 —— 已做成整组组，但**默认关**（enabled:false）。
+    # 800=血条受体（HP 壳）/ 801=休眠可见体 / 802=phase2 替换体，三者同模型 c4650 = 1 Boss。
+    # 事件依赖：pair(801/802→800)、ForceAnimationPlayback(801,30002/20002 休眠/起身)、
+    # SpEffect 13209 → phase2(802)。最后两条对陌生模型是否成立尚未实机确认。
+    # 验证方法：把 enabled 改 true（或计划 options 里 constraints.multiphase_include_unverified=true）
+    # 生成实验层，打完看：①有没有 phase2 ②有没有姿态卡死 ③死亡/奖励正常。确认后再默认开。
+    - {id: nokstella_dragonkin, map: m12_01_00_00, phases: [12010800, 12010801, 12010802], bosses: [[12010800, 12010801, 12010802]], pair: true, swap: true, sources: [12010800], enabled: false, note: "诺克史黛拉的龙人士兵：800=血条受体/801=休眠体/802=phase2；13209 与 anim 30002/20002 未验证"}
+# ── 双人（多实体）Boss 的第二只：单只互换（v1.4.0，实验）─────────────────────────
+# 背景：这些位置的第二只是 Class=Helper（yaml:41、enemy_data_build.py:519），数据层
+# 全部 keep；单独换它会让主人的事件/血条/死亡条件对不上。参考实现走「删原 helper +
+# 克隆 donor 的 helper + 重写事件」；我们只做**身份替换**：保留 EntityID、不删实体、
+# 不动事件死亡条件，只换 npc/think/chara/model（enemy_write.patch_map，unit 驱动）
+# 并按实体改血条名（bar_names.targets_for_map，按 place 生成）。
+# 计划层语义（enemy_plan.py 的 duo 分支）：
+#   · 主实体照旧走现有随机（policy=randomize 不变）；
+#   · 第二只单独从「有血条名 + 体型/场地以主人为基准」的 Boss 池里抽一只；
+#   · HP = 换入者 HP × (第二只原血 / 主人原血)，夹在换入者的 hp_ratio 区间内；
+#   · 魂 0；与主人换入的身份不同；同一场里两只第二只不抽同一个身份。
+# batch：A=低风险（默认开）；B=事件里有 ForceAnimationPlayback 姿态命令（待实机）；
+#        C=阶段战（分阶段召唤/生成器，暂缓）。改 enabled 前先看
+#        investigation/_probe/B_双人Boss单只互换_调查.md 的风险表。
+duo:
+  version: 1
+  enabled: true
+  mode: second_only
+  size_base: owner
+  hp_mode: keep_ratio
+  soul_mode: zero
+  donor:
+    require_bar_name: true
+    classes: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss, Evergaol]
+    size_mult: {radius: 1.5, height: 1.2}
+    hp_ratio: {min: 0.2, max: 1.0}
+    require_model_change_vs_owner: true
+  groups:
+    # ── A 批（默认开）：同时在场、无动画姿态命令、无阶段生成器 ──
+    - {id: misbegotten_perfumer, map: m30_12_00_00, owner: 30120800, second: [30120801], batch: A, enabled: true}   # 混种战士+调香师
+    - {id: watchdog_duo,         map: m30_14_00_00, owner: 30140800, second: [30140801], batch: A, enabled: true}   # 归树看门犬两只
+    - {id: demi_human_duo,       map: m31_15_00_00, owner: 31150800, second: [31150801], batch: A, enabled: true}   # 亚人首领+亚人
+    - {id: miranda_omenkiller,   map: m31_18_00_00, owner: 31180800, second: [31180801], batch: A, enabled: true}   # 恶兆猎人+?
+    - {id: fell_twins,           map: m34_14_00_00, owner: 34140850, second: [34140851], batch: A, enabled: true}   # 恶兆孪生子（参考无 swappable，机制最简单）
+    - {id: nox_duo,              map: m60_49_39_00, owner: 1049390800, second: [1049390801], batch: A, enabled: true}  # 诺克斯剑士+?
+    # ── B 批（默认关）：事件里有 ForceAnimationPlayback(30000/20000) 姿态命令，
+    #    换陌生模型是否静默无效尚未实机确认 ──
+    - {id: cryst_spear_duo,      map: m31_06_00_00, owner: 31060800, second: [31060801], batch: B, anim: true, enabled: false}
+    - {id: putrid_trio,          map: m31_11_00_00, owner: 31110800, second: [31110801, 31110802], batch: B, anim: true, enabled: false}
+    - {id: cryst_ringblade_duo,  map: m32_05_00_00, owner: 32050800, second: [32050801], batch: B, anim: true, enabled: false}
+    # ── C 批（默认关）：阶段生成器 31223307/31223308 与换模型是否互相影响未确认 ──
+    - {id: godskin_stages,       map: m31_22_00_00, owner: 31220800, second: [31220801, 31220802], batch: C, stage: true, enabled: false}
+    # m12_07 拟态泪 12070805 不做：没有主人、真身复制玩家（另有 keep_npc_ids 双保险）。
+
 # ── 池（法魂专属；只决定"界面给玩家勾哪一行"，不限制候选）─────────────────────
 pools:
   - id: waygate
@@ -416,7 +467,23 @@ overrides:
     # 写盘层替它补两件事：血条名（enemy_bar_name_overrides.csv → 121911「精干的劳弗仪卫」）
     # 与变体加护（enemy_donor_effects.csv → SpEffect 18781）。事件不搬（见 docs/敌人随机_假设台账.md H-043）。
     c2195: {class: Boss, policy: randomize, note: "劳弗圣龛守卫：圣龛位置由 reliquary_guardian 规则随机；当来源时补名字+变体加护"}
-  places: []      # 例： {map: m60_45_37_10, part_name: c3650_9000, occurrence: 1, policy: keep, reason: "..."}
+  places:
+    # 2026-10-24：c0000「玩家模型」Boss 的第一批放开（调查见 docs/敌人随机_不可随Boss调查_20261024.md）。
+    # 这些 part 的 model=c0000、外观由 chara_id→CharaInitParam 决定，EMEVD 只做启用/动画/血条/奖励；
+    # 写盘层换 model/npc/think/chara 四字段即可（enemy_write.patch_map），不需要改事件。
+    # 红熊在封印/未封印两张图各一份（link L0014），必须两行同时放开，否则计划层 link 校验直接退出。
+    - {map: m31_19_00_00, part_name: c0000_9001, occurrence: 1, policy: randomize, reason: "死术师哥瑞斯：c0000 玩家模型 Boss，事件只 enable+血条"}
+    - {map: m35_00_00_00, part_name: c0000_9001, occurrence: 1, policy: randomize, reason: "「鲜血祭司」艾斯加：c0000 玩家模型 Boss"}
+    - {map: m41_02_00_00, part_name: c0000_9001, occurrence: 1, policy: randomize, reason: "喟叹者：c0000 玩家模型 Boss"}
+    - {map: m43_01_00_00, part_name: c0000_9010, occurrence: 1, policy: randomize, reason: "古龙人：c0000 玩家模型 Boss"}
+    - {map: m60_52_56_00, part_name: c3910_9000, occurrence: 1, policy: randomize, reason: "火焰大主教：旧 evt:pair 是注释里死事件的假阳性，已随 scan_events 修复"}
+    - {map: m61_46_38_00, part_name: c0000_9001, occurrence: 1, policy: randomize, reason: "拉纳舞娘（DLC）：c0000 玩家模型 Boss"}
+    - {map: m61_46_41_00, part_name: c0000_9001, occurrence: 1, policy: randomize, reason: "孤牢骑士（DLC）：c0000 玩家模型 Boss"}
+    - {map: m61_46_45_00, part_name: c0000_9000, occurrence: 1, policy: randomize, reason: "红熊（DLC，封印/未封印成对）：c0000 玩家模型 Boss"}
+    - {map: m61_46_45_10, part_name: c0000_9000, occurrence: 1, policy: randomize, reason: "红熊（DLC，封印/未封印成对）：同一实体另一份 MSB，必须同步"}
+    - {map: m61_51_44_00, part_name: c0000_9002, occurrence: 1, policy: randomize, reason: "罗刹（DLC）：c0000 玩家模型 Boss"}
+    # 仍保留：菲雅英雄组 5（CopyCharacterDataFromOnlinePlayers 复制玩家外观 + 5 连战分阶段血条）
+    # 与帕奇 2（商人/剧情状态机）——见同一份调查报告。
 
 # ── 构建期断言（--check 会验；对不上就是数据/配置漂移）─────────────────────────
 assertions:

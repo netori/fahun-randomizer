@@ -96,7 +96,10 @@ DEFAULT_OPTIONS = {
                  "bgm_follow": False, "soul_follow": False,
                  # 参考实现的 Enemy Onslaught（实验）：1.0=关；1.5=普通敌人约 +50%。
                  # 只复制普通敌人的 MSB part，Boss/多阶段/传送门/有血条/事件位一律不动。
-                 "onslaught": 1.0},
+                 "onslaught": 1.0,
+                 # v1.4.0：双人 Boss 的第二只（Helper）也参与随机（单只互换，实验）。
+                 # 与 yaml duo.enabled 两个开关同时开才生效；关掉 = 这些位置保持原样。
+                 "duo_second": True},
     # 全局数值倍率（参考实现的 Scale up/down enemy health/damage）：
     # hp 直接乘到克隆行的 target_hp；伤害/防御走位置档（spEffectID3），这里只放大生命值。
     "scaling": {"hp": 1.0},
@@ -276,6 +279,16 @@ def load_multiphase(cfg):
     return members, groups
 
 
+def active_multiphase_groups(groups, options=None):
+    """计划实际参与的多阶段组：yaml enabled:false 的「未验证组」默认不生效。
+
+    实验/自检用 constraints.multiphase_include_unverified 把它们拉进来。
+    """
+    inc = bool(((options or {}).get("constraints") or {})
+               .get("multiphase_include_unverified"))
+    return [g for g in (groups or []) if g.get("enabled", True) or inc]
+
+
 def multiphase_source_units(units, groups):
     """多阶段 Boss 里「可以当来源」的单元：{unit_key: 组 id}。
 
@@ -295,6 +308,28 @@ def multiphase_source_units(units, groups):
         if gid:
             out[u["key"]] = gid
     return out
+
+
+def load_duo(cfg):
+    """双人 Boss「第二只」单只互换配置（v1.4.0）。
+
+    data 层那些 Helper 仍然是 keep（它们不是独立位置、单独换会与主人断链）；
+    这里只在**计划层**给它们开一条旁路：主实体照旧随机，第二只单独抽一只有
+    血条名的 Boss 身份换进去。保留 EntityID、不删实体、不改事件死亡条件 ——
+    只换 npc/think/chara/model + 按实体改血条名（写盘层 unit 驱动，天然覆盖）。
+
+    缺配置 / enabled=false / 界面 features.duo_second 关闭 → 计划层完全不变。
+    """
+    raw = (cfg or {}).get("duo") or {}
+    return {
+        "enabled": bool(raw.get("enabled")),
+        "mode": raw.get("mode") or "second_only",
+        "size_base": raw.get("size_base") or "owner",
+        "hp_mode": raw.get("hp_mode") or "keep_ratio",
+        "soul_mode": raw.get("soul_mode") or "zero",
+        "donor": raw.get("donor") or {},
+        "groups": [g for g in (raw.get("groups") or []) if g],
+    }
 
 
 def load_rules(cfg):
@@ -1369,6 +1404,8 @@ def donor_units(units, options, deny=None, extra_ok=None):
     deny = deny or {}
     out = []
     for u in units:
+        if u.get("duo"):
+            continue          # 双人 Boss 的第二只不单独当来源（保留原 helper 身份）
         if u["policy"] not in ok_policy and u["key"] not in extra_ok:
             continue
         if not u["cls"]:
@@ -1851,7 +1888,10 @@ def build_plan(data, options=None, seed=1):
     """纯函数：data = {places, npc, cfg, pools, multiphase, hashes}。返回 plan dict。"""
     options = merge_options(options)
     units = unitize(data["places"])
-    multiphase, groups = data["multiphase"]
+    multiphase, groups_all = data["multiphase"]
+    # v1.4.0：yaml 里可以放 enabled:false 的「未验证组」（写法已落地、默认不生效）；
+    # 自检/实验层用 constraints.multiphase_include_unverified 把它们拉进来。
+    groups = active_multiphase_groups(groups_all, options)
 
     # 数值与名字回填
     bar_places = (data.get("bar") or ({}, {}))[0]
@@ -1929,6 +1969,48 @@ def build_plan(data, options=None, seed=1):
     manual = data.get("manual") or {}
     # v1.3.14：多阶段 Boss 的身份也能当来源（位置仍然 keep，那场战斗不动）。
     constraints = options["constraints"]
+    # v1.4.0：双人 Boss 的第二只（数据层 keep 的 Helper）在计划层单独互换。
+    # 只有 yaml duo.enabled + 界面 features.duo_second 同时开才生效；标记不改 policy。
+    duo_cfg = load_duo(data["cfg"])
+    if duo_cfg["enabled"] and not (options.get("features") or {}).get("duo_second", True):
+        duo_cfg["enabled"] = False
+    duo_marks, duo_notes = {}, []
+    if duo_cfg["enabled"]:
+        u_by_place = {}
+        for u in units:
+            u_by_place[(u["map"], u["entity_id"])] = u
+        for g in duo_cfg["groups"]:
+            gid = g.get("id") or "duo"
+            if not g.get("enabled", True):
+                duo_notes.append("%s：enabled=false，跳过" % gid)
+                continue
+            ou = u_by_place.get((g.get("map"), _i(g.get("owner"))))
+            if ou is None:
+                duo_notes.append("%s：找不到主人位置 %s/%s" % (
+                    gid, g.get("map"), g.get("owner")))
+                continue
+            own_hp = int(ou.get("hp") or 0)
+            for ent in (g.get("second") or []):
+                su = u_by_place.get((g.get("map"), _i(ent)))
+                if su is None:
+                    duo_notes.append("%s：找不到第二只位置 %s/%s" % (
+                        gid, g.get("map"), ent))
+                    continue
+                if su["policy"] != "keep":
+                    duo_notes.append("%s：第二只 %s 政策是 %s（应为 keep），跳过" % (
+                        gid, su["key"], su["policy"]))
+                    continue
+                if su["key"] in duo_marks:
+                    continue
+                ratio = (float(su["hp"]) / own_hp) if (own_hp > 0 and su["hp"] > 0) else 1.0
+                mark = {"group": gid, "batch": g.get("batch"),
+                        "owner_key": ou["key"], "owner_hp": own_hp,
+                        "second_hp": int(su.get("hp") or 0), "ratio": ratio}
+                su["duo"] = mark
+                # 尺寸/场地以主人为基准（helper 自己的 ref_size/ref_arena 都是 0）
+                for k in ("radius", "height", "ref_size", "ref_arena"):
+                    su[k] = ou.get(k) or 0
+                duo_marks[su["key"]] = mark
     mp_src_map = {}
     if constraints.get("multiphase_as_source", True):
         mp_src_map = multiphase_source_units(units, groups)
@@ -1955,6 +2037,7 @@ def build_plan(data, options=None, seed=1):
     cap_stats = {"relaxed": 0}
 
     plan_units, skips, positions = [], [], []
+    entries_by_key = {}          # unit_key → entry（双人 Boss 第二只要看主人换成了谁）
     stats = {"clamped_hp": 0, "clamped_soul": 0, "no_candidate_units": 0}
     by_rule = {}
 
@@ -1968,6 +2051,7 @@ def build_plan(data, options=None, seed=1):
     positions.extend(mp_positions)
     for e in mp_entries:
         by_rule[e["rule"]] = by_rule.get(e["rule"], 0) + 1
+        entries_by_key[e["key"]] = e
     for u in units:
         if u["key"] in mp_handled:
             u["multiphase"] = 1
@@ -1983,6 +2067,8 @@ def build_plan(data, options=None, seed=1):
         reasons = []
         if u["key"] in mp_handled:
             continue
+        if u.get("duo"):
+            continue          # 第二只走后面的 duo 分支（要看主人换成了谁）
         if u["policy"] != "randomize":
             skips.append(_skip(u, "policy:%s" % u["policy"], u["note"]))
             continue
@@ -2021,6 +2107,7 @@ def build_plan(data, options=None, seed=1):
             for _pos in pos:
                 _pos["manual"] = True
             plan_units.append(entry)
+            entries_by_key[u["key"]] = entry
             positions.extend(pos)
             by_rule[rule["id"]] = by_rule.get(rule["id"], 0) + 1
             if d["cls"] in AREA_BOSSISH:
@@ -2071,11 +2158,121 @@ def build_plan(data, options=None, seed=1):
         reasons.append("rate:%s" % rate)
         entry, pos = _entry_for(u, d, rule, options, reasons, ai_fallback)
         plan_units.append(entry)
+        entries_by_key[u["key"]] = entry
         positions.extend(pos)
         by_rule[rule["id"]] = by_rule.get(rule["id"], 0) + 1
         if d["cls"] in AREA_BOSSISH:
             _n = int(d["npc_id"])
             boss_use[_n] = boss_use.get(_n, 0) + 1
+
+    # v1.4.0：双人 Boss 的第二只（Helper）单只互换 —— 主实体照旧随机，第二只单独
+    # 从「有血条名 + 体型/场地以主人为基准」的 Boss 池里抽一只换进去；保留 EntityID、
+    # 不删实体、不改事件死亡条件。HP 按原「第二只/主人」比例缩放，魂 0。
+    duo_entries, duo_positions, duo_info = [], [], {}
+    if duo_cfg["enabled"] and duo_marks:
+        dcfg = duo_cfg.get("donor") or {}
+        donor_classes = set(dcfg.get("classes") or AREA_BOSSISH)
+        hr = dcfg.get("hp_ratio") or {}
+        hp_lo = float(hr.get("min") or 0.2)
+        hp_hi = float(hr.get("max") or 1.0)
+        duo_rule = {
+            "id": "duo_second", "name": "双人Boss第二只",
+            "match": {"cls": [], "pools": [], "area": "any", "tier": [],
+                      "bar": False, "multiphase": False},
+            "rate": 1.0,
+            "targets": {"cls": sorted(donor_classes), "areas": ["base", "dlc"],
+                        "tier": [], "pools": []},
+            "size_max": 99.0, "size_max_height": 99.0,
+            "clamp_hp": None, "clamp_soul": None,
+            "note": "双人 Boss 的第二只（Helper）单只互换：保留实体 ID，只换身份与血条名",
+        }
+        picked_by_group = {}
+        for u in units:
+            mark = duo_marks.get(u["key"])
+            if not mark:
+                continue
+            gid = mark["group"]
+            ou = None
+            for x in units:
+                if x["key"] == mark["owner_key"]:
+                    ou = x
+                    break
+            owner_e = entries_by_key.get(mark["owner_key"])
+            # 候选集只依赖主人的「原身份」（静态），不依赖主人这次换成了谁 ——
+            # 否则关掉主人所在规则时第二只的抽签结果会跟着变（自检⑦要求局部性）。
+            owner_npc = int((ou or {}).get("npc_id") or 0)
+            owner_model = (ou or {}).get("model")
+            rng = unit_rng(base_seed, "duo:" + u["key"])
+            cands = []
+            for d in donors:
+                if d["cls"] not in donor_classes:
+                    continue
+                if not d.get("bar"):
+                    continue        # 名字优先取捐赠位置自己的血条名；没名字会顶原名
+                if d["key"] == mark["owner_key"] or int(d["npc_id"]) == owner_npc:
+                    continue        # 不与主人换成同一只
+                if d["model"] == owner_model:
+                    continue
+                if int(d["npc_id"]) in picked_by_group.get(gid, ()):
+                    continue        # 同一场里两只第二只不换成同一个身份
+                if not _size_ok(u, d, duo_rule, options):
+                    continue
+                cands.append(d)
+            # 第二只不参与「同一个 Boss 最多用几次」的全局顺序统计：那是主力位的
+            # 预算，掺进来会让关掉某条规则时别的位置抽签结果跟着变（自检⑦）。
+            cands.sort(key=lambda x: (x["cls"], x["npc_id"], x["key"]))
+            d = pick_donor(u, cands, rng, False)
+            if d is not None and owner_e and d["model"] == owner_e.get("new_model"):
+                # 主人这次刚好换成同一只模型：按排序取下一只（只影响这一组，不重抽全局）
+                alt = [x for x in cands if x["model"] != owner_e.get("new_model")]
+                d = alt[0] if alt else None
+            if d is None:
+                stats["no_candidate_units"] += 1
+                skips.append(_skip(u, "duo:no_donor",
+                                   "双人组 %s 没有体型/名字合适的换入 Boss（主人=%s）"
+                                   % (gid, owner_model)))
+                continue
+            ratio = float(mark.get("ratio") or 1.0)
+            hp_raw = int(round(float(d["hp"]) * ratio))
+            hp_lo_abs = max(1, int(round(float(d["hp"]) * hp_lo)))
+            hp_hi_abs = max(hp_lo_abs, int(round(float(d["hp"]) * hp_hi)))
+            tgt_hp = max(hp_lo_abs, min(hp_hi_abs, hp_raw))
+            reasons = ["duo:%s" % gid, "duo:mode=second_only",
+                       "duo:owner=%s" % (owner_npc or mark["owner_key"]),
+                       "duo:ratio=%.3f（第二只原血/主人原血）" % ratio]
+            extra = {"duo": {"group": gid, "batch": mark.get("batch"),
+                             "owner_key": mark["owner_key"], "owner_npc": owner_npc,
+                             "owner_model": owner_model, "ratio": round(ratio, 6),
+                             "owner_hp": int(mark.get("owner_hp") or 0),
+                             "second_hp": int(mark.get("second_hp") or 0),
+                             "hp_ratio": [hp_lo, hp_hi]}}
+            entry, poss = _entry_for(u, d, duo_rule, options, reasons, ai_fallback,
+                                     extra=extra)
+            entry["target_hp"] = tgt_hp
+            entry["target_soul"] = 0
+            entry["hp_model"] = "duo"
+            entry["reason"] += (" | target:hp=%d（第二只原比例 %.3f × 换入者 %d，"
+                                "限 %.2f–%.2f）" % (tgt_hp, ratio, int(d["hp"]),
+                                                    hp_lo, hp_hi))
+            for p in poss:
+                p["target_hp"] = tgt_hp
+                p["target_soul"] = 0
+                p["duo"] = gid
+            plan_units.append(entry)
+            positions.extend(poss)
+            duo_entries.append(entry)
+            duo_positions.extend(poss)
+            by_rule[duo_rule["id"]] = by_rule.get(duo_rule["id"], 0) + 1
+            picked_by_group.setdefault(gid, set()).add(int(d["npc_id"]))
+            duo_info.setdefault(gid, {
+                "batch": mark.get("batch"), "owner": mark["owner_key"],
+                "owner_hp": int(mark.get("owner_hp") or 0),
+                "seconds": []})["seconds"].append({
+                    "key": u["key"], "second_old_npc": int(u["npc_id"]),
+                    "new_npc": int(d["npc_id"]), "new_model": d["model"],
+                    "ratio": round(ratio, 6), "hp": tgt_hp})
+        if duo_entries:
+            rules = list(rules) + [duo_rule]
 
     # Enemy Onslaught（实验）：给普通敌人算「再复制几个」。放在所有抽样之后，
     # 只写 dup_count，不影响 donor / 系数 / 其它单元。
@@ -2171,6 +2368,16 @@ def build_plan(data, options=None, seed=1):
         "multiphase_donor": {gid: {"policy": v.get("policy"),
                                    "donors": v.get("donors")}
                              for gid, v in mp_info.items()},
+        # v1.4.0：双人 Boss 第二只单只互换（实验）
+        "duo": {
+            "enabled": bool(duo_cfg["enabled"]),
+            "mode": duo_cfg.get("mode"),
+            "groups": len(duo_cfg["groups"]),
+            "swapped": len(duo_entries),
+            "swapped_places": len(duo_positions),
+            "policy": duo_info,
+            "notes": duo_notes,
+        },
     }
     return {"meta": meta, "units": plan_units, "positions": positions, "skips": skips}
 
@@ -2258,7 +2465,7 @@ def validate_plan(plan, data=None):
     mp_swap = bool(cons.get("multiphase_swap"))
     mp_groups, mp_boss_of, mp_group_list = {}, {}, []
     if data:
-        for g in data["multiphase"][1]:
+        for g in active_multiphase_groups(data["multiphase"][1], opts):
             if not (mp_swap and bool(g.get("swap"))):
                 continue
             mp_group_list.append(g)
@@ -2322,7 +2529,7 @@ def validate_plan(plan, data=None):
         # 数值语义：换入者整行 + 两处类别桥接（普通→Boss 的 bosshp；Boss→普通由写盘层挂 0.25）
         if e.get("target_hp") is None:
             bad.append("%s 缺 target_hp（M2 没法直接写克隆行）" % k)
-        elif data is not None and not e.get("balance"):
+        elif data is not None and not e.get("balance") and not e.get("duo"):
             # 数值平衡层（enemy_balance）会把 target_hp 改成「位置原强度 × 分层抽值」，
             # 这时它不等于类别血量模型，跳过这条等式复核。
             old_hp = data["npc"].get(int(e["old_npc_id"]), {}).get("hp")
@@ -2437,6 +2644,56 @@ def validate_plan(plan, data=None):
                 bad.append("多阶段组 %s 的换入身份记录与实际不一致（%s ≠ %s）" % (
                     gid, _dn, _got_dn))
 
+    # v1.4.0：双人 Boss 第二只 —— 组/身份/血量/魂里能离线证的部分（保留 EntityID、
+    # 不删实体由写盘层保证；这里只查计划本身自洽）。
+    duo_ens = [e for e in plan["units"] if e.get("duo")]
+    if duo_ens:
+        dcfg = load_duo((data or {}).get("cfg") or {})
+        if not dcfg["enabled"]:
+            bad.append("计划里有双人第二只条目，但 yaml duo.enabled 是关的")
+        else:
+            gmap = {g.get("id"): g for g in dcfg["groups"]}
+            owner_entry = {}
+            for e in plan["units"]:
+                for p in e["places"]:
+                    owner_entry[(p["map"], p["entity_id"])] = e
+            hr = (dcfg.get("donor") or {}).get("hp_ratio") or {}
+            hp_lo = float(hr.get("min") or 0.2)
+            hp_hi = float(hr.get("max") or 1.0)
+            seen_duo = set()
+            for e in duo_ens:
+                du = e["duo"] or {}
+                g = gmap.get(du.get("group"))
+                if not g:
+                    bad.append("%s 的 duo 组 %s 不在 yaml 里" % (e["key"], du.get("group")))
+                    continue
+                sec_ents = {_i(x) for x in (g.get("second") or [])}
+                pl_ents = {p["entity_id"] for p in e["places"]}
+                if not pl_ents <= sec_ents:
+                    bad.append("%s 的实体不在组 %s 的 second 里" % (e["key"], g.get("id")))
+                if e.get("old_cls") != "Helper":
+                    bad.append("%s 是 %s，双人第二只必须是 Helper" % (
+                        e["key"], e.get("old_cls")))
+                own = owner_entry.get((g.get("map"), _i(g.get("owner"))))
+                own_model = (own or {}).get("new_model") or (own or {}).get("old_model")
+                if own_model and e.get("new_model") == own_model:
+                    bad.append("%s 与主 Boss 换成了同一只（%s）" % (e["key"], own_model))
+                if int(e.get("target_soul") or 0) != 0:
+                    bad.append("%s 的第二只魂应为 0（实际 %s）" % (
+                        e["key"], e.get("target_soul")))
+                k2 = (du.get("group"), e["key"])
+                if k2 in seen_duo:
+                    bad.append("双人组 %s 的第二只 %s 重复" % (du.get("group"), e["key"]))
+                seen_duo.add(k2)
+                if data is not None:
+                    donor_hp = data["npc"].get(int(e.get("new_npc_id") or 0), {}).get("hp")
+                    if donor_hp:
+                        tgt = int(e.get("target_hp") or 0)
+                        if (tgt < int(round(donor_hp * hp_lo))
+                                or tgt > int(round(donor_hp * hp_hi))):
+                            bad.append("%s 的第二只血量 %d 超出换入者 %d 的 %.2f–%.2f 倍" % (
+                                e["key"], tgt, donor_hp, hp_lo, hp_hi))
+
     # link 组要么都在要么都不在：union 检查
     placed = set()
     for e in plan["units"]:
@@ -2453,7 +2710,7 @@ def validate_plan(plan, data=None):
         # v1.3.16：按「场次」计 —— 同一场多阶段战斗里同一个 Boss 的多个位置只算用一次。
         _use, _mp_grp = {}, set()
         for e in plan["units"]:
-            if e.get("manual") or e.get("donor_cls") not in AREA_BOSSISH:
+            if e.get("manual") or e.get("duo") or e.get("donor_cls") not in AREA_BOSSISH:
                 continue
             _n = int(e.get("new_npc_id") or 0)
             if e.get("multiphase"):
@@ -2573,20 +2830,34 @@ def _selftest():
     print("PASS 换种子结果变（%d 个单元换入不同）" % sum(
         1 for x, y in zip(plan["units"], plan3["units"]) if x["new_npc_id"] != y["new_npc_id"]))
 
-    # ② keep/hazard/story 不得出现在目标侧（v1.3.16 起多阶段 Boss 的位置例外）
+    # ② keep/hazard/story 不得出现在目标侧（多阶段位置与双人第二只例外）
     target_keys = {e["key"] for e in plan["units"]}
     _units_all = unitize(data["places"])
+    _mp_groups_act = active_multiphase_groups(data["multiphase"][1], plan["meta"]["options"])
     _mp_ent = set()
-    for _g in data["multiphase"][1]:
+    for _g in _mp_groups_act:
         for _slot in _group_bosses(_g):
             for _e0 in _slot:
                 _mp_ent.add((_g["map"], _i(_e0)))
     _mp_keys = {u["key"] for u in _units_all
                 if any((p["map"], p["entity_id"]) in _mp_ent for p in u["places"])}
+    # v1.4.0：双人 Boss 的第二只（Helper）也是 keep，但计划层专门开了旁路
+    _duo_by_place = {(u["map"], u["entity_id"]): u["key"] for u in _units_all}
+    _duo_keys = set()
+    _duo_cfg0 = load_duo(data["cfg"])
+    if _duo_cfg0["enabled"] and (plan["meta"]["options"].get("features") or {}).get(
+            "duo_second", True):
+        for _g0 in _duo_cfg0["groups"]:
+            if not _g0.get("enabled", True):
+                continue
+            for _e0 in (_g0.get("second") or []):
+                _k0 = _duo_by_place.get((_g0.get("map"), _i(_e0)))
+                if _k0:
+                    _duo_keys.add(_k0)
     keep_units = {u["key"] for u in _units_all if u["policy"] != "randomize"}
-    assert not (target_keys & (keep_units - _mp_keys)), "keep 单元出现在目标侧"
-    print("PASS keep 单元零替换（多阶段 %d 个位置除外；共 %d 个 keep）" % (
-        len(_mp_keys), len(keep_units)))
+    assert not (target_keys & (keep_units - _mp_keys - _duo_keys)), "keep 单元出现在目标侧"
+    print("PASS keep 单元零替换（多阶段 %d 个位置 + 双人第二只 %d 个除外；共 %d 个 keep）" % (
+        len(_mp_keys), len(_duo_keys), len(keep_units)))
 
     # ③ link 组一致性：同 link 号的两行都在 positions 里
     by_link = {}
@@ -2602,8 +2873,60 @@ def _selftest():
     tagged = {(p["map"], p["entity_id"]) for e in plan["units"]
               if e.get("multiphase") for p in e["places"]}
     assert tagged == _mp_ent, "多阶段位置有条目没标组：%s" % sorted(_mp_ent - tagged)[:5]
-    print("PASS 多阶段 %d 个位置全部参与替换（%d 组）" % (
-        len(_mp_ent), len(data["multiphase"][1])))
+    print("PASS 多阶段 %d 个位置全部参与替换（%d 组；yaml 里另有 %d 组 enabled:false 未验证组）" % (
+        len(_mp_ent), len(_mp_groups_act), len(data["multiphase"][1]) - len(_mp_groups_act)))
+
+    # ④b v1.4.0：双人 Boss 第二只单只互换（A 批 6 组默认开；yaml 里 B/C 批 enabled:false）
+    _duo = load_duo(data["cfg"])
+    assert _duo["enabled"], "yaml duo 段没读到或没开"
+    _duo_act = [g for g in _duo["groups"] if g.get("enabled", True)]
+    _duo_ents = [e for e in plan["units"] if e.get("duo")]
+    _duo_want = sum(len(g.get("second") or []) for g in _duo_act)
+    assert len(_duo_ents) == _duo_want, "双人第二只替换单元 %d != %d" % (
+        len(_duo_ents), _duo_want)
+    _emap = {e["key"]: e for e in plan["units"]}
+    for _e in _duo_ents:
+        _d = _e["duo"]
+        _own = _emap.get(_d["owner_key"])
+        assert _own and _own.get("new_npc_id"), "双人组 %s 的主人没被替换" % _d["group"]
+        assert _e["old_cls"] == "Helper", "第二只原类不是 Helper：%s" % _e["old_cls"]
+        assert int(_e["new_npc_id"]) != int(_own["new_npc_id"]), \
+            "双人组 %s 第二只与主人换成了同一只" % _d["group"]
+        assert _e["new_model"] != _own["new_model"], \
+            "双人组 %s 第二只与主人换成了同一模型" % _d["group"]
+        assert _e["target_soul"] == 0, "第二只魂 %r 应为 0" % _e["target_soul"]
+        _dhp = float((data["npc"].get(int(_e["new_npc_id"])) or {}).get("hp") or 0)
+        _lo = max(1, int(round(_dhp * _d["hp_ratio"][0])))
+        _hi = max(_lo, int(round(_dhp * _d["hp_ratio"][1])))
+        _want_hp = max(_lo, min(_hi, int(round(_dhp * _d["ratio"]))))
+        assert int(_e["target_hp"]) == _want_hp, "第二只血量 %r != %r" % (
+            _e["target_hp"], _want_hp)
+        assert _e["hp_model"] == "duo", "第二只 HP 模型不是 duo"
+    _p_duooff = build_plan(data, {"features": {"duo_second": False}}, seed)
+    _pmap = {e["key"]: e for e in _p_duooff["units"]}
+    assert not [e for e in _pmap.values() if e.get("duo")], "关掉 duo_second 后还有第二只条目"
+    _duo_keys = {e["key"] for e in _duo_ents}
+    _sh_duo = [k for k in _pmap if k not in _duo_keys
+               and int(_pmap[k]["new_npc_id"]) != int(_emap[k]["new_npc_id"])]
+    assert not _sh_duo, "关掉 duo_second 后其它单元变了：%s" % _sh_duo[:5]
+    print("PASS 双人 Boss 第二只：%d 组 / %d 个第二只单只互换（与主人不同身份、魂 0、"
+          "血量按原比例）；关掉后零替换，其它单元零变化"
+          % (len(_duo_act), len(_duo_ents)))
+
+    # ④c v1.4.0：C 批龙人士兵组是 enabled:false 的未验证组 —— 默认不进计划，显式放开才整组换
+    _dgn = [g for g in data["multiphase"][1] if g.get("id") == "nokstella_dragonkin"]
+    assert _dgn and _dgn[0].get("enabled") is False, "龙人士兵组不在了或不是默认关"
+    assert not [e for e in plan["units"] if e.get("multiphase") == "nokstella_dragonkin"], \
+        "默认计划里出现了未验证的龙人士兵组"
+    _p_dg = build_plan(data, {"constraints": {"multiphase_include_unverified": True,
+                                             "boss_usage_cap": 0}}, seed)
+    _bad_dg = validate_plan(_p_dg, data)
+    assert not _bad_dg, _bad_dg[:5]
+    _dg = [e for e in _p_dg["units"] if e.get("multiphase") == "nokstella_dragonkin"]
+    assert len(_dg) == 3, "龙人士兵组换了 %d 个位置（应为 3）" % len(_dg)
+    assert len({int(e["new_npc_id"]) for e in _dg}) == 1, "龙人士兵组被拆成多个换入身份"
+    assert {e["mp_boss"] for e in _dg} == {1}, "龙人士兵组的 Boss 编号不是同一个"
+    print("PASS 龙人士兵组（C 批）：默认关、不进计划；显式放开后 3 个位置整组换同一只 Boss")
 
     # ⑤ 池开关：关掉某个池，只允许「只属于这个池」的单元消失，其它单元一个字节都不许变。
     # v1.3.13：Boss 使用上限是全局顺序统计，开关池会改变全局用量 → 局部性测试关掉上限再比。
@@ -2677,6 +3000,8 @@ def _selftest():
     # ⑨ HP 模型：默认换入者血量；普通→Boss 且原位置更厚时取 sqrt(原×换入)；魂默认位置原值
     bad_fid = []
     for e in plan["units"]:
+        if e.get("duo"):
+            continue        # 双人第二只走 duo 的血量模型（原比例 × 换入者），下一项单独验
         old = data["npc"].get(int(e["old_npc_id"])) or {}
         if old.get("hp") is None:
             continue
@@ -2701,7 +3026,8 @@ def _selftest():
     p_on = build_plan(data, {"constraints": {"boss_usage_cap": 0}}, seed)
     bad_on = validate_plan(p_on, data)
     assert not bad_on, bad_on[:5]
-    groups_sw = [g for g in data["multiphase"][1] if bool(g.get("swap"))]
+    groups_sw = [g for g in active_multiphase_groups(data["multiphase"][1], plan["meta"]["options"])
+                 if bool(g.get("swap"))]
     flat_of = {g["id"]: [_i(x) for slot in _group_bosses(g) for x in slot]
                for g in groups_sw}
     want_units = sum(len(v) for v in flat_of.values())
@@ -2834,6 +3160,8 @@ def _selftest():
     bad_s = validate_plan(p_s, data)
     assert not bad_s, bad_s[:5]
     for _e in p_s["units"]:
+        if _e.get("duo"):
+            continue    # 双人第二只：HP 走 duo 模型（原比例），不跟全局 HP 倍率
         _old = data["npc"].get(int(_e["old_npc_id"]), {}).get("hp")
         _new = data["npc"].get(int(_e["new_npc_id"]), {}).get("hp")
         if _old is not None and _new is not None:
@@ -2848,7 +3176,8 @@ def _selftest():
     assert not bad_o, bad_o[:5]
     assert all(_e["new_cls"] == "Boss"
                and _e["rule"] in ("oops_all", "multiphase_boss")
-               for _e in p_o["units"])
+               for _e in p_o["units"] if not _e.get("duo"))
+    assert all(_e.get("duo") for _e in p_o["units"] if _e["rule"] == "duo_second")
     assert p_o["meta"]["counts"]["replaced_units"] > 0
     print("PASS 全替换为：%d 个替换单元全部换入 Boss（规则 oops_all / multiphase_boss）"
           % len(p_o["units"]))
@@ -2939,7 +3268,7 @@ def _selftest():
         # v1.3.16：按「场次」计 —— 同一场多阶段战斗里同一个 Boss 的多个位置只算一次。
         use, seen = {}, set()
         for _e in pl["units"]:
-            if _e.get("manual") or _e.get("donor_cls") not in AREA_BOSSISH:
+            if _e.get("manual") or _e.get("duo") or _e.get("donor_cls") not in AREA_BOSSISH:
                 continue
             _n = int(_e["new_npc_id"])
             if _e.get("multiphase"):
@@ -2998,7 +3327,8 @@ def _selftest():
             _x["hp"], _x["soul"] = _s["hp"], _s["soul"]
             _x["radius"], _x["height"] = _s["radius"], _s["height"]
             _x["name"] = _s["name"]
-    _mp_map = multiphase_source_units(_mp_units, data["multiphase"][1])
+    _mp_map = multiphase_source_units(
+        _mp_units, active_multiphase_groups(data["multiphase"][1], plan["meta"]["options"]))
     assert len(_mp_map) >= 20, "多阶段来源实体太少：%d" % len(_mp_map)
     _mp_deny = data.get("donor_deny") or {}
     _d_on = donor_units(_mp_units, merge_options({}), _mp_deny, extra_ok=_mp_map)
