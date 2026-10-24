@@ -45,6 +45,8 @@ import msb_write                                                   # noqa: E402
 
 DISPLAY_BAR = (2003, 11)          # EMEDF 显式 index（不是数组下标）
 INIT_COMMON = (2000, 6)
+INIT_LOCAL = (2000, 0)            # InitializeEvent(0, <本地事件>, …)：参数转交
+BAR_NAME_ARG = 3                  # DisplayBossHealthBar 的第 4 个参数（名字）
 
 # 换入模型既没有血条名、也没有同义名时写这个 Name ID。它不在 NpcName 表里，
 # 引擎查不到就渲染成占位文本 "?NpcName?"（实测/用户确认的显示口径）。
@@ -136,6 +138,12 @@ def patch_evd(evd, targets):
     同一位置可能有多个旧名字 ID（不同显示路径各用一套），这里把「这条指令同时含实体
     与任一旧名字」的所有出现都换成新名字；参数区等长，不重排任何偏移。
     旧名字是 0（无名血条）时只改已知道具的名字槽，见 _zero_name_positions。
+
+    还有一条**参数转交**的显示路径（2026-10-24 实测：劳弗圣龛 9 变体）：
+    本地事件里的 DisplayBossHealthBar(<实体>, …, 0) 名字参数是 0（占位），真正的名字
+    由调用点 InitializeEvent(0, <本地事件>, …, <名字>) 传进去、引擎在运行时覆盖。
+    只改指令里的 0 没用（不改看不出变化），必须回写所有调用点的对应参数 —— 见下面
+    第二遍扫描。
     """
     raw = bytearray(evd.raw)
     hits = {}
@@ -165,6 +173,46 @@ def patch_evd(evd, targets):
                         if pos < len(ws) and ws[pos] == 0:
                             struct.pack_into("<I", raw, base + pos * 4, new)
                             hits.setdefault(ent, set()).add((e["eid"], j))
+    # 第二遍：本地事件的「参数转交」血条名。
+    # 先找「DisplayBossHealthBar 的名字参数是 0」的事件与目标实体，再把调用点
+    # InitializeEvent(0, <该事件>, …) 的对应参数改成新名字。
+    # 只有调用点实参个数 == 这条显示指令的参数个数时才动手 —— 此时"第几个实参"
+    # 与"显示指令第几个参数"一一对应，才敢按位置回写；对不上就放弃（宁可不换名，
+    # 也不要把非名字参数改成名字 ID）。一个事件里出现多个目标实体时同样跳过。
+    local_slots = {}
+    orig = evd.raw                     # 用原文判断「名字参数是不是 0」——本轮前面已写过 raw
+    for e in evd.events:
+        for (j, cat, idx, size, aoff) in evd.instructions(e["eid"]):
+            if (cat, idx) != DISPLAY_BAR or size < 16:
+                continue
+            base = evd.arg_base + aoff
+            ws = _words(orig, base, size)
+            ents = {w for w in ws if w in targets}
+            if not ents or len(ws) <= BAR_NAME_ARG or ws[BAR_NAME_ARG] != 0:
+                continue
+            local_slots[e["eid"]] = {"ents": ents, "argi": BAR_NAME_ARG, "nargs": len(ws)}
+    for eid_, slot in local_slots.items():
+        if len(slot["ents"]) != 1:
+            continue
+        ent = next(iter(slot["ents"]))
+        olds, new = targets[ent]
+        if isinstance(olds, int):
+            olds = [olds]
+        if not new or new in olds:
+            continue
+        for e in evd.events:
+            for (j, cat, idx, size, aoff) in evd.instructions(e["eid"]):
+                if (cat, idx) != INIT_LOCAL or size < 12:
+                    continue
+                base = evd.arg_base + aoff
+                ws = _words(raw, base, size)
+                if len(ws) < 2 or ws[1] != eid_ or len(ws) - 2 != slot["nargs"]:
+                    continue
+                wi = 2 + slot["argi"]              # InitializeEvent 参数从第 3 个字开始
+                if wi >= len(ws) or ws[wi] == new:
+                    continue
+                struct.pack_into("<I", raw, base + wi * 4, new)
+                hits.setdefault(ent, set()).add((e["eid"], j))
     return bytes(raw), hits
 
 

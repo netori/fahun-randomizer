@@ -46,8 +46,13 @@ BAR_TABLE = os.path.join(WORKSPACE, "investigation", "enemy_bar_names.csv")
 # 这里放的是「名字 id + 本体事件文件」的兜底，不参与计划抽样（不改 plan/种子）。
 BAR_FALLBACK = os.path.join(WORKSPACE, "investigation", "enemy_bar_fallback.csv")
 VANILLA_EVENT_DIR = os.path.join(WORKSPACE, "investigation", "vanilla_events")
+# 来源模型的「专属加护」：按模型人工登记 → 克隆行自动挂上。
+# 换的是模型，但有些模型的战斗方式还依赖位置事件套的 SpEffect（目前只有劳弗仪卫 c2195：
+# 圣龛事件套 18781..9 之一才有完整招式/数值）。不补这类 effect，换到别处就是缺招/缺数值的废人。
+# 格式 model,sp_effect_id,note；文件可选，不进计划/种子（改它只影响写盘）。
+DONOR_EFFECTS = os.path.join(WORKSPACE, "investigation", "enemy_donor_effects.csv")
 MANIFEST_NAME = "enemy_manifest.json"
-WRITE_VERSION = 8        # 8 = 法魂放宽多阶段血量 clamp 上限（火焰巨人 5045 生效）；7 = 多阶段 Boss 血量（参考实现 5 组）；6 = 敌人倍增；5 = 敌人颜色；4 = 血条名随换入者
+WRITE_VERSION = 9        # 9 = 来源模型专属加护（劳弗仪卫 c2195）；8 = 法魂放宽多阶段血量 clamp 上限（火焰巨人 5045 生效）；7 = 多阶段 Boss 血量（参考实现 5 组）；6 = 敌人倍增；5 = 敌人颜色；4 = 血条名随换入者
 CLONE_NAME = "gfE:"                     # 克隆行的名字前缀（重跑时据此清理）
 MAP_REL = os.path.join("map", "MapStudio")
 DATA_SUB = "mod"        # 方案层根只放说明书，游戏数据在 <层根>/mod/（YAFSML 的 [mod] 要的是数据根）
@@ -370,6 +375,23 @@ def find_param_name(names, suffix):
     raise WriteError("regulation 里找不到 %s" % suffix)
 
 
+def load_donor_effects(path=DONOR_EFFECTS):
+    """读来源模型的专属加护表 → {model: sp_effect_id}。文件不存在返回空表。"""
+    out = {}
+    if not os.path.isfile(path):
+        return out
+    with open(path, encoding="utf-8-sig", newline="") as f:
+        for row in csv.DictReader(f):
+            model = (row.get("model") or "").strip()
+            try:
+                eff = int(row.get("sp_effect_id") or 0)
+            except (TypeError, ValueError):
+                continue
+            if model and eff > 0:
+                out[model] = eff
+    return out
+
+
 def load_bar_fallback(path=BAR_FALLBACK):
     """读「mod 没覆盖的地图」的旧血条名（来自本体 EMEVD）。
 
@@ -585,7 +607,8 @@ def _rainbow_index(donor, old_npc, n):
     return (int(donor) * 131 + int(old_npc) * 17) % max(1, n)
 
 
-def make_npc_clone(base_payload, key, fbp, src_payload=None, rainbow_ids=None):
+def make_npc_clone(base_payload, key, fbp, src_payload=None, rainbow_ids=None,
+                   donor_effects=None):
     """复制捐赠行 → 改 hp/魂/威胁等级/必改位 → 抄位置掉落 + 挂区域 effect。
 
     src_payload 是**这个位置原本那只**的 NpcParam 行，只用来抄 itemLotId_*（F3：掉落
@@ -648,6 +671,14 @@ def make_npc_clone(base_payload, key, fbp, src_payload=None, rainbow_ids=None):
         if new_b is not None:
             b = bytearray(new_b)
             notes["area_effect"] = (slot, area_effect)
+    donor_model = donor // 10000
+    _deff = (donor_effects or {}).get("c%d" % donor_model)
+    if _deff:
+        # 来源模型自带的加护（如劳弗仪卫的圣龛变体 SpEffect）：写进下一个空槽。
+        new_b, slot = _attach_area_effect(b, fbp, _deff)
+        if new_b is not None:
+            b = bytearray(new_b)
+            notes["donor_effect"] = (slot, _deff)
     if rainbow_ids:
         # 参考实现只填第一个 -1 的槽；克隆行沿用捐赠者的材质槽，所以有 -1 才染色。
         for name in RAINBOW_FIELDS:
@@ -659,7 +690,6 @@ def make_npc_clone(base_payload, key, fbp, src_payload=None, rainbow_ids=None):
                 break
         else:
             notes["rainbow_skipped"] = True
-    donor_model = donor // 10000
     if donor not in SHRINK_SKIP_NPC:
         r, h = _f32(b, fbp.off("hitRadius")), _f32(b, fbp.off("hitHeight"))
         if r > SHRINK_RADIUS:
@@ -1144,7 +1174,14 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
     log("[写盘] 身份所有权：%d 个位置、无冲突" % n_places)
     log("[写盘] 克隆行：NpcParam %d 条 / NpcThinkParam %d 条" % (len(alloc), len(think_alloc)))
 
+    donor_effects = load_donor_effects()
+    if donor_effects:
+        missing = sorted(set(donor_effects.values()) - set(sp_pf.ids))
+        if missing:
+            raise WriteError("来源加护不在 SpEffectParam 里：%s（检查 %s）"
+                             % ("、".join(str(x) for x in missing), DONOR_EFFECTS))
     npc_extra, npc_notes = [], {}
+    donor_effect_units = 0
     n_with_src = 0
     for key in sorted(alloc):
         nid = alloc[key]
@@ -1157,11 +1194,14 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
         if src is not None and len(src) >= fbn.size:
             n_with_src += 1
         payload, notes = make_npc_clone(npc_pf.payload(key[0]), key, fbn, src,
-                                        rainbow_ids=rainbow_ids)
+                                        rainbow_ids=rainbow_ids,
+                                        donor_effects=donor_effects)
         nm = "%s%d:%d:%d:%s:t%d:p%d:e%d:a%d" % (
             CLONE_NAME, key[0], key[1], key[2], key[3], key[4], key[5], key[6], key[7])
         npc_extra.append((nid, payload, nm))
         npc_notes[nid] = notes
+        if "donor_effect" in notes:
+            donor_effect_units += 1
     think_extra = []
     for (base_t, goal), nid in sorted(think_alloc.items()):
         payload, notes = make_think_clone(think_pf.payload(base_t), fbt, goal or None)
@@ -1169,6 +1209,9 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
         npc_notes[("think", nid)] = notes
     log("[写盘] 位置数值对齐：%d/%d 条克隆行抄了原位置的掉落（%d 个单元没有原行）"
         % (n_with_src, len(alloc), sum(1 for k in alloc if not k[5])))
+    if donor_effect_units:
+        log("[写盘] 来源专属加护：%d 条克隆行挂了模型自带的 SpEffect（%s）"
+            % (donor_effect_units, "、".join(sorted(donor_effects))))
 
     # ③ 按图分组
     by_map = {}
@@ -1420,6 +1463,7 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
                    "area_balance_units": area_stats["balance_units"],
                    "onslaught_units": ons_units, "onslaught_dups": ons_dups,
                    "npc_clone_with_src": n_with_src,
+                   "donor_effect_units": donor_effect_units,
                    "bar_name_maps": bar_stats["maps"],
                    "bar_name_targets": bar_stats["targets"],
                    "bar_name_patched": bar_stats["patched"],
@@ -1718,6 +1762,18 @@ def verify_layer(layer_dir, plan_path=None, log=print):
                            % (rid, slot, _u32(b, fbn.off(slot)), eff))
             if eff not in sp_pf_c.ids:
                 bad.append("克隆行 %s 的区域 effect %s 不在表里" % (rid, eff))
+        # 来源模型专属加护：克隆行挂的 effect 槽必须等于 manifest 记的
+        de = (man.get("npc_clone_notes") or {}).get(str(rid), {}).get("donor_effect")
+        if de:
+            slot, eff = de[0], int(de[1])
+            if sp_pf_c is None:
+                spn2 = find_param_name([n for n, _ in bnd.files], "SpEffectParam.param")
+                sp_pf_c = param_bin.ParamFile(bnd.get(spn2))
+            if _u32(b, fbn.off(slot)) != eff:
+                bad.append("克隆行 %s 的 %s=%s ≠ manifest %s"
+                           % (rid, slot, _u32(b, fbn.off(slot)), eff))
+            if eff not in sp_pf_c.ids:
+                bad.append("克隆行 %s 的来源加护 %s 不在表里" % (rid, eff))
         # 掉落必须逐字节等于**位置原行**（F3：掉落绑地点）
         if old_npc and pf_b is not None:
             try:
@@ -1804,6 +1860,10 @@ def selftest():
     out = tempfile.mkdtemp(prefix="gf_enemy_write_self_")
     plan = json.load(open(PLAN_DEFAULT, encoding="utf-8"))
     ok = []
+    _de = load_donor_effects()
+    if _de.get("c2195") != 18781:
+        raise WriteError("来源专属加护表对不上（应为 c2195→18781）：%r" % (_de,))
+    ok.append("来源加护表 c2195→18781")
 
     # ① owner 冲突注入：必须 raise，且目标目录一个字节都不出现
     bad = json.loads(json.dumps(plan))
@@ -1828,7 +1888,10 @@ def selftest():
     _plans = os.path.join(out, "_plans")
     build(PLAN_DEFAULT, label="selftest", out_root=out, limit=2, log=lambda *a: None,
           plans_dir=_plans)
-    verify_layer(os.path.join(out, "selftest"), PLAN_DEFAULT, log=lambda *a: None)
+    # v1.3.19：写盘时会补 balance（内存里改过 target_hp），快照是重新序列化的那一份，
+    # 所以复验必须用快照而不是原计划文件（否则 sha 必然对不上；2026-10-24 修）。
+    verify_layer(os.path.join(out, "selftest"),
+                 os.path.join(_plans, "selftest.json"), log=lambda *a: None)
     ok.append("读回 PASS")
 
     # ③ 同 label 重跑：整体替换、不留 .stage_/.old_

@@ -116,8 +116,8 @@ l4_policy:
     - {map: m14_00_00_00, entity: 14000891, reason: "蕾娜菈二阶段法术分身（Comet Azur/Moon 等）"}
     # 指头之母尤弥尔：MSB 里是占位模型 c0000，真模型由事件挂 SpEffect 生成，换掉就崩
     - {map: m61_51_45_00, entity: 2051450720, reason: "占位模型 c0000，真身由事件生成"}
-    # 劳弗圣龛竞技场：一个实体承载 9 个仪卫变体（用 spEffect 切换）——换掉 9 个变体全变一只、阶段二断链
-    - {map: m31_81_00_00, entity: 31810800, reason: "9 个劳弗仪卫变体共用的竞技场实体"}
+    # 劳弗圣龛竞技场：一个实体承载 9 个仪卫变体（用 spEffect 切换）——
+    # 2026-10-24 实验：从 keep 放开，改由规则 reliquary_guardian 按 Boss 抽（9 座会随成同一只 Boss）。
     # 拟态泪的可见壳（entity 12070810）：事件 12078850 里 X16 = 它，ForceAnimationPlayback(20010) 摆尸体造型、
     # 真身 X0=12070805 由 CopyPlayerCharacterData 复制玩家。换掉壳 = 玩家看到「蝙蝠尸体」，拟态本体不出现。
     - {map: m12_07_00_00, entity: 12070810, reason: "拟态泪可见壳（事件 X16 / ForceAnimationPlayback 20010），换掉后看到的是壳"}
@@ -301,9 +301,11 @@ pools:
     note: |
       9 座圣龛（全 DLC）共用 **1 个竞技场实体** 31810800：EMEVD 事件 31812810 用 9 组
       (typeFlag 2055559111..9, spEffect 18781..9, nameId 121911..9) 切出 9 个「劳弗仪卫」变体，
-      阶段二事件 31812811 等 CharacterHasSpEffect(BossEntityId, 18770)。
-      → 换掉这一个实体 = 9 个变体全变一只 + 阶段二断链，所以该位置 policy=keep（见 l4_policy.keep_places）。
-      池子里仍记 1 行，界面显示"劳弗圣龛（9 变体，v1 不换）"。
+      阶段二事件 31812811 只等 CharacterHasSpEffect(BossEntityId, 18770)（事件体里音乐/阶段逻辑都注释掉了，等于空转）。
+      → 结构限制：9 座共用 1 个实体，**只能整组随成同一只 Boss**（想 9 只各自随 = 给 9 座各放一个实体，那是地图级改造）。
+      2026-10-24 起该位置从 keep 放开（v1.3.19 正式可随，默认开）：由规则 reliquary_guardian 按 Boss 抽；
+      死亡 → BossDefeated 旗标 → 31812840 回圣龛解锁链只认实体，换人仍成立。有问题把池开关「劳弗圣龛」关掉即可恢复原样。
+      守卫本体 c2195 也当来源（见 overrides.models）：写盘层替它补血条名与变体加护。
     members:
       - {map: m31_81_00_00, entity: 31810800, npc_id: 21950001, model: c2195, name: "劳弗仪卫（9 变体共用）", area: base}
 
@@ -334,6 +336,8 @@ randomization:
 
   # 捐赠者黑名单（模型级）：这些模型「能被换掉」，但不能被推进别人的位置。
   # 判据 = 它的战斗方式依赖自己的位置/脚本，换到别处会变成废人（不会攻击、原地传送、复制玩家）。
+  # 例外（2026-10-24）：劳弗仪卫 c2195 移出黑名单 —— 它缺的变体加护由写盘层补上
+  # （见下方 overrides.models 与 investigation/enemy_donor_effects.csv）。
   donor_deny:
     - {model: c4140, reason: "唤灵蜗牛：本体不动，只靠召唤物作战"}
     - {model: c4480, reason: "「病花」米兰达：扎根不动，靠孢子和缠绕"}
@@ -368,6 +372,14 @@ randomization:
       targets: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss], areas: same}
       note: "守门位只换 boss 级身份；换成杂兵会让「守门战」变成无害路人，奖励链仍在但观感全无"
 
+    # ①b 劳弗圣龛守门（2026-10-24 实验）：9 座圣龛共用 1 个竞技场实体，只能整组随成同一只 Boss。
+    - id: reliquary_guardian
+      name: 劳弗圣龛守门（9 变体共用一只）
+      match: {pools: [reliquary]}
+      rate: 1.0
+      targets: {cls: [Boss, MinorBoss, Miniboss, NightMiniboss, DragonMiniboss], areas: same}
+      note: "9 座圣龛共用 1 个实体：换掉 = 9 座随成同一只 Boss；关掉池开关「劳弗圣龛」= 保持原样"
+
     # ② 有 Boss 血条的位置：不管它在参考表里被标成什么类，一律按 Boss 抽
     #    （判据：位置表 bar=1，来自地图 EMEVD 的 DisplayBossHealthBar / 90005870 / 90005876 等模板调用）
     #    反例（修之前）：m18 的「猎犬骑士哥廷」参考类=Basic，被 fauna 换成了普通杂兵 —— 双 Boss 战变成单 Boss。
@@ -398,7 +410,12 @@ randomization:
 
 # ── 覆盖层：人工改判（优先于所有自动规则）────────────────────────────────────
 overrides:
-  models: {}      # 例： c3300: {class: Basic, policy: randomize, note: "..."}
+  models:
+    # 劳弗圣龛守卫（9 变体共用 1 个实体）：2026-10-24 从 keep 放开、移出捐赠黑名单，当来源用。
+    # 它不是普通杂兵 —— 有竞技场血条，靠圣龛事件套变体 SpEffect(18781..9) 才有完整招式/数值。
+    # 写盘层替它补两件事：血条名（enemy_bar_name_overrides.csv → 121911「精干的劳弗仪卫」）
+    # 与变体加护（enemy_donor_effects.csv → SpEffect 18781）。事件不搬（见 docs/敌人随机_假设台账.md H-043）。
+    c2195: {class: Boss, policy: randomize, note: "劳弗圣龛守卫：圣龛位置由 reliquary_guardian 规则随机；当来源时补名字+变体加护"}
   places: []      # 例： {map: m60_45_37_10, part_name: c3650_9000, occurrence: 1, policy: keep, reason: "..."}
 
 # ── 构建期断言（--check 会验；对不上就是数据/配置漂移）─────────────────────────

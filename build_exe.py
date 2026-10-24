@@ -88,6 +88,8 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         "investigation/enemy_bar_fallback.csv",
         # 没有血条名、但有同义中文名的普通敌人（模型 → name_id）；缺了会退化成 ?NpcName? 占位
         "investigation/enemy_bar_name_overrides.csv",
+        # v1.3.19：来源模型专属加护（模型 → SpEffectParam 行 id）；缺了劳弗仪卫当来源时没有变体加护
+        "investigation/enemy_donor_effects.csv",
         ] + [os.path.join("investigation", "vanilla_events", f)
              for f in sorted(os.listdir(os.path.join(WS, "investigation", "vanilla_events")))
              if f.endswith(".emevd.dcx")] + [

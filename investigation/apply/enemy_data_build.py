@@ -67,7 +67,8 @@ KEEP_CLASSES = {"None", "Helper", "DupeOnly", "Dummy", "Scarab", "CaravanTroll"}
 # 无名模型的统一名（照参考实现 GameData.ModelName 的兜底：表里没有就给模型号）
 GENERIC_NAME = "法魂杂兵（%s）"
 # 同一个模型在不同图上有多个血条名时，模型级显示名人工指定（血条名多值见 note）
-NAME_OVERRIDES = {"c3805": "密契女猎手"}
+NAME_OVERRIDES = {"c3805": "密契女猎手",
+                   "c2195": "劳弗圣龛守卫（9 变体共用）"}
 # 查出来但名字不在任何表里的（凭数值+位置认定），人工给个名字
 KEEP_NAMES = {
     "c8003": "圆桌厅堂训练假人", "c8004": "圆桌厅堂训练假人",

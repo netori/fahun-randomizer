@@ -48,6 +48,10 @@ PLACES = os.path.join(INV, "enemy_places.csv")
 NPC = os.path.join(INV, "enemy_table.csv")
 MODEL_NAMES = os.path.join(INV, "enemy_model_names.csv")
 BAR_TABLE = os.path.join(INV, "enemy_bar_names.csv")
+# 模型 → 血条名的人工同义名/变体名表（与写盘层 bar_names.py 共用同一份 CSV）。
+# 有些模型本来有中文名、但没当过 Boss，enemy_bar_names.csv 里没有它的 name_id；
+# 计划层要据此判断「这个换入者能不能上血条位」（named_models），所以这里也读一遍。
+BAR_NAME_OVERRIDES = os.path.join(INV, "enemy_bar_name_overrides.csv")
 YAML_PATH = os.path.join(HERE, "data", "enemy_classes_v3.yaml")
 DEFAULT_PLAN = os.path.join(INV, "enemy_plan.json")
 MANUAL = os.path.join(INV, "enemy_manual.csv")
@@ -177,11 +181,29 @@ def load_places(path=PLACES):
     return out
 
 
+def load_model_name_overrides(path=BAR_NAME_OVERRIDES):
+    """读 enemy_bar_name_overrides.csv → {模型: 名字 id}。
+
+    人工补的同义名/变体名（格式 model,name_id,note）。写盘层用同一份表决定血条显示什么，
+    计划层这里也必须认它，否则「有名字的换入者」会被当成无名、进不了血条位。
+    """
+    out = {}
+    if not os.path.isfile(path):
+        return out
+    for r in read_csv(path):
+        model = (r.get("model") or "").strip()
+        nid = _i(r.get("name_id"))
+        if model and nid > 0:
+            out[model] = nid
+    return out
+
+
 def load_bar_names(path=BAR_TABLE):
     """(位置 → 原血条名, 模型 → 血条名)。
 
     两张索引来自 enemy_bar_names.csv（扫 EMEVD 的 DisplayBossHealthBar/InitializeCommonEvent
     与 boss_healthbar.csv 合并）。模型→名字取出现最多的那个（tie 取较小 id）。
+    enemy_bar_name_overrides.csv 的人工名字优先（写盘层也用它）。
     """
     by_place, by_model, cnt = {}, {}, {}
     for r in read_csv(path):
@@ -197,6 +219,9 @@ def load_bar_names(path=BAR_TABLE):
             c[mid] = c.get(mid, 0) + 1
     for mod, c in cnt.items():
         by_model[mod] = min(c.items(), key=lambda kv: (-kv[1], kv[0]))[0]
+    # 人工名字最后覆盖：写盘层按它改血条，计划层也必须按它判「有没有名字」。
+    for mod, nid in load_model_name_overrides().items():
+        by_model[mod] = nid
     return by_place, by_model
 
 
@@ -3018,6 +3043,28 @@ def _selftest():
     assert not _in_bad, "特殊规则没沿用目标类组成：%s" % _in_bad[:5]
     print("PASS 特殊规则沿用目标类组成：Boss 类传送门/血条位 %d 个，全部抽自追忆池"
           % len(_in_spec))
+
+    # ㉒ v1.3.19：劳弗仪卫 c2195 是 Boss 级来源，带人工血条名 121911，能当来源抽到
+    assert data["bar"][1].get("c2195") == 121911, \
+        "劳弗仪卫的人工血条名没进模型索引：%r" % (data["bar"][1].get("c2195"),)
+    pr_rl = default_preset(data["cfg"], unitize(data["places"]))
+    pr_rl["rate_mode"] = "independent"
+    for _e in pr_rl["classes"].values():
+        _e["enabled"] = False
+    for _e in pr_rl["pools"].values():
+        _e["enabled"] = False
+    pr_rl["bar"] = {"enabled": False, "rate": 0.0, "weight": 0.0,
+                    "targets": [], "donor_weights": None}
+    pr_rl["classes"]["Boss"].update({
+        "enabled": True, "rate": 1.0,
+        "targets": ["pool:reliquary"], "donor_weights": {"pool:reliquary": 100.0},
+        "source_areas": ["base", "dlc"], "target_areas": "same", "size_max": None})
+    p_rl = build_plan(data, {"preset": pr_rl, "constraints": {"boss_usage_cap": 0}}, seed)
+    assert not validate_plan(p_rl, data)[:5]
+    _rl = [e for e in p_rl["units"] if e["new_model"] == "c2195" and not e.get("manual")]
+    assert _rl, "劳弗仪卫当来源：一个 Boss 位都没抽到 c2195"
+    print("PASS 劳弗仪卫当来源：%d 个 Boss 位换入 c2195（人工血条名 121911）"
+          % len(_rl))
 
     print("RESULT: PASS")
 

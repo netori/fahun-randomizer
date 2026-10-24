@@ -287,7 +287,7 @@ c4072,法魂杂兵（c4072）,generic,Basic,auto:noname,6,1,409,409,1,randomize,
 c4493,法魂杂兵（c4493）,generic,Basic,auto:noname,6,1,449,449,1,randomize,
 c5192,巨大蜘蛛蝎,血条名,Basic,exact,6,4,422,1000,1,randomize,
 c5220,“米凯拉的王”拉塔恩,血条名(多: 2),Helper,exact,6,3,3168,3168,1,keep,multiphase:radahn_consort
-c5230,幽影树的化身,血条名,Helper,exact,6,6,640,1152,1,keep,evt:pair;anim
+c5230,幽影树的化身,血条名,Helper,exact,6,6,640,1152,1,keep,multiphase:scadutree
 c5662,法魂杂兵（c5662）,generic,Basic,auto:noname,6,2,153,153,1,randomize,
 c5790,Guardian Golem,ModelName,Basic,exact,6,3,2442,5236,1,randomize,
 c5931,Giant Beast Skeleton,ModelName,Basic,exact,6,3,613,671,1,randomize,
@@ -387,7 +387,7 @@ c2131,Defeated Morgott,ModelName,None,exact,1,1,0,0,1,keep,class.silo=false
 c2151,闪电球变体（c2151）,人工指定,Dummy,auto:dummy,1,1,2765,2765,1,keep,evt:pair;anim
 c2170,Finger Reader Enia,ModelName,None,exact,1,1,902,902,1,keep,class.silo=false
 c2190,“黄金律法”拉达冈,血条名,Boss,exact,1,1,2612,2612,1,keep,multiphase:radagon_eldenbeast
-c2195,法魂杂兵（c2195）,generic,Basic,auto:noname,1,1,3130,3130,1,keep,keep_places:9 个劳弗仪卫变体共用的竞技场实体
+c2195,劳弗圣龛守卫（9 变体共用）,人工指定,Boss,yaml,1,1,3130,3130,1,randomize,
 c2200,艾尔登之兽,血条名,Boss,exact,1,1,3768,3768,1,keep,multiphase:radagon_eldenbeast
 c2501,“背叛熔炉者”斯卡德,血条名,Boss,auto:bossbar,1,1,1209,1209,1,randomize,
 c3015,焦黑失乡骑士,血条名(多: 2),Boss,auto:bossbar,1,1,1500,1500,1,randomize,
@@ -405,7 +405,7 @@ c3902,腐败习武修士,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
 c3911,恶兵长官,血条名,Boss,auto:bossbar,1,1,3000,3000,1,randomize,
 c3920,“冰之守卫”艾纳尔,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
 c4051,“唤星领主”达克,血条名,Boss,auto:bossbar,1,1,1450,1450,1,randomize,
-c4135,腐败容器,血条名,Boss,auto:bossbar,1,1,2500,2500,1,keep,evt:pair;anim
+c4135,腐败容器,血条名,Boss,auto:bossbar,1,1,2500,2500,1,keep,multiphase:godskin_scion
 c4261,癫火归树看门犬,血条名,Boss,auto:bossbar,1,1,1052,1052,1,randomize,
 c4271,“古龙之剑”希拉,血条名,Boss,auto:bossbar,1,1,2340,2340,1,randomize,
 c4364,Redmane Knight's Horse,ModelName,Helper,exact,1,1,448,448,1,keep,class.silo=false
@@ -433,7 +433,7 @@ c5010,黄金河马,血条名,Boss,exact,1,1,2957,2957,1,randomize,
 c5050,Mini Midra,ModelName,Basic,exact,1,1,416,416,1,keep,multiphase:midra
 c5051,“癫火之王”米德拉,血条名,Boss,exact,1,1,3347,3347,1,keep,multiphase:midra
 c5120,“狂龙”贝勒,血条名,Boss,exact,1,1,2712,2712,1,randomize,
-c5140,Large Messmer Serpent,ModelName,Helper,exact,1,1,2963,2963,1,keep,evt:pair;anim
+c5140,Large Messmer Serpent,ModelName,Helper,exact,1,1,2963,2963,1,keep,multiphase:messmer
 c5165,“纯血骑士”康拉德,血条名,Boss,auto:bossbar,1,1,1500,1500,1,randomize,
 c5200,"Metyr, Mother of Fingers",ModelName,Boss,exact,1,1,3072,3072,1,randomize,
 c5312,“拷问老者”约里,血条名,MinorBoss,exact,1,1,2239,2239,1,randomize,
