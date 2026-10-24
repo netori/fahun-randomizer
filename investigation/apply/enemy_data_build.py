@@ -827,6 +827,19 @@ def _read_model_table():
         io.open(MODEL_TABLE, encoding="utf-8-sig", newline=""))}
 
 
+def EP_group_bosses(grp):
+    """yaml 多阶段组的 Boss 划分：每个子列表 = 一个 Boss（同模型）。
+
+    v1.3.16 起 yaml 直接写 bosses；旧格式（swap_entities/phases）兼容成
+    「每个实体各自一个 Boss」。
+    """
+    raw = grp.get("bosses")
+    if raw:
+        return [[int(e) for e in slot] for slot in raw]
+    ents = grp.get("swap_entities") or grp.get("phases") or []
+    return [[int(e)] for e in ents]
+
+
 def check(yaml_path=None):
     """严格校验：磁盘 ↔ 位置表 ↔ 分类配置 ↔ 模型名字表 四处必须自洽。
 
@@ -1141,13 +1154,17 @@ def check(yaml_path=None):
             break
     print("never_touch 命中: %d 行（必须全部 keep）" % len(nt_rows))
 
-    # ⑤b 多阶段 Boss：一组两阶段都必须存在、且全部 keep（只换一阶段 = 半只 Boss）
+    # ⑤b 多阶段 Boss：phases 是组内全部位置（数据层全部 keep），
+    #     bosses 每个子列表 = 一个 Boss（同模型、整组共用一个换入身份）；
+    #     v1.3.16 起按「模型」拆 Boss（用户 2026-10-24 原则）。
     mp_groups = (cfg.get("multiphase") or {}).get("groups") or []
     seen_mp = {}
+    n_boss_slots = n_boss_ents = 0
     for grp in mp_groups:
         gid, gmap = grp.get("id", "?"), grp.get("map")
-        for ent in grp.get("phases") or []:
-            k = (gmap, int(ent))
+        phases = [int(e) for e in (grp.get("phases") or [])]
+        for ent in phases:
+            k = (gmap, ent)
             if k in seen_mp:
                 fails.append("多阶段组 %s 的 %s/%s 与 %s 重复" % (gid, gmap, ent, seen_mp[k]))
             seen_mp[k] = gid
@@ -1159,48 +1176,65 @@ def check(yaml_path=None):
                 if r["policy"] != "keep":
                     fails.append("多阶段组 %s：%s/%s 被标成 %s（只换一阶段=半只 Boss）" % (
                         gid, gmap, r["part_name"], r["policy"]))
-                # pair 检查挪到下面「真正要换的实体」上：辅助组不换的血条助手/坐骑保留 pair 没问题。
-        # v1.3.15：swap_entities = 真正要被换掉的实体（缺省 = phases）。辅助组只换真身
-        # （血条助手 / HP 壳 / 坐骑 / 事件共用实体不动），所以非 phase 组必须显式写。
-        sw_ents = grp.get("swap_entities")
-        if sw_ents is not None:
-            if not sw_ents:
-                fails.append("多阶段组 %s 的 swap_entities 是空的（要么不写，缺省用 phases）" % gid)
-            sw_seen = set()
-            for ent in sw_ents:
+                # pair 检查挪到下面「真正要换的实体」上：辅助体不换的血条助手/坐骑保留 pair 没问题。
+        bosses = EP_group_bosses(grp)
+        if not bosses:
+            fails.append("多阶段组 %s 没写 bosses（每个子列表 = 一个 Boss）" % gid)
+            continue
+        by_model = {}
+        boss_seen = set()
+        for si, slot in enumerate(bosses):
+            if not slot:
+                fails.append("多阶段组 %s 的 Boss%d 是空的" % (gid, si + 1))
+                continue
+            slot_models = set()
+            for ent in slot:
                 k = (gmap, int(ent))
-                if k in sw_seen:
-                    fails.append("多阶段组 %s 的 swap_entities 重复：%s/%s" % (gid, gmap, ent))
-                sw_seen.add(k)
+                if k in boss_seen:
+                    fails.append("多阶段组 %s 的实体 %s/%s 出现在多个 Boss 里" % (gid, gmap, ent))
+                boss_seen.add(k)
+                if int(ent) not in phases:
+                    fails.append("多阶段组 %s 的 Boss%d 实体 %s 不在 phases 里" % (
+                        gid, si + 1, ent))
                 hit = [r for r in tab.values()
                        if r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)]
                 if not hit:
-                    fails.append("多阶段组 %s 的 swap_entities 实体 %s/%s 在位置表里找不到" % (
-                        gid, gmap, ent))
+                    fails.append("多阶段组 %s 的 Boss%d 实体 %s/%s 在位置表里找不到" % (
+                        gid, si + 1, gmap, ent))
+                models = {r["model"] for r in hit}
+                if len(models) > 1:
+                    fails.append("多阶段组 %s 的实体 %s 在同组里出现了多个模型：%s" % (
+                        gid, ent, sorted(models)))
+                slot_models |= models
                 for r in hit:
                     if r["policy"] != "keep":
-                        fails.append("多阶段组 %s 的 swap_entities 实体 %s 被标成 %s"
+                        fails.append("多阶段组 %s 的实体 %s 被标成 %s"
                                      "（要被换掉的位置在数据层仍是 keep，由计划层接管）" % (
                                          gid, r["part_name"], r["policy"]))
-        if grp.get("swap") and str(grp.get("kind") or "phase") != "phase" and not sw_ents:
-            fails.append("多阶段组 %s 开了 swap，但 kind=%s 且没写 swap_entities"
-                         "（辅助组必须明确指出换哪个真身）" % (gid, grp.get("kind")))
+                n_boss_ents += 1
+            n_boss_slots += 1
+            if len(slot_models) > 1:
+                fails.append("多阶段组 %s 的 Boss%d 混了多个模型：%s（同模型才算一个 Boss）" % (
+                    gid, si + 1, sorted(slot_models)))
+            for md in slot_models:
+                if md in by_model:
+                    fails.append("多阶段组 %s 的模型 %s 出现在 Boss%d 与 Boss%d"
+                                 "（同模型应合成一个 Boss）" % (gid, md, by_model[md], si + 1))
+                by_model[md] = si + 1
         # 真正要换的实体若被 CreateReferredDamagePair 绑定，必须显式认账（pair: true → 组内同换）
-        if grp.get("swap"):
-            _real = sw_ents if sw_ents is not None else (grp.get("phases") or [])
-            for ent in _real:
-                for r in tab.values():
-                    if (r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)
-                            and "pair" in (r.get("evt") or "") and not grp.get("pair")):
-                        fails.append("多阶段组 %s 要换的 %s 有 CreateReferredDamagePair 绑定"
-                                     "（整组换会重演安塞尔河坏档；确认要换请显式写 pair: true）：%s" % (
-                                         gid, r["part_name"], r.get("evt")))
-        # v1.3.14：sources = 允许当「来源」的实体（缺省 = phases）。真身不在 phases 里的组
+        for _m, ent in sorted(boss_seen):
+            for r in tab.values():
+                if (r["map"] == gmap and int(r["entity_id"] or 0) == int(ent)
+                        and "pair" in (r.get("evt") or "") and not grp.get("pair")):
+                    fails.append("多阶段组 %s 要换的 %s 有 CreateReferredDamagePair 绑定"
+                                 "（整组换会重演安塞尔河坏档；确认要换请显式写 pair: true）：%s" % (
+                                     gid, r["part_name"], r.get("evt")))
+        # v1.3.14：sources = 允许当「来源」的实体（缺省 = bosses 摊平）。真身不在 bosses 里的组
         # （幽影树化身 800）显式写；这些位置也必须 keep（当来源 != 可当目标）。
         src_ents = grp.get("sources")
         if src_ents is not None:
             if not src_ents:
-                fails.append("多阶段组 %s 的 sources 是空的（要么不写，缺省用 phases）" % gid)
+                fails.append("多阶段组 %s 的 sources 是空的（要么不写，缺省用 bosses）" % gid)
             src_seen = set()
             for ent in src_ents:
                 k = (gmap, int(ent))
@@ -1218,12 +1252,11 @@ def check(yaml_path=None):
                                      "（当来源的身份必须 keep：它不能同时是随机目标）" % (
                                          gid, r["part_name"], r["policy"]))
     swap_n = sum(1 for g in mp_groups if g.get("swap"))
-    src_n = sum(len(g.get("sources") or g.get("phases") or []) for g in mp_groups)
-    swap_units = sum(len(g.get("swap_entities") or g.get("phases") or [])
-                     for g in mp_groups if g.get("swap"))
-    print("multiphase: %d 组 / %d 个位置（数据层全部 keep；其中 %d 组开了位置替换 = "
-          "%d 个实体，%d 个实体可当来源）" % (
-              len(mp_groups), len(seen_mp), swap_n, swap_units, src_n))
+    src_n = sum(len(g.get("sources") or [e for slot in EP_group_bosses(g) for e in slot])
+                for g in mp_groups)
+    print("multiphase: %d 组 / %d 个位置（数据层全部 keep）/ %d 个 Boss / %d 个 Boss 实体"
+          "（其中 %d 组开了位置替换，%d 个实体可当来源）" % (
+              len(mp_groups), len(seen_mp), n_boss_slots, n_boss_ents, swap_n, src_n))
 
     # ⑤c 重复 MSB（已封印/未封印两份）：同一物理位置必须成组，且 link 列自洽
     kg = collections.defaultdict(list)

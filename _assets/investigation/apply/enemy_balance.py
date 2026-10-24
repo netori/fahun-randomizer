@@ -156,6 +156,19 @@ def plan_seed(plan, seed=None):
     return str(meta.get("base_seed") or meta.get("seed") or 1)
 
 
+def _mp_lead_phase(plan):
+    """(组, Boss 编号) -> 该 Boss 第一个位置的 phase（平衡只挑它当代表，其余跟随）。"""
+    lead = {}
+    for e in plan.get("units") or []:
+        if not e.get("multiphase") or e.get("mp_boss") is None:
+            continue
+        k = (e["multiphase"], int(e["mp_boss"]))
+        ph = int(e.get("phase") or 0)
+        if k not in lead or ph < lead[k]:
+            lead[k] = ph
+    return lead
+
+
 def eligible_units(plan):
     """换入身份是 Boss 级、且不是多阶段组条目的位置（这些才能按分布重写血量）。
 
@@ -168,14 +181,21 @@ def eligible_units(plan):
         if e.get("new_cls") not in BOSSISH:
             continue
         if e.get("multiphase"):
-            # 多阶段：每阶段各换一个 Boss 的组，各阶段单独参与平衡；
-            # 整场共用一个 Boss 的组只平衡第一阶段，其余阶段在下面跟着第一阶段统一。
-            pol = e.get("mp_policy")
-            if pol == "one_boss":
-                if int(e.get("phase") or 0) != 1:
+            # v1.3.16 按「模型」拆 Boss：同一个 Boss 的多个位置只平衡第一个位置，
+            # 其余位置在下面跟随同一份血量；不同 Boss 各自独立平衡。
+            if e.get("mp_boss") is not None:
+                _lead = _mp_lead_phase(plan)
+                if int(e.get("phase") or 0) != _lead.get(
+                        (e["multiphase"], int(e["mp_boss"]))):
                     continue
-            elif pol != "per_phase_model":
-                continue
+            else:
+                # 旧计划兼容：整场共用一个 Boss 的组只平衡第一阶段。
+                pol = e.get("mp_policy")
+                if pol == "one_boss":
+                    if int(e.get("phase") or 0) != 1:
+                        continue
+                elif pol != "per_phase_model":
+                    continue
         if not e.get("old_npc_id") or not e.get("new_npc_id"):
             continue
         try:
@@ -267,11 +287,18 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
             "dst_tier": r["dst_tier"], "dst_rate": round(r["dst_rate"], 6),
             "src_tier": r["src_tier"], "src_rate": round(r["src_rate"], 6),
         }
-    # 多阶段「整场共用一个 Boss」：二阶段起跟随第一阶段的分层结果（同一个 Boss 同一份血量）
+    # 多阶段「同一个 Boss」：同一 Boss 的其余位置跟随它第一个位置的分层结果（同一份血量）
     groups_one = {}
     for _e in plan.get("units") or []:
-        if _e.get("multiphase") and _e.get("mp_policy") == "one_boss":
-            groups_one.setdefault(_e["multiphase"], []).append(_e)
+        if not _e.get("multiphase"):
+            continue
+        if _e.get("mp_boss") is not None:
+            _gkey = (_e["multiphase"], int(_e["mp_boss"]))
+        elif _e.get("mp_policy") == "one_boss":
+            _gkey = (_e["multiphase"], 0)
+        else:
+            continue
+        groups_one.setdefault(_gkey, []).append(_e)
     harmonized = 0
     for _gid, _es in groups_one.items():
         _es.sort(key=lambda x: int(x.get("phase") or 0))

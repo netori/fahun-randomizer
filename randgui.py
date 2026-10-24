@@ -1429,7 +1429,8 @@ class App:
             GoldCheck(_prow, text=_ptxt, variable=_pv,
                       command=self._ev1_status_refresh).pack(side="left", padx=(0, px(14)))
         # v1.3.15：多阶段 Boss 的位置默认也参与替换、身份也可当来源，两件事常开，不再给开关。
-        tk.Label(b0, text="多阶段BOSS：位置默认也参与替换（14 组，含二阶段 / 辅助真身），身份也可当来源；"
+        # v1.3.16：按「模型」拆 Boss —— 同模型（跨阶段/多管血条）算一只，异模型拆成多只。
+        tk.Label(b0, text="多阶段BOSS：位置默认也参与替换（14 组 / 20 个 Boss，按模型拆），身份也可当来源；"
                           "这一项默认常开，不提供开关。",
                  bg=BG, fg=SUB, font=FONT_MICRO, justify="left",
                  wraplength=px(980)).pack(anchor="w", pady=(px(8), 0))
@@ -2247,7 +2248,7 @@ class App:
                            [c for c in classes if counts.get(c, 0) > 0
                             and c not in ("Dummy", "None", "Helper", "DupeOnly")],
                            "合并全敌人")).pack(side="left", padx=(px(8), 0))
-            tk.Label(right, text="多阶段首领：位置默认也换、身份也能当来源（常开，无开关）",
+            tk.Label(right, text="多阶段首领：位置默认也换、按模型拆 Boss、身份也能当来源（常开，无开关）",
                      bg=BG, fg=SUB, font=FONT_MICRO).pack(anchor="w", pady=(px(12), 0))
             tk.Label(right, text="参与池（池只决定哪些位置参与；具体换谁由下面类别规则决定）",
                      bg=BG, fg=GOLD, font=FONT_MICRO).pack(anchor="w", pady=(px(14), px(4)))

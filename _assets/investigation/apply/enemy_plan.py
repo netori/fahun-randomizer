@@ -69,8 +69,9 @@ DEFAULT_OPTIONS = {
         # 血条会沿用原 Boss 的名字 —— 用户实测「一部分 boss 没换名字」）。
         "require_named_donor_for_bar": True,
         # v1.3.15：多阶段 Boss 的**位置**默认也参与随机（14 组全部换；界面不提供开关）。
-        # 每条要换的实体见 yaml multiphase.groups[].swap_entities（缺省 = phases），
-        # 辅助组只换真身（血条助手 / 坐骑 / HP 壳不动）。设 False 只用于自检隔离与排障。
+        # v1.3.16：按「模型」拆 Boss —— yaml multiphase.groups[].bosses 每个子列表 = 一个 Boss
+        # （同模型、共用一个换入身份；异模型拆成多个 Boss）；没进子列表的辅助体不动。
+        # 设 False 只用于自检隔离与排障。
         "multiphase_swap": True,
         # v1.3.14：多阶段 Boss 也能当「来源」——位置仍然 keep（不动那场战斗），
         # 只把 yaml multiphase.groups 的 sources（缺省 = phases）身份拉进来源池。
@@ -226,27 +227,42 @@ def load_pools(cfg):
     return pools
 
 
+def _group_bosses(g):
+    """组的 Boss 划分：每个子列表 = 一个 Boss（必须同模型，整组共用一个换入身份）。
+
+    v1.3.16 起 yaml 直接写 bosses；旧格式（swap_entities/phases）向后兼容成
+    「每个实体各自一个 Boss」（等于旧 per_phase_model 的行为）。
+    """
+    raw = g.get("bosses")
+    if raw:
+        return [[_i(e) for e in slot] for slot in raw]
+    ents = g.get("swap_entities") or g.get("phases") or []
+    return [[_i(e)] for e in ents]
+
+
 def load_multiphase(cfg):
-    """返回 (位置集合, 组列表)；位置集合用来在计划层硬拦。"""
+    """返回 (位置集合, 组列表)；位置集合 = 会被整组替换的实体，用来在计划层硬拦。"""
     members, groups = set(), []
     for g in (cfg.get("multiphase") or {}).get("groups") or []:
         groups.append(g)
-        for e in g["phases"]:
-            members.add((g["map"], _i(e)))
+        for slot in _group_bosses(g):
+            for e in slot:
+                members.add((g["map"], _i(e)))
     return members, groups
 
 
 def multiphase_source_units(units, groups):
     """多阶段 Boss 里「可以当来源」的单元：{unit_key: 组 id}。
 
-    yaml 的 sources 缺省 = phases（真阶段；v1.3.14 起当来源用，位置本身仍 keep）。
-    个别组的真身不在 phases 里（幽影树化身 800 / 米德拉 800 / 融泥骑士 800），
-    yaml 里显式写；HP 壳、坐骑、血条助手不列 —— 它们不是能独立出战的身份。
+    yaml 的 sources 缺省 = bosses 摊平（真 Boss；v1.3.14 起当来源用，位置本身仍 keep）。
+    个别组的真身不在 phases 里（幽影树化身 800），yaml 里显式写；
+    HP 壳、坐骑、血条助手不列 —— 它们不是能独立出战的身份。
     """
     ent2gid = {}
     for g in groups or []:
         gid = g.get("id") or "multiphase"
-        for ent in (g.get("sources") or g.get("phases") or []):
+        _flat = [e for slot in _group_bosses(g) for e in slot]
+        for ent in (g.get("sources") or _flat or g.get("phases") or []):
             ent2gid[(g["map"], _i(ent))] = gid
     out = {}
     for u in units:
@@ -1599,7 +1615,7 @@ def _entry_for(u, d, rule, options, reasons, ai_fallback, extra=None):
             "reason": entry["reason"],
         }
         if extra:
-            for k in ("multiphase", "phase", "mp_policy", "donor_group"):
+            for k in ("multiphase", "phase", "mp_boss", "mp_policy", "donor_group"):
                 if k in extra:
                     item[k] = extra[k]
         pos_out.append(item)
@@ -1680,17 +1696,15 @@ def _boss_cap_filter(cand, boss_use, cap, stats):
 def _multiphase_plan(units, groups, rules, options, ai_fallback, base_seed,
                      rule_donors=None, size_cache=None, named_models=None,
                      boss_use=None, boss_cap=0, cap_stats=None, enabled_pools=None):
-    """v1.3.15：多阶段 Boss 的**位置**默认也参与随机（yaml 14 组 swap=true；默认开、无界面开关）。
+    """v1.3.16：多阶段 Boss 按「模型」拆成若干 Boss（用户 2026-10-24 的原则）。
 
-    - 每组要换的实体 = swap_entities（缺省 = phases）：辅助组只换真身，血条助手 / 坐骑 /
-      HP 壳 / 事件共用实体保持原样；
-    - 分流策略看「组内要换实体的原模型是否相同」：相同 → one_boss（整场共用一个换入 Boss，
-      各位置同一 npc 行、同一份血量）；不同 → per_phase_model（每个位置各换一个不同的 Boss，
-      换入模型互不相同、也都不等于任一原模型，保证看得见变化）；
-      yaml 标了 pair: true 的组一律 one_boss —— pair 两端是同一场战斗，不能拆成两只怪。
-    - 组内单元所在池全部被关掉时整组跳过（池开关 = 这些位置不参与）。
+    - yaml bosses 每个子列表 = 一个 Boss：同子列表实体同模型、共用一个换入身份；
+      不同子列表 = 不同 Boss，捐赠者互不相同、也都不等于组内任何原模型（保证看得见变化）；
+    - 没进 bosses 的实体（血条壳 / 坐骑 / HP 壳 / 事件共用体）= 辅助体，保持原样；
+    - 组内位置所在池全部被关掉时整组跳过（池开关 = 这些位置不参与）。
     返回 (entries, positions, handled_keys, info, skipped_groups, skipped_units)；
-    info[gid] = {"policy", "phases", "donors": [npc_id…]}（跳过时带 "skipped"）。
+    info[gid] = {"policy": "per_model", "bosses", "phases", "donors", "models"}
+    （跳过时另带 "skipped"）。
     """
     cons = options["constraints"]
     if not cons.get("multiphase_swap"):
@@ -1711,12 +1725,14 @@ def _multiphase_plan(units, groups, rules, options, ai_fallback, base_seed,
     swap = [g for g in groups if bool(g.get("swap"))]
     groups_units = {}
     for g in swap:
-        ents = [ _i(e) for e in (g.get("swap_entities") or g.get("phases") or []) ]
-        us = [by_place.get((g["map"], e)) for e in ents]
-        if any(u is None for u in us):
-            raise SystemExit("多阶段组 %s 有实体不在位置表里：%s" % (
-                g.get("id"), [e for e, u in zip(ents, us) if u is None]))
-        groups_units[g["id"]] = us
+        slots = []
+        for slot in _group_bosses(g):
+            su = [by_place.get((g["map"], e)) for e in slot]
+            if any(u is None for u in su):
+                raise SystemExit("多阶段组 %s 有实体不在位置表里：%s" % (
+                    g.get("id"), [e for e, u in zip(slot, su) if u is None]))
+            slots.append(su)
+        groups_units[g["id"]] = slots
 
     donor_groups = rule_donors.get(mp_rule["id"]) or {}
     boss_use = {} if boss_use is None else boss_use
@@ -1737,78 +1753,72 @@ def _multiphase_plan(units, groups, rules, options, ai_fallback, base_seed,
     require_model = bool(cons.get("require_model_change", True))
 
     for g in swap:
-        tus = groups_units[g["id"]]
-        models = {u["model"] for u in tus}
-        # pair 组（同一场战斗的两半）统一 one_boss：两个位置换成同一个 Boss，pair 关系不动。
-        policy = ("one_boss" if (bool(g.get("pair")) or len(models) == 1)
-                  else "per_phase_model")
-        # 池开关 = 这些位置不参与：组内单元所在池全被关掉时整组保持原样。
+        slots = groups_units[g["id"]]
+        flat = [u for slot in slots for u in slot]
+        group_models = {u["model"] for u in flat}
+        # 池开关 = 这些位置不参与：组内位置所在池全被关掉时整组保持原样。
         _pools = set()
-        for u in tus:
+        for u in flat:
             _pools |= set(u.get("pools") or [])
         if _pools and not (_pools & enabled_pools):
             skipped.append(g["id"])
-            info[g["id"]] = {"policy": policy, "phases": len(tus),
+            info[g["id"]] = {"policy": "per_model", "bosses": len(slots),
+                             "phases": len(flat),
                              "skipped": "pool_off:%s" % "+".join(sorted(_pools))}
-            for u in tus:
+            for u in flat:
                 skipped_units.append((u, g["id"], "pool_off"))
                 handled.add(u["key"])
             continue
-        donors = []
-        if policy == "one_boss":
-            base_u = tus[0]
-            # 不能把组内自己的模型/身份当换入者（否则「换了」其实没换，或者变成同组另一半）。
-            cand = [d for d in _cand_of(base_u)
-                    if d["model"] not in models
-                    and all(_size_ok(x, d, mp_rule, options)
-                            and _named_ok(x, d, options, named_models) for x in tus)]
-            cand = _cap_filter(cand)
-            if cand:
-                d = pick_donor(base_u, cand, unit_rng(base_seed, "mp:%s:one" % g["id"]),
-                               require_model)
-                if d is not None:
-                    donors = [d] * len(tus)
-        else:
-            used = set()
-            for idx, tu in enumerate(tus):
-                rng = unit_rng(base_seed, "mp:%s:phase%d" % (g["id"], idx + 1))
-                cand = _cap_filter([d for d in _cand_of(tu)
-                                    if d["model"] not in used and d["model"] not in models])
-                d = pick_donor(tu, cand, rng, True)
-                if d is None:
-                    cand = _cap_filter([d for d in _cand_of(tu)
-                                        if d["model"] not in used
-                                        and d["model"] not in models])
-                    d = pick_donor(tu, cand, rng, require_model)
-                if d is None:
-                    donors = []
-                    break
-                donors.append(d)
-                used.add(d["model"])
+        # 每个 Boss（bosses 子列表）抽一个捐赠者：互不相同、也都不等于组内原模型。
+        donors, used_models = [], set()
+        for si, slot in enumerate(slots):
+            base_u = slot[0]
+            cand = _cap_filter([d for d in _cand_of(base_u)
+                                if d["model"] not in used_models
+                                and d["model"] not in group_models
+                                and all(_size_ok(x, d, mp_rule, options)
+                                        and _named_ok(x, d, options, named_models)
+                                        for x in slot)])
+            d = pick_donor(base_u, cand,
+                           unit_rng(base_seed, "mp:%s:boss%d" % (g["id"], si + 1)),
+                           require_model)
+            if d is None:
+                donors = []
+                break
+            donors.append(d)
+            used_models.add(d["model"])
+            # 上限按「场次」计：同一个 Boss 在一场多阶段战斗里只算用了一次。
+            if d["cls"] in AREA_BOSSISH:
+                _n = int(d["npc_id"])
+                boss_use[_n] = boss_use.get(_n, 0) + 1
         if not donors:
             skipped.append(g["id"])
-            info[g["id"]] = {"policy": policy, "phases": len(tus),
-                             "skipped": "no_mp_donor"}
-            for u in tus:
+            info[g["id"]] = {"policy": "per_model", "bosses": len(slots),
+                             "phases": len(flat), "skipped": "no_mp_donor"}
+            for u in flat:
                 skipped_units.append((u, g["id"], "no_mp_donor"))
                 handled.add(u["key"])
             continue
-        for idx, (tu, du) in enumerate(zip(tus, donors)):
-            reasons = ["rule:%s" % mp_rule["id"],
-                       "multiphase:%s:phase%d" % (g["id"], idx + 1),
-                       "mp_policy:%s" % policy]
-            if tu["silo"]:
-                reasons.append("silo:%s" % tu["silo"])
-            extra = {"multiphase": g["id"], "phase": idx + 1, "mp_policy": policy}
-            entry, pos = _entry_for(tu, du, mp_rule, options, reasons, ai_fallback, extra)
-            entries.append(entry)
-            positions.extend(pos)
-            handled.add(tu["key"])
-            if du["cls"] in AREA_BOSSISH:
-                _n = int(du["npc_id"])
-                boss_use[_n] = boss_use.get(_n, 0) + 1
-        info[g["id"]] = {"policy": policy, "phases": len(tus),
-                         "donors": [int(d["npc_id"]) for d in donors]}
+        idx = 0
+        for si, slot in enumerate(slots):
+            du = donors[si]
+            for tu in slot:
+                idx += 1
+                reasons = ["rule:%s" % mp_rule["id"],
+                           "multiphase:%s:boss%d" % (g["id"], si + 1),
+                           "mp_policy:per_model"]
+                if tu["silo"]:
+                    reasons.append("silo:%s" % tu["silo"])
+                extra = {"multiphase": g["id"], "phase": idx,
+                         "mp_policy": "per_model", "mp_boss": si + 1}
+                entry, pos = _entry_for(tu, du, mp_rule, options, reasons, ai_fallback, extra)
+                entries.append(entry)
+                positions.extend(pos)
+                handled.add(tu["key"])
+        info[g["id"]] = {"policy": "per_model", "bosses": len(slots),
+                         "phases": len(flat),
+                         "donors": [int(d["npc_id"]) for d in donors],
+                         "models": [d["model"] for d in donors]}
     return entries, positions, handled, info, skipped, skipped_units
 
 
@@ -2126,8 +2136,12 @@ def build_plan(data, options=None, seed=1):
         "ai_fallback": ai_fallback,
         "multiphase_groups": len(groups),
         "multiphase_swap": bool(constraints.get("multiphase_swap")),
-        "multiphase_swapped": sum(len(v.get("donors") or [])
-                                  for v in mp_info.values()),
+        # v1.3.16：按「模型」拆 Boss —— swapped 记换掉的位置数，
+        # swapped_bosses 记实际换入的 Boss 数（同一个 Boss 的多个位置共用一个身份）。
+        "multiphase_swapped": sum(int(v.get("phases") or 0)
+                                  for v in mp_info.values() if not v.get("skipped")),
+        "multiphase_swapped_bosses": sum(len(v.get("donors") or [])
+                                         for v in mp_info.values()),
         "multiphase_skipped": len(mp_skipped),
         "multiphase_policy": mp_info,
         "multiphase_donor": {gid: {"policy": v.get("policy"),
@@ -2218,15 +2232,18 @@ def validate_plan(plan, data=None):
     mp = data["multiphase"][0] if data else set()
     # v1.1：整组替换的位置单独放行（否则下面「命中多阶段 = 错」会把整组换掉判成失败）
     mp_swap = bool(cons.get("multiphase_swap"))
-    mp_groups, mp_group_list = {}, []
+    mp_groups, mp_boss_of, mp_group_list = {}, {}, []
     if data:
         for g in data["multiphase"][1]:
             if not (mp_swap and bool(g.get("swap"))):
                 continue
             mp_group_list.append(g)
-            ents = g.get("swap_entities") or g.get("phases") or []
-            for idx, ent in enumerate(ents):
-                mp_groups[(g["map"], _i(ent))] = (g["id"], idx + 1)
+            idx = 0
+            for si, slot in enumerate(_group_bosses(g)):
+                for ent in slot:
+                    idx += 1
+                    mp_groups[(g["map"], _i(ent))] = (g["id"], idx)
+                    mp_boss_of[(g["map"], _i(ent))] = si + 1
     for e in plan["units"]:
         k = e["key"]
         if k in keys:
@@ -2311,6 +2328,9 @@ def validate_plan(plan, data=None):
                         k, gid, phase, e.get("multiphase"), e.get("phase")))
                 if e.get("rule") != "multiphase_boss":
                     bad.append("%s 属多阶段组 %s，规则却是 %s" % (k, gid, e.get("rule")))
+                if mp_boss_of.get(loc) != e.get("mp_boss"):
+                    bad.append("%s 属多阶段组 %s 的 Boss%d，条目却标 mp_boss=%s" % (
+                        k, gid, mp_boss_of.get(loc) or 0, e.get("mp_boss")))
             elif mp and loc in mp:
                 bad.append("%s 命中了多阶段位置 %s/%s" % (k, p["map"], p["entity_id"]))
         nd = int(e.get("dup_count") or 0)
@@ -2328,8 +2348,8 @@ def validate_plan(plan, data=None):
             for p in e["places"]:
                 if int(p.get("entity_id") or 0) <= 0:
                     bad.append("%s 实体 ID 为 0，不能复制" % k)
-    # v1.2：多阶段一致性（按「转阶段是否换模型」分流：模型变了每阶段各换一个 Boss，
-    # 模型没变整场共用一个 Boss）
+    # v1.3.16：多阶段一致性 —— 按「模型」拆 Boss（yaml bosses 每个子列表 = 一个 Boss）：
+    # 同一 Boss 的所有实体换成同一个身份；不同 Boss 身份互不相同、也都不等于组内原模型。
     if mp_group_list and data is not None:
         units_all = unitize(data["places"])
         by_place_unit = {}
@@ -2343,47 +2363,55 @@ def validate_plan(plan, data=None):
         mp_policy = meta.get("multiphase_policy") or {}
         for g in mp_group_list:
             gid = g["id"]
+            slots = _group_bosses(g)
+            flat = [(_i(x), si + 1) for si, slot in enumerate(slots) for x in slot]
             ens = sorted(by_gid.get(gid) or [], key=lambda e: e.get("phase") or 0)
-            phases = [int(x) for x in (g.get("swap_entities")
-                                       or g.get("phases") or [])]
             info = mp_policy.get(gid) or {}
             if not ens:
                 if not info.get("skipped"):
-                    bad.append("多阶段组 %s 一个阶段都没换" % gid)
+                    bad.append("多阶段组 %s 一个位置都没换" % gid)
                 continue
-            if len(ens) != len(phases):
-                bad.append("多阶段组 %s 只换了 %d/%d 个阶段" % (gid, len(ens), len(phases)))
+            if len(ens) != len(flat):
+                bad.append("多阶段组 %s 只换了 %d/%d 个位置" % (gid, len(ens), len(flat)))
                 continue
-            want = info.get("policy")
-            if want not in ("one_boss", "per_phase_model"):
-                bad.append("多阶段组 %s 没有标明分流策略（%s）" % (gid, want))
-                continue
-            old_models = {by_place_unit[(g["map"], _i(x))]["model"]
-                          for x in phases if (g["map"], _i(x)) in by_place_unit}
-            want_old = ("one_boss" if (bool(g.get("pair")) or len(old_models) == 1)
-                        else "per_phase_model")
-            if want != want_old:
-                bad.append("多阶段组 %s 分流策略 %s 与阶段模型数（%d 种）不符，应为 %s" % (
-                    gid, want, len(old_models), want_old))
+            if info.get("policy") != "per_model":
+                bad.append("多阶段组 %s 的分流策略是 %s，应为 per_model" % (
+                    gid, info.get("policy")))
+            old_models = {by_place_unit[(g["map"], ent)]["model"]
+                          for ent, _si in flat if (g["map"], ent) in by_place_unit}
+            got = {}
             for idx, e in enumerate(ens):
+                ent, want_si = flat[idx]
                 if e.get("phase") != idx + 1:
-                    bad.append("多阶段组 %s 阶段序号乱：%s" % (gid, e.get("phase")))
-                if e.get("mp_policy") != want:
-                    bad.append("多阶段组 %s 阶段 %d 的分流标记 %s ≠ %s" % (
-                        gid, idx + 1, e.get("mp_policy"), want))
-            npcs = {int(e["new_npc_id"]) for e in ens}
-            models_n = [e["new_model"] for e in ens]
-            if want == "one_boss":
-                if len(npcs) != 1:
-                    bad.append("多阶段组 %s 模型没变，却换了 %d 个不同 Boss：%s" % (
-                        gid, len(npcs), sorted(npcs)))
-            else:
-                if len(set(models_n)) != len(models_n):
-                    bad.append("多阶段组 %s 每阶段该换不同 Boss，却有重复模型：%s" % (
-                        gid, models_n))
-                if old_models and (set(models_n) & old_models):
-                    bad.append("多阶段组 %s 的换入模型与阶段原模型重合：%s" % (
-                        gid, sorted(set(models_n) & old_models)))
+                    bad.append("多阶段组 %s 位置序号乱：%s" % (gid, e.get("phase")))
+                if e.get("mp_boss") != want_si:
+                    bad.append("多阶段组 %s 第 %d 个位置的 Boss 编号 %s ≠ %d" % (
+                        gid, idx + 1, e.get("mp_boss"), want_si))
+                if e.get("mp_policy") != "per_model":
+                    bad.append("多阶段组 %s 第 %d 个位置的分流标记 %s ≠ per_model" % (
+                        gid, idx + 1, e.get("mp_policy")))
+                got.setdefault(want_si, []).append(e)
+            slot_models = []
+            for si in sorted(got):
+                part = got[si]
+                if len(part) != len(slots[si - 1]):
+                    bad.append("多阶段组 %s 的 Boss%d 只换了 %d/%d 个位置" % (
+                        gid, si, len(part), len(slots[si - 1])))
+                npcs_part = {int(e["new_npc_id"]) for e in part}
+                if len(npcs_part) != 1:
+                    bad.append("多阶段组 %s 的 Boss%d 被拆成了多个换入身份：%s" % (
+                        gid, si, sorted(npcs_part)))
+                slot_models.append(part[0]["new_model"])
+            if len(set(slot_models)) != len(slot_models):
+                bad.append("多阶段组 %s 的不同 Boss 换了同一只：%s" % (gid, slot_models))
+            if old_models and (set(slot_models) & old_models):
+                bad.append("多阶段组 %s 的换入模型与组内原模型重合：%s" % (
+                    gid, sorted(set(slot_models) & old_models)))
+            _dn = [int(x) for x in (info.get("donors") or [])]
+            _got_dn = [int(got[si][0]["new_npc_id"]) for si in sorted(got)]
+            if _dn and _got_dn and _dn != _got_dn:
+                bad.append("多阶段组 %s 的换入身份记录与实际不一致（%s ≠ %s）" % (
+                    gid, _dn, _got_dn))
 
     # link 组要么都在要么都不在：union 检查
     placed = set()
@@ -2398,11 +2426,17 @@ def validate_plan(plan, data=None):
     # v1.3.13：Boss 使用上限 —— 同一个 Boss 最多被随到 N 次（手动指定是显式覆盖，不计入）。
     _cap = int(cons.get("boss_usage_cap") or 0)
     if _cap:
-        _use = {}
+        # v1.3.16：按「场次」计 —— 同一场多阶段战斗里同一个 Boss 的多个位置只算用一次。
+        _use, _mp_grp = {}, set()
         for e in plan["units"]:
             if e.get("manual") or e.get("donor_cls") not in AREA_BOSSISH:
                 continue
             _n = int(e.get("new_npc_id") or 0)
+            if e.get("multiphase"):
+                _k = (_n, e.get("multiphase"), e.get("mp_boss"))
+                if _k in _mp_grp:
+                    continue
+                _mp_grp.add(_k)
             _use[_n] = _use.get(_n, 0) + 1
         _mx = max(_use.values()) if _use else 0
         _relaxed = int((((meta.get("counts") or {}).get("boss_cap") or {})
@@ -2515,13 +2549,14 @@ def _selftest():
     print("PASS 换种子结果变（%d 个单元换入不同）" % sum(
         1 for x, y in zip(plan["units"], plan3["units"]) if x["new_npc_id"] != y["new_npc_id"]))
 
-    # ② keep/hazard/story 不得出现在目标侧（v1.3.15 起多阶段 Boss 的 24 个位置例外）
+    # ② keep/hazard/story 不得出现在目标侧（v1.3.16 起多阶段 Boss 的位置例外）
     target_keys = {e["key"] for e in plan["units"]}
     _units_all = unitize(data["places"])
     _mp_ent = set()
     for _g in data["multiphase"][1]:
-        for _e0 in (_g.get("swap_entities") or _g["phases"]):
-            _mp_ent.add((_g["map"], _i(_e0)))
+        for _slot in _group_bosses(_g):
+            for _e0 in _slot:
+                _mp_ent.add((_g["map"], _i(_e0)))
     _mp_keys = {u["key"] for u in _units_all
                 if any((p["map"], p["entity_id"]) in _mp_ent for p in u["places"])}
     keep_units = {u["key"] for u in _units_all if u["policy"] != "randomize"}
@@ -2537,7 +2572,7 @@ def _selftest():
     assert all(len(v) == 2 for v in by_link.values()), "link 组只写了一边"
     print("PASS link 组两行同进同出（%d 组）" % len(by_link))
 
-    # ④ v1.3.15：多阶段 Boss 的位置默认全部参与替换（辅助组只换真身）
+    # ④ v1.3.16：多阶段 Boss 的位置默认全部参与替换（按模型拆 Boss，辅助体不动）
     hit = [p for p in plan["positions"] if (p["map"], p["entity_id"]) in _mp_ent]
     assert len(hit) == len(_mp_ent), "多阶段位置只换了 %d/%d 个" % (len(hit), len(_mp_ent))
     tagged = {(p["map"], p["entity_id"]) for e in plan["units"]
@@ -2555,12 +2590,22 @@ def _selftest():
     for pid in sorted(enabled_all):
         opts = merge_options({"constraints": {"boss_usage_cap": 0}})
         opts["pools"][pid] = False
-        b_map = {e["key"]: e for e in build_plan(data, opts, seed)["units"]}
+        b_plan = build_plan(data, opts, seed)
+        b_map = {e["key"]: e for e in b_plan["units"]}
+        b_pol = b_plan["meta"].get("multiphase_policy") or {}
         off_keys = set(a_map) - set(b_map)
         bad = []
         for k in off_keys:
-            pools = set(a_map[k]["pools"])
+            e0 = a_map[k]
+            pools = set(e0["pools"])
             still = {p for p in pools if p != pid and p in enabled_all}
+            if e0.get("multiphase"):
+                # 多阶段组是原子决策：组内任一位置所在的池被关掉，整组都不换
+                # （池开关 = 这些位置不参与），组员自己有别的池也一起消失，不算泄漏。
+                _info = b_pol.get(e0["multiphase"]) or {}
+                _why = str(_info.get("skipped") or "")
+                if _why.startswith("pool_off:") and pid in _why.split(":")[-1].split("+"):
+                    continue
             if not pools or still:
                 bad.append(k)
         for k in set(a_map) & set(b_map):
@@ -2623,8 +2668,8 @@ def _selftest():
     print("PASS HP 模型：%d 个替换单元的 hp 按换入者/普通→Boss sqrt；魂默认位置原值"
           % len(plan["units"]))
 
-    # ⑩ v1.3.15 多阶段 Boss 位置：14 组默认全部参与替换（含 pair / 辅助组），
-    #    辅助组只换 swap_entities；两种分流策略都覆盖；关掉开关时零替换、其它单元零变化
+    # ⑩ v1.3.16 多阶段 Boss 位置：14 组默认全部参与替换，按「模型」拆 Boss ——
+    #    同一 Boss 的实体共用一个换入身份、不同 Boss 身份互异；关掉开关零替换、其它单元零变化
     p_off = build_plan(data, {"constraints": {"multiphase_swap": False,
                                               "boss_usage_cap": 0}}, seed)
     assert not [e for e in p_off["units"] if e.get("multiphase")], "关掉多阶段后还有条目"
@@ -2633,38 +2678,48 @@ def _selftest():
     bad_on = validate_plan(p_on, data)
     assert not bad_on, bad_on[:5]
     groups_sw = [g for g in data["multiphase"][1] if bool(g.get("swap"))]
-    want_units = sum(len(g.get("swap_entities") or g["phases"]) for g in groups_sw)
+    flat_of = {g["id"]: [_i(x) for slot in _group_bosses(g) for x in slot]
+               for g in groups_sw}
+    want_units = sum(len(v) for v in flat_of.values())
+    want_bosses = sum(len(_group_bosses(g)) for g in groups_sw)
     ents = [e for e in p_on["units"] if e.get("multiphase")]
     assert len(ents) == want_units, "多阶段替换单元数 %d != %d" % (len(ents), want_units)
     policy = p_on["meta"].get("multiphase_policy") or {}
-    n_one = sum(1 for v in policy.values() if v.get("policy") == "one_boss")
-    n_per = sum(1 for v in policy.values() if v.get("policy") == "per_phase_model")
+    n_bosses = 0
     for g in groups_sw:
         es = [e for e in ents if e["multiphase"] == g["id"]]
         info = policy.get(g["id"]) or {}
         if info.get("skipped"):
             assert not es, "组 %s 标了跳过却有条目" % g["id"]
             continue
-        want_n = len(g.get("swap_entities") or g["phases"])
-        assert len(es) == want_n, "组 %s 实体数不对：%d != %d" % (g["id"], len(es), want_n)
-        assert {e["phase"] for e in es} == set(range(1, want_n + 1)), \
+        slots = _group_bosses(g)
+        assert info.get("policy") == "per_model", "组 %s 策略不是 per_model" % g["id"]
+        assert len(es) == len(flat_of[g["id"]]), "组 %s 实体数不对：%d != %d" % (
+            g["id"], len(es), len(flat_of[g["id"]]))
+        assert {e["phase"] for e in es} == set(range(1, len(es) + 1)), \
             "组 %s 序号不连续" % g["id"]
-        if info["policy"] == "one_boss":
-            assert len({int(e["new_npc_id"]) for e in es}) == 1, \
-                "组 %s 整场却换了多个 Boss" % g["id"]
-        else:
-            _models = [e["new_model"] for e in es]
-            assert len(set(_models)) == len(_models), "组 %s 阶段之间换了同一个 Boss" % g["id"]
+        assert {e["mp_boss"] for e in es} == set(range(1, len(slots) + 1)), \
+            "组 %s 的 Boss 编号不连续" % g["id"]
+        _slot_models = []
+        for si, slot in enumerate(slots):
+            part = [e for e in es if e["mp_boss"] == si + 1]
+            assert len(part) == len(slot), "组 %s 的 Boss%d 少了位置：%d != %d" % (
+                g["id"], si + 1, len(part), len(slot))
+            assert len({int(e["new_npc_id"]) for e in part}) == 1, \
+                "组 %s 的 Boss%d 被拆成了多个换入身份" % (g["id"], si + 1)
+            _slot_models.append(part[0]["new_model"])
+        assert len(set(_slot_models)) == len(_slot_models), \
+            "组 %s 不同 Boss 换了同一只" % g["id"]
+        n_bosses += len(slots)
+    assert n_bosses == want_bosses, "多阶段 Boss 数 %d != %d" % (n_bosses, want_bosses)
     off_map = {e["key"]: e for e in p_off["units"]}
     on_map = {e["key"]: e for e in p_on["units"]}
     shifted = [k for k in off_map if k in on_map
                and off_map[k]["new_npc_id"] != on_map[k]["new_npc_id"]]
     assert not shifted, "多阶段换 Boss 后不相关的单元变了：%s" % shifted[:5]
     assert not [k for k in off_map if k not in on_map], "多阶段换 Boss 后丢了普通单元"
-    assert n_one and n_per, "两种分流策略没都覆盖到：整场=%d 每阶段=%d" % (n_one, n_per)
-    print("PASS 多阶段 Boss 位置（默认全换）：%d 组 / %d 个位置；整场共用一个 Boss %d 组、"
-          "每位置各换 %d 组；关掉后零替换，其它单元零变化" % (
-              len(groups_sw), want_units, n_one, n_per))
+    print("PASS 多阶段 Boss 位置（默认全换、按模型拆）：%d 组 / %d 个位置 / %d 个 Boss；"
+          "关掉后零替换，其它单元零变化" % (len(groups_sw), want_units, n_bosses))
 
     # ⑪ 逐类预设：只改 Boss 的目标类（只允许 Boss→Boss），其它单元的抽签结果一个字节都不变
     pr = default_preset(data["cfg"], unitize(data["places"]))
@@ -2856,21 +2911,27 @@ def _selftest():
     p_cap3 = build_plan(data, {"constraints": {"boss_usage_cap": 3}}, seed)
     bad_cap3 = validate_plan(p_cap3, data)
     assert not bad_cap3, bad_cap3[:5]
-    _use3 = {}
-    for _e in p_cap3["units"]:
-        if _e.get("manual") or _e.get("donor_cls") not in AREA_BOSSISH:
-            continue
-        _n = int(_e["new_npc_id"])
-        _use3[_n] = _use3.get(_n, 0) + 1
+    def _cap_use(pl):
+        # v1.3.16：按「场次」计 —— 同一场多阶段战斗里同一个 Boss 的多个位置只算一次。
+        use, seen = {}, set()
+        for _e in pl["units"]:
+            if _e.get("manual") or _e.get("donor_cls") not in AREA_BOSSISH:
+                continue
+            _n = int(_e["new_npc_id"])
+            if _e.get("multiphase"):
+                _k = (_n, _e["multiphase"], _e.get("mp_boss"))
+                if _k in seen:
+                    continue
+                seen.add(_k)
+            use[_n] = use.get(_n, 0) + 1
+        return use
+
+    _use3 = _cap_use(p_cap3)
     _mx3 = max(_use3.values()) if _use3 else 0
     _c3 = p_cap3["meta"]["counts"]["boss_cap"]
     assert _mx3 <= 3 or _c3["relaxed"], "Boss 上限 3 生效时仍有 Boss 被用了 %d 次：%s" % (
         _mx3, sorted((v, k) for k, v in _use3.items() if v > 3)[:3])
-    _use0 = {}
-    for _e in plan0["units"]:
-        if _e.get("donor_cls") in AREA_BOSSISH:
-            _n = int(_e["new_npc_id"])
-            _use0[_n] = _use0.get(_n, 0) + 1
+    _use0 = _cap_use(plan0)
     _mx0 = max(_use0.values()) if _use0 else 0
     assert _mx0 > 3, "上限关掉后 Boss 复用次数没有变化（%d）—— 上限可能没生效" % _mx0
     print("PASS Boss 使用上限：默认上限 %d（实际最多 %d 次）；上限 3 时最多 %d 次、放宽 %d 个；不限时最多 %d 次"
@@ -2921,7 +2982,8 @@ def _selftest():
     _mp_donors = [d for d in _d_on if d["key"] in _mp_map]
     _mp_npcs = {d["npc_id"] for d in _mp_donors}
     assert len(_d_on) > len(_d_off), "多阶段 Boss 没进来源池：%d vs %d" % (len(_d_on), len(_d_off))
-    for _n in (21200056, 21900078, 22000078, 47200070, 44000001, 52300396, 50200087, 50510086):
+    for _n in (21200056, 21900078, 22000078, 47200070, 44000001, 41350000, 52300396,
+               50200087, 50510086):
         assert _n in _mp_npcs, "多阶段 Boss 的 npc 不在来源池：%s" % _n
     assert plan["meta"]["counts"]["multiphase_sources"]["units"] == len(_mp_donors), (
         plan["meta"]["counts"]["multiphase_sources"], len(_mp_donors))
@@ -2951,7 +3013,7 @@ def main(argv):
     ap.add_argument("--preset", default=None,
                     help="逐类预设 JSON（GUI 编辑器保存的那份）；省略 = 按 YAML 规则")
     ap.add_argument("--mp-swap", action="store_true",
-                    help="v1.1：多阶段 Boss 整组替换（实验，只对 5 个无 pair 的组生效）")
+                    help="v1.3.15：多阶段 Boss 位置替换（默认已开，v1.3.16 按模型拆 Boss）")
     ap.add_argument("--onslaught", type=float, default=None,
                     help="Enemy Onslaught（实验）：1.0=关，1.5≈普通敌人 +50%%，2.0=+100%%")
     ap.add_argument("--show", action="store_true")
