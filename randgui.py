@@ -6425,6 +6425,58 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
             pass
         root.update()
         app.ev1_preset = _old_pre07
+    # ── v1.3.18：预设里的「池条目」也要能自己配来源（池内位置组的来源，不是把池当来源） ──
+    try:
+        import copy as _copyp
+        import enemy_plan as _EPp
+        _cfgp = _EPp.load_data()["cfg"]
+        _rawp = {
+            "name": "池来源（自检内联）", "rate_mode": "independent",
+            "classes": {"Boss": {"enabled": True, "rate": 1.0, "weight": 100.0,
+                                 "targets": ["Boss"], "donor_weights": {"Boss": 100.0},
+                                 "source_areas": ["base", "dlc"], "target_areas": "same",
+                                 "size_max": None}},
+            "pools": {
+                "remembrance": {"enabled": True, "rate": 1.0, "weight": 100.0,
+                                "targets": ["Boss", "pool:remembrance"],
+                                "donor_weights": {"Boss": 30.0, "pool:remembrance": 70.0},
+                                "source_areas": ["base", "dlc"], "target_areas": "same",
+                                "size_max": None},
+                "reliquary": {"enabled": False, "rate": 0.0, "weight": 0.0,
+                              "targets": [], "donor_weights": None,
+                              "source_areas": ["base", "dlc"], "target_areas": "same",
+                              "size_max": None},
+            },
+        }
+        _np = _EPp.normalize_preset(_rawp, _cfgp)
+        _rp = ((_np or {}).get("pools") or {}).get("remembrance") or {}
+        ck("v1 预设编辑器：池条目的来源（pool:remembrance）经 normalize 保留",
+           bool(_rp.get("enabled")) and "pool:remembrance" in (_rp.get("donor_weights") or {}),
+           repr(_rp)[:180])
+        app.ev1_preset = _np
+        app.enemy_v1_preset_editor()
+        root.update()
+        _curp = getattr(app, "_ev1_preset_cur", {}) or {}
+        _cpr = (_curp.get("pools") or {}).get("remembrance") or {}
+        ck("v1 预设编辑器：打开后池来源仍在（cur[pools][remembrance]）",
+           "pool:remembrance" in (_cpr.get("donor_weights") or {}), repr(_cpr)[:180])
+        _pp = _copyp.deepcopy(_curp)
+        _pp["builtin"] = False
+        _np2 = _EPp.normalize_preset(_pp, _cfgp)
+        _rp2 = ((_np2 or {}).get("pools") or {}).get("remembrance") or {}
+        ck("v1 预设编辑器：应用/保存后池来源不丢",
+           "pool:remembrance" in (_rp2.get("donor_weights") or {}), repr(_rp2)[:180])
+    except Exception:
+        import traceback as _tbp
+        print("   · 池来源自检异常：" + _tbp.format_exc(limit=2))
+        ck("v1 预设编辑器：池来源自检（异常即失败）", False, _tbp.format_exc(limit=1))
+    finally:
+        try:
+            app._ev1_preset_win.destroy()
+        except Exception:
+            pass
+        root.update()
+        app.ev1_preset = _old_pre07
     # 权重叠加语义：预设里的 rate_mode/weight 必须原样进 options（引擎按它分「换入占比」）
     _old_pre = app.ev1_preset
     app.ev1_preset = {"version": 1, "name": "权重测试", "rate_mode": "weight",
