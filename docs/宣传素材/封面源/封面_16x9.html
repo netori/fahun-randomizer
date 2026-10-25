@@ -1,0 +1,81 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><title>cover 1920x1080</title><style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1920px;height:1080px;overflow:hidden;background:#070605}
+  body{font-family:"Noto Sans SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+  .cover{position:relative;width:1920px;height:1080px;overflow:hidden;isolation:isolate}
+  .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:66% 58%;filter:saturate(.92) contrast(1.03) brightness(.96)}
+  .shade{position:absolute;inset:0;background:
+    linear-gradient(90deg,rgba(5,4,3,.96) 0%,rgba(6,5,3,.90) 30%,rgba(7,5,3,.62) 52%,rgba(8,6,3,.18) 74%,rgba(8,6,3,.30) 100%),
+    linear-gradient(180deg,rgba(4,3,2,.72) 0%,rgba(5,4,3,.06) 26%,rgba(5,4,3,.10) 66%,rgba(4,3,2,.88) 100%)}
+  .glow{position:absolute;inset:0;background:
+    radial-gradient(900px 700px at 24% 42%,rgba(196,146,62,.16),transparent 62%),
+    radial-gradient(700px 500px at 82% 22%,rgba(255,214,140,.12),transparent 60%),
+    radial-gradient(1200px 900px at 50% 60%,transparent 40%,rgba(2,2,1,.55) 100%)}
+  .frame{position:absolute;inset:34px;border:1px solid rgba(216,178,98,.22)}
+  .frame:before,.frame:after{content:"";position:absolute;width:22px;height:22px;border:1px solid rgba(216,178,98,.55)}
+  .frame:before{left:-1px;top:-1px;border-right:0;border-bottom:0}
+  .frame:after{right:-1px;bottom:-1px;border-left:0;border-top:0}
+  .inner{position:absolute;inset:0;padding:74px 112px;display:flex;flex-direction:column}
+  .top{display:flex;justify-content:space-between;align-items:flex-start;color:#c9b48a}
+  .brand{display:flex;align-items:center;gap:16px;font-size:19px;letter-spacing:.34em;color:#d9c39a}
+  .brand .diamond{width:8px;height:8px;background:#d8b262;transform:rotate(45deg);box-shadow:0 0 14px rgba(216,178,98,.8)}
+  .brand .thin{width:64px;height:1px;background:linear-gradient(90deg,rgba(216,178,98,.75),rgba(216,178,98,.12))}
+  .topright{text-align:right;font-size:15px;letter-spacing:.22em;color:#bda97f;line-height:1.9}
+  .topright b{display:block;color:#efdfbd;font-weight:600;font-size:18px;letter-spacing:.16em}
+  .hero{margin-top:96px;max-width:1080px;position:relative}
+  .hero:before{content:"";position:absolute;left:-43px;top:6px;bottom:10px;width:2px;background:linear-gradient(180deg,rgba(216,178,98,0),rgba(216,178,98,.85) 18%,rgba(216,178,98,.25) 78%,rgba(216,178,98,0))}
+  .eyebrow{font-family:Georgia,"Times New Roman",serif;font-size:20px;letter-spacing:.52em;color:#cfae6d;text-transform:uppercase;margin-bottom:24px}
+  h1{font-family:"Noto Serif SC","STZhongsong",serif;font-weight:800;font-size:170px;line-height:1.06;letter-spacing:.06em;white-space:nowrap;
+     background:linear-gradient(180deg,#fffdf6 4%,#f3e6c8 48%,#d9ba7c 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+     filter:drop-shadow(0 6px 26px rgba(0,0,0,.85))}
+  h1 .g{background:linear-gradient(180deg,#ffe9b0 0%,#e6bf74 55%,#b9853c 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .rule{display:flex;align-items:center;gap:18px;margin:30px 0 30px}
+  .rule .l{width:168px;height:1px;background:linear-gradient(90deg,rgba(216,178,98,.85),rgba(216,178,98,.10))}
+  .rule .d{width:9px;height:9px;transform:rotate(45deg);border:1px solid rgba(216,178,98,.9);box-shadow:0 0 12px rgba(216,178,98,.45)}
+  .rule .r{width:246px;height:1px;background:linear-gradient(90deg,rgba(216,178,98,.10),rgba(216,178,98,.85))}
+  .sub{font-size:41px;letter-spacing:.06em;color:#f0e8d7;font-weight:500;line-height:1.55}
+  .sub em{font-style:normal;color:#d8b262;padding:0 14px}
+  .desc{margin-top:20px;font-size:24px;letter-spacing:.12em;color:#b7a687;line-height:1.75}
+  .desc b{color:#e7d3a8;font-weight:600}
+  .facts{margin-top:44px;display:flex;flex-direction:column;gap:14px}
+  .fact{display:flex;align-items:baseline;gap:14px;font-size:23px;color:#a99a80;letter-spacing:.05em}
+  .fact i{width:6px;height:6px;flex:none;transform:rotate(45deg);background:#c79a4f;box-shadow:0 0 10px rgba(216,178,98,.45);position:relative;top:-2px}
+  .fact b{color:#e3cfa6;font-weight:600;letter-spacing:.08em}
+  .bottom{margin-top:auto;display:flex;justify-content:space-between;align-items:flex-end;gap:30px}
+  .tag{font-size:27px;letter-spacing:.08em;color:#e9ddc4;font-weight:500}
+  .tag span{color:#d8b262}
+  .tag-en{font-family:Georgia,"Times New Roman",serif;font-size:15px;letter-spacing:.42em;color:#8f8168;margin-top:12px;text-transform:uppercase}
+  .stamp{text-align:right;padding-right:8px;border-right:1px solid rgba(216,178,98,.45);padding-right:22px}
+  .stamp b{display:block;color:#e7d3a8;font-weight:600;font-size:20px;letter-spacing:.16em}
+  .stamp span{display:block;margin-top:6px;color:#9c8c72;font-size:15px;letter-spacing:.14em}
+  </style></head>
+<body><div class="cover">
+  <img class="bg" src="../源图/背景_生成图.png" alt="">
+  <div class="shade"></div><div class="glow"></div>
+  <div class="frame"></div>
+  <div class="inner">
+    <div class="top">
+      <div class="brand"><span class="diamond"></span>THE COVERAGE<span class="thin"></span>法魂整合包</div>
+      <div class="topright"><b>RANDOMIZER</b>v1.4.2 · 单机离线</div>
+    </div>
+    <div class="hero">
+      <div class="eyebrow">CONVERGENCE · RANDOMIZER</div>
+      <h1>法魂<span class="g">随机器</span></h1>
+      <div class="rule"><span class="l"></span><span class="d"></span><span class="r"></span></div>
+      <p class="sub">职业物品<em>×</em>敌人<em>×</em>BOSS —— 全部重新洗牌</p>
+      <p class="desc"><b>7 份内置预设</b> · 多阶段 / 双人 BOSS · 独立存档 · 本体零改动</p>
+      <div class="facts">
+        <div class="fact"><i></i><b>物品</b>只换地点，不换名字</div>
+        <div class="fact"><i></i><b>敌人</b>全图 2.4 万个位置重排</div>
+        <div class="fact"><i></i><b>方案</b>独立覆盖层 + 每套方案一份存档</div>
+      </div>
+    </div>
+    <div class="bottom">
+      <div>
+        <p class="tag">同一颗种子，<span>完全不同的交界地。</span></p>
+        <p class="tag-en">Same seed · a different world</p>
+      </div>
+      <div class="stamp"><b>本体零改动</b><span>一键还原 · 随时切回</span></div>
+    </div>
+  </div>
+</div></body></html>
