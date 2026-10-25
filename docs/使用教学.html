@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark">
+<title>法魂随机器 · 使用教学（发行版 v1.4.2）</title>
+<style>
+:root{
+  color-scheme: dark;
+  --bg:#0e0c0a; --panel:#191510; --panel2:#211b14; --line:#332a1e; --line2:#463721;
+  --gold:#e0b45f; --gold-b:#f3d493; --text:#e9e2d4; --muted:#a79b87; --dim:#7d7365;
+  --red:#d97a63; --green:#86bd92; --blue:#7fb0cf; --radius:14px; --maxw:1120px;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:84px}
+body{
+  margin:0;color:var(--text);
+  font:15.5px/1.8 "Noto Sans SC","Microsoft YaHei","PingFang SC",system-ui,-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background:
+    radial-gradient(1100px 560px at 82% -8%, rgba(224,180,95,.10), transparent 62%),
+    radial-gradient(820px 480px at -12% 28%, rgba(224,180,95,.05), transparent 58%),
+    var(--bg);
+}
+a{color:var(--gold);text-decoration:none}
+a:hover{text-decoration:underline}
+.skip{position:fixed;left:12px;top:-60px;z-index:99;background:var(--gold);color:#1b1409;padding:8px 14px;border-radius:8px;font-weight:700}
+.skip:focus{top:12px}
+.hero{max-width:var(--maxw);margin:0 auto;padding:54px 28px 30px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:28px;align-items:center;border-bottom:1px solid var(--line)}
+.kicker{font-size:12.5px;letter-spacing:.22em;color:var(--gold);text-transform:uppercase;margin:0 0 12px}
+.hero h1{margin:0;font-size:44px;line-height:1.15;letter-spacing:.03em;font-weight:800}
+.hero h1 small{display:block;font-size:16px;font-weight:500;letter-spacing:.18em;color:var(--muted);margin-top:12px}
+.lede{color:var(--muted);font-size:16px;margin:16px 0 0;max-width:56em}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:20px}
+.chip{font-size:12.5px;color:var(--gold-b);border:1px solid var(--line2);background:rgba(224,180,95,.07);border-radius:999px;padding:3px 11px}
+.crest{opacity:.55;filter:drop-shadow(0 0 22px rgba(224,180,95,.18))}
+.shell{max-width:var(--maxw);margin:0 auto;padding:26px 28px 90px;display:grid;grid-template-columns:252px minmax(0,1fr);gap:40px;align-items:start}
+.sidebar{position:sticky;top:18px;align-self:start;max-height:calc(100vh - 36px);overflow:auto;font-size:13.4px;padding:4px 2px 10px}
+.sidebar .toc-h{font-size:11.5px;letter-spacing:.2em;color:var(--dim);margin:0 0 10px 10px}
+.sidebar ol{list-style:none;margin:0;padding:0}
+.sidebar li{margin:0}
+.sidebar a{display:block;color:var(--muted);padding:4px 10px;border-left:2px solid transparent;border-radius:0 7px 7px 0;line-height:1.55}
+.sidebar a:hover{color:var(--text);background:rgba(224,180,95,.06);text-decoration:none}
+.sidebar a.sub{padding-left:24px;font-size:12.7px;color:var(--dim)}
+.sidebar a.active{color:var(--gold-b);border-left-color:var(--gold);background:linear-gradient(90deg,rgba(224,180,95,.13),transparent)}
+main{min-width:0}
+section{padding-top:44px;margin-top:44px;border-top:1px solid var(--line)}
+section:first-of-type{padding-top:0;margin-top:0;border-top:0}
+h2{font-size:27px;line-height:1.35;letter-spacing:.02em;margin:0 0 10px;display:flex;gap:13px;align-items:baseline}
+h2 .num{flex:none;font-size:12.5px;letter-spacing:.12em;color:var(--gold);border:1px solid var(--line2);border-radius:999px;padding:2px 10px;background:rgba(224,180,95,.05)}
+h3{font-size:19px;margin:30px 0 10px;color:var(--gold-b);letter-spacing:.01em}
+h4{font-size:15.5px;margin:18px 0 8px;color:var(--text)}
+p{margin:.62em 0}
+ul,ol{padding-left:1.35em;margin:.5em 0}
+li{margin:.32em 0}
+strong{color:var(--gold-b);font-weight:650}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;margin:16px 0}
+.card h4:first-child,.card h3:first-child{margin-top:0}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:14px}
+.table-wrap{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}
+table{width:100%;border-collapse:collapse;font-size:14.2px;min-width:520px}
+thead th{background:#231d14;color:var(--gold-b);text-align:left;padding:10px 13px;border-bottom:1px solid var(--line2);font-size:13.4px;letter-spacing:.02em;white-space:nowrap}
+td,th{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+tbody tr:last-child td{border-bottom:0}
+tbody tr:nth-child(even){background:rgba(255,255,255,.013)}
+td:first-child{white-space:nowrap}
+.callout{border-left:3px solid var(--gold);background:rgba(224,180,95,.06);padding:12px 16px;border-radius:0 11px 11px 0;margin:15px 0;color:var(--muted);font-size:14.6px}
+.callout strong{color:var(--text)}
+.callout.warn{border-color:var(--red);background:rgba(217,122,99,.075)}
+.callout.ok{border-color:var(--green);background:rgba(134,189,146,.065)}
+.badge{display:inline-block;padding:1px 8px;border-radius:999px;font-size:12px;border:1px solid;line-height:1.75;white-space:nowrap;vertical-align:1px}
+.b-on{color:#a8d8b4;border-color:rgba(134,189,146,.45);background:rgba(134,189,146,.10)}
+.b-off{color:var(--muted);border-color:var(--line2);background:rgba(255,255,255,.03)}
+.b-exp{color:#e8c98a;border-color:rgba(224,180,95,.45);background:rgba(224,180,95,.10)}
+.b-risk{color:#e6a08e;border-color:rgba(217,122,99,.45);background:rgba(217,122,99,.10)}
+.b-open{color:#a8cfe6;border-color:rgba(127,176,207,.40);background:rgba(127,176,207,.10)}
+kbd{font-family:inherit;background:#2a2318;border:1px solid var(--line2);border-bottom-width:2px;border-radius:6px;padding:1px 7px;font-size:13.2px;color:var(--gold-b);white-space:nowrap}
+code{font-family:"Cascadia Code",Consolas,"Courier New",monospace;background:#241e15;border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:13.1px;color:#e7d8ae;word-break:break-all}
+pre{background:#15110c;border:1px solid var(--line);border-radius:11px;padding:14px 16px;overflow:auto;font-size:13.1px;line-height:1.62;margin:14px 0}
+pre code{background:none;border:0;padding:0;color:#d9cfb8;word-break:normal}
+.steps{list-style:none;counter-reset:step;padding:0;margin:18px 0;display:grid;gap:10px}
+.steps li{counter-increment:step;position:relative;padding:12px 16px 12px 56px;background:var(--panel);border:1px solid var(--line);border-radius:12px}
+.steps li::before{content:counter(step);position:absolute;left:15px;top:13px;width:27px;height:27px;border-radius:50%;display:grid;place-items:center;font-size:13px;font-weight:800;color:#1b1409;background:linear-gradient(180deg,var(--gold-b),var(--gold));box-shadow:0 1px 0 rgba(255,255,255,.25) inset}
+.steps li b{color:var(--gold-b)}
+.tight li{margin:.1em 0}
+details{border:1px solid var(--line);border-radius:11px;background:var(--panel);margin:10px 0;padding:0 16px}
+details summary{cursor:pointer;padding:13px 0;font-weight:650;color:var(--text);list-style-position:inside}
+details summary:hover{color:var(--gold-b)}
+details[open] summary{color:var(--gold-b);border-bottom:1px solid var(--line);margin-bottom:10px}
+details .body{padding:0 0 14px;color:var(--muted);font-size:14.6px}
+details .body p:first-child{margin-top:0}
+.flow{margin:18px 0 6px;border:1px solid var(--line);border-radius:14px;background:linear-gradient(180deg,#181410,#13100c);padding:14px 12px 6px;overflow-x:auto}
+.flow svg{display:block;width:100%;min-width:660px;height:auto}
+.caption{color:var(--dim);font-size:13px;text-align:center;margin:2px 0 16px}
+.tag{display:inline-block;font-size:12.5px;color:var(--gold);border:1px dashed var(--line2);border-radius:6px;padding:0 7px;margin-right:6px}
+hr.sep{border:0;border-top:1px solid var(--line);margin:30px 0}
+footer{border-top:1px solid var(--line);padding:26px 28px 64px;color:var(--dim);font-size:13px;text-align:center;line-height:1.9}
+#toTop{position:fixed;right:22px;bottom:22px;width:44px;height:44px;border-radius:50%;background:var(--panel2);border:1px solid var(--line2);color:var(--gold);cursor:pointer;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;font-size:18px;z-index:20}
+#toTop.show{opacity:1;pointer-events:auto}
+#toTop:hover{transform:translateY(-2px)}
+@media (max-width:920px){
+  .hero{grid-template-columns:minmax(0,1fr);padding:40px 18px 26px}
+  .crest{display:none}
+  .hero h1{font-size:34px}
+  .shell{grid-template-columns:minmax(0,1fr);gap:8px;padding:18px 18px 70px}
+  .sidebar{position:static;max-height:300px;overflow:auto;border:1px solid var(--line);border-radius:12px;background:var(--panel);padding:12px;margin-bottom:8px}
+  .grid2{grid-template-columns:minmax(0,1fr)}
+  section{padding-top:34px;margin-top:34px}
+  h2{font-size:23px}
+}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
+@media print{
+  body{background:#fff;color:#111}
+  .sidebar,#toTop,.hero .crest{display:none}
+  .shell{display:block;max-width:none;padding:0}
+  .hero{border:0;padding:0 0 12px}
+  .hero h1{color:#111}
+  h2,h3,h4,strong{color:#111}
+  .card,.table-wrap,details,pre,.flow{border-color:#bbb;background:#fff}
+  a{color:#111;text-decoration:underline}
+}
+</style>
+</head>
+<body>
+<a class="skip" href="#main">跳到正文</a>
+
+<header class="hero">
+  <div>
+    <p class="kicker">THE COVERAGE · 法魂整合包 单机随机器</p>
+    <h1>法魂随机器<small>使用教学 · 发行版 v1.4.2</small></h1>
+    <p class="lede">把「说明书里的物品在哪儿」和「地图上的敌人是谁」重新洗一遍。<br>
+      每次随机只生成一套<strong>方案</strong>；开玩时才把它叠成一层覆盖文件。<strong>法魂本体一个字节都不改</strong>，
+      想回原版点一下「切回法魂本体」就行。</p>
+    <div class="badges">
+      <span class="chip">职业物品随机</span>
+      <span class="chip">敌人随机（含 BOSS）</span>
+      <span class="chip">7 份内置预设</span>
+      <span class="chip">独立存档 · 一键还原</span>
+      <span class="chip">离线可用</span>
+    </div>
+  </div>
+  <div class="crest" aria-hidden="true">
+    <svg width="190" height="190" viewBox="0 0 200 200" fill="none">
+      <circle cx="100" cy="100" r="92" stroke="#463721" stroke-width="1.4"/>
+      <circle cx="100" cy="100" r="74" stroke="#e0b45f" stroke-opacity=".55" stroke-width="1.1" stroke-dasharray="2 7"/>
+      <circle cx="100" cy="100" r="46" stroke="#e0b45f" stroke-opacity=".8" stroke-width="1.3"/>
+      <path d="M100 22v30M100 148v30M22 100h30M148 100h30" stroke="#e0b45f" stroke-opacity=".7" stroke-width="1.2"/>
+      <path d="M100 54l11 24 24 11-24 11-11 24-11-24-24-11 24-11 11-24z" stroke="#f3d493" stroke-opacity=".85" stroke-width="1.2"/>
+      <circle cx="100" cy="100" r="5.5" fill="#e0b45f" fill-opacity=".85"/>
+      <path d="M100 26l7 12-7 12-7-12 7-12zM100 174l7-12-7-12-7 12 7 12zM26 100l12 7 12-7-12-7-12 7zM174 100l-12 7-12-7 12-7 12 7z" fill="#e0b45f" fill-opacity=".5"/>
+    </svg>
+  </div>
+</header>
+
+<div class="shell">
+<aside class="sidebar" aria-label="目录">
+  <p class="toc-h">目录</p>
+  <ol>
+    <li><a href="#quick">快速上手（8 步）</a></li>
+    <li><a href="#know">01 认识它</a></li>
+    <li><a href="#install">02 安装与第一次运行</a></li>
+    <li><a href="#ui">03 界面与操作总览</a></li>
+    <li><a href="#item">04 物品随机</a></li>
+    <li><a href="#enemy">05 敌人随机</a></li>
+    <li><a class="sub" href="#enemy-pools">特殊池</a></li>
+    <li><a class="sub" href="#enemy-multiphase">多阶段 BOSS</a></li>
+    <li><a class="sub" href="#enemy-switches">开关与滑杆</a></li>
+    <li><a class="sub" href="#enemy-numbers">区域缩放与平衡</a></li>
+    <li><a class="sub" href="#presets">7 份内置预设</a></li>
+    <li><a class="sub" href="#editor">编辑逐类预设</a></li>
+    <li><a class="sub" href="#manual">手动指定位置</a></li>
+    <li><a class="sub" href="#enemy-notes">哪些默认不碰</a></li>
+    <li><a href="#library">06 方案库</a></li>
+    <li><a href="#play">07 开玩与独立存档</a></li>
+    <li><a href="#restore">08 还原、卸载、搬迁</a></li>
+    <li><a href="#cli">09 命令行的少量用法</a></li>
+    <li><a href="#files">10 文件与目录</a></li>
+    <li><a href="#faq">11 常见问题</a></li>
+    <li><a href="#versions">12 版本、边界与风险</a></li>
+  </ol>
+</aside>
+
+<main id="main">
+
+<section id="quick">
+  <h2><span class="num">START</span>快速上手（8 步）</h2>
+  <p class="lede">第一次用照着走一遍就行。全程只点界面里的按钮，不需要装 mod 管理器，也不需要改游戏文件。</p>
+  <ol class="steps">
+    <li><b>放好 exe</b>：把 <code>ConvergenceClassItemRandomizer.exe</code> 放进法魂整合包里「和 <code>mod</code> 文件夹、<code>启动法魂.bat</code> 并排」的那一层。</li>
+    <li><b>双击打开</b>：第一次启动会在 exe 旁边生成 <code>investigation</code> 文件夹（别删）。等「本地文件」自检跑完；缺「原始备份」就点 <kbd>补一份原始备份</kbd>。</li>
+    <li><b>勾要随机的类型</b>：页签标题前的勾选框 —— 勾「职业物品随机」/「敌人随机」，或者两个都勾（底部按钮会变成「开始随机物品和敌人」）。</li>
+    <li><b>物品页先只调一件事</b>：<b>合理度保持 80%</b>。随机项目至少勾一项（卢恩 / 护甲 / 装备）。第一次不用动「更多设置」。</li>
+    <li><b>敌人页先选预设</b>：配置选 <b>01 参考默认·同族池</b>；四个特殊池保持默认全开；其它开关先不动。</li>
+    <li><b>点底部主按钮</b>：<kbd>开始随机物品和敌人</kbd>。它会生成一套方案并<b>自动存进方案库</b>，同时跳到方案库页。</li>
+    <li><b>双击刚生成的那一行</b>：第一次开玩会先生成覆盖层（只物品几十秒；含敌人约 3 分钟）→ 换档 → 挂载 → 起游戏。</li>
+    <li><b>想回原版</b>：退出游戏，点 <kbd>切回法魂本体</kbd>（只是不挂层）。本体从来没被动过，不用还原。</li>
+  </ol>
+  <div class="callout ok"><strong>一句话记住流程：</strong>「开始随机」= 造一套方案，不写游戏文件；「双击方案」= 生成覆盖层并开玩。方案可以存很多套，互不覆盖。</div>
+</section>
+
+<section id="know">
+  <h2><span class="num">01</span>认识它</h2>
+  <p>这是一个给《艾尔登法环》<strong>法魂汉化整合包（游戏 1.17.1）</strong>用的单机随机器，两个玩法：</p>
+  <div class="grid2">
+    <div class="card">
+      <h4>职业物品随机</h4>
+      <p>把游戏里<strong>本来就存在</strong>的物品出现位置重洗：宝箱 / 掉落里放什么、职业说明书里写的地点、可选把商店在售的职业专属装备一起换。</p>
+      <p class="caption" style="text-align:left;margin-bottom:0">不新增物品，不改物品名 / 数量 / 概率 / 价格 / 解锁条件。</p>
+    </div>
+    <div class="card">
+      <h4>敌人随机</h4>
+      <p>把地图上摆着的敌人换成别的敌人：普通杂兵、野生生物、BOSS 都能按规则互换；可改 BOSS 血条名、按区域强度缩放换入者。</p>
+      <p class="caption" style="text-align:left;margin-bottom:0">改的是<b>克隆行</b>，原 NpcParam 一行不动；地图布局、事件流程也不动。</p>
+    </div>
+  </div>
+  <h3>它为什么敢说「本体一个字节都不改」</h3>
+  <p>因为所有产物都落在<strong>方案层</strong>里，而不是写回法魂本体：</p>
+  <ul class="tight">
+    <li>每次随机 = 一套<strong>方案</strong>（存在 <code>plans\</code> 里的 JSON：设置 + 种子 + 计划 + 版本指纹）；</li>
+    <li>开玩时才按方案生成<strong>覆盖层</strong>：<code>法魂包\方案\&lt;层名&gt;\mod\</code>，里面是 <code>regulation.bin</code>、说明书、地图、事件等一整套文件；</li>
+    <li>启动器把这一层「盖」在法魂本体上（<code>yafsml\YAFSML.ini</code> 里的 <code>Plan=</code> 一行），游戏读到的是层里的文件；</li>
+    <li>不玩了就删掉挂载（<kbd>切回法魂本体</kbd>）—— 法魂本体那份 <code>mod\regulation.bin</code> 始终是原样。</li>
+  </ul>
+  <h3>它到底改了什么</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>会改</th><th>不会改</th></tr></thead>
+    <tbody>
+      <tr><td>宝箱 / 掉落里放什么</td><td>宝箱在哪儿、有几个</td></tr>
+      <tr><td>说明书写的地点</td><td>物品名、字体、字号</td></tr>
+      <tr><td>商店在售的职业装备（可选，默认关）</td><td>数量、概率、价格、库存、解锁条件、事件流程</td></tr>
+      <tr><td>地图上敌人的<b>种类</b>（改克隆行）</td><td>敌人原来的 NpcParam 行</td></tr>
+      <tr><td>BOSS 血条上显示的名字</td><td>敌人摆的位置 / 数量（敌人倍增默认关）</td></tr>
+      <tr><td>换入敌人的强度（按区域缩放的 SpEffect）</td><td>事件流程、地图布局、BOSS 阶段脚本</td></tr>
+      <tr><td>—</td><td>游戏本体（法魂本体文件一个字节都不动）</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><strong>先用之前知道三件事：</strong>① 只能单人离线玩，<b>不能联机</b>；② 玩多套方案前先关掉 Steam 云存档；③ 用前请自己备份一份存档。工具不联网，未签名的 exe 被杀软提示属正常。</div>
+</section>
+
+<section id="install">
+  <h2><span class="num">02</span>安装与第一次运行</h2>
+  <h3>2.1 需要准备什么</h3>
+  <ul class="tight">
+    <li>Windows；《艾尔登法环》<strong>法魂汉化本体 1.17.1</strong>（新版 YAFSML 启动器）整合包；</li>
+    <li>随机器 <code>ConvergenceClassItemRandomizer.exe</code>（发行包解压即得）；</li>
+    <li>建议：整合包原版 <code>regulation.bin</code> 的一份备份（工具也会自己留，但自己留一份最稳）；</li>
+    <li>不需要 mod 管理器；不需要联网。</li>
+  </ul>
+  <h3>2.2 放在哪里</h3>
+  <p>判据只有一条：<strong>exe 所在层（或往上一两层）里有 <code>mod\regulation.bin</code></strong>。最省事的摆法是把 exe 直接放在法魂整合包根目录：</p>
+  <pre><code>法魂整合包\
+├─ mod\regulation.bin          ← 法魂本体（工具永远不写这里）
+├─ yafsml\YAFSML.ini           ← 启动器配置（Plan= 挂载开关在这里）
+├─ 启动法魂.bat
+├─ ConvergenceClassItemRandomizer.exe   ← 把 exe 放这一层
+├─ investigation\              ← 第一次运行自动生成（原始备份、预设、手工表都在里面）
+├─ plans\                      ← 方案库（每次随机自动保存）
+├─ 方案\                       ← 每次开玩生成的覆盖层
+└─ 存档库\                     ← 每套方案自己的独立存档</code></pre>
+  <p class="caption">找不到也不要紧：打开程序点 <kbd>指定 MOD 目录…</kbd> 手动选一次即可；以后整个文件夹搬到别的盘 / 改名，它会按「哪层有 mod\regulation.bin」重新找。</p>
+  <h3>2.3 第一次运行：本地文件自检</h3>
+  <p>第一次打开会在 exe 旁边生成工作文件（几秒）。「本地文件」卡会逐项检查，<strong>缺必需项会禁用开始按钮</strong>：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>检查项</th><th>它在确认什么</th><th>缺了怎么办</th></tr></thead>
+    <tbody>
+      <tr><td>MOD 根目录</td><td>找没找到法魂整合包（<code>mod\regulation.bin</code>）</td><td>点「指定 MOD 目录…」重选</td></tr>
+      <tr><td>游戏物品数据</td><td>本体 <code>regulation.bin</code> 能不能读</td><td>确认整合包完整、游戏版本对</td></tr>
+      <tr><td>游戏说明书</td><td>职业说明书 <code>item_dlc02.msgbnd.dcx</code> 在不在</td><td>重装 / 补全汉化本体</td></tr>
+      <tr><td>目录可写</td><td>整合包目录能不能写文件</td><td>别放 C:\Program Files；换到普通目录</td></tr>
+      <tr><td>原始备份</td><td>有没有一份「原版」基线（<b>必需，2/2</b>）</td><td>点 <kbd>补一份原始备份</kbd>（前提是本体还没被改过）</td></tr>
+      <tr><td>说明书基准</td><td>说明书基线是否登记</td><td>同「原始备份」一起补</td></tr>
+      <tr><td>随机引擎</td><td>生成计划用的数据与代码是否就绪</td><td>重开程序；仍失败看 exe 旁日志</td></tr>
+    </tbody>
+  </table></div>
+  <p>其它按钮：<kbd>重新检测</kbd> 重跑一遍；<kbd>逐项详情▸</kbd> 展开看每一项的实际路径与错误原因。</p>
+  <h3>2.4 第一次运行的两个小坑</h3>
+  <ul class="tight">
+    <li><b>别删 <code>investigation</code> 文件夹</b>：原始备份在 <code>investigation\apply\backup</code>，删了之后「还原成原始」就没有基线了。</li>
+    <li><b>报找不到 <code>oo2core_*_win64.dll</code></b>：打开游戏安装目录里的 <code>Game</code> 文件夹，把 <code>oo2core_*_win64.dll</code> 复制到 <b>exe 旁边的 <code>oodle</code> 文件夹</b>（没有就新建）。放一次即可。</li>
+  </ul>
+  <div class="callout warn"><strong>「原始备份」必须是真的原版。</strong>如果第一次补备份时本体已经被随机过（比如用过 2026-10-23 之前「直接写本体」的老版本），工具会拒绝登记或写入时提示「写前复核未通过」。处理：把法魂 mod 原版 <code>regulation.bin</code> 放回本体 → 再点「补一份原始备份」。</div>
+</section>
+
+<section id="ui">
+  <h2><span class="num">03</span>界面与操作总览</h2>
+  <h3>3.1 三个页签</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>页签</th><th>干什么</th><th>怎么参与本次随机</th></tr></thead>
+    <tbody>
+      <tr><td>职业物品随机</td><td>选随机项目、混合方式、合理度，生成物品方案</td><td>把页签标题前的<b>勾选框勾上</b></td></tr>
+      <tr><td>敌人随机</td><td>选预设 / 调开关 / 预览，生成敌人方案</td><td>同上</td></tr>
+      <tr><td>📚 方案库</td><td>管理所有方案、开玩、独立存档</td><td>不参与随机（没有勾选框）</td></tr>
+    </tbody>
+  </table></div>
+  <h3>3.2 顶栏与底栏</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>位置</th><th>元素</th><th>意思</th></tr></thead>
+    <tbody>
+      <tr><td>顶栏</td><td>引擎 / MOD 状态灯</td><td>检测中 / 已连接 / 未找到；红了就先解决环境再点开始</td></tr>
+      <tr><td>底栏</td><td>种子 + <kbd>换一个</kbd> + ☑ 每次开始随机都换种子</td><td>默认每次自动换种子；取消勾选 = 用同一个种子复现同一套结果</td></tr>
+      <tr><td>底栏</td><td><b>主按钮</b></td><td>文案会跟着勾选变，见 3.3</td></tr>
+      <tr><td>底栏</td><td><kbd>还原成原始</kbd></td><td>把本体两个文件放回原版（只对 2026-10-23 前直写本体的老行为需要）</td></tr>
+      <tr><td>底栏</td><td><kbd>打开方案库</kbd></td><td>跳到方案库页</td></tr>
+      <tr><td>底栏</td><td>状态行 / 「这次会随机 物品：…」</td><td>当前进度与本次勾选摘要；卡住时看这一行</td></tr>
+    </tbody>
+  </table></div>
+  <h3>3.3 底部主按钮会变成什么</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>勾选状态</th><th>按钮文案</th><th>点下去发生什么</th></tr></thead>
+    <tbody>
+      <tr><td>物品 + 敌人</td><td>开始随机物品和敌人</td><td>先生成物品方案，再生成敌人方案，合成一套「物品+敌人」存进方案库</td></tr>
+      <tr><td>只勾物品</td><td>开始随机物品</td><td>只生成物品方案，存进方案库</td></tr>
+      <tr><td>只勾敌人</td><td>开始随机敌人</td><td>只把敌人设置存成方案（同样不写盘，开玩时再生成层）</td></tr>
+      <tr><td>都没勾 / 环境坏</td><td>按钮置灰</td><td>先勾类型或修环境</td></tr>
+    </tbody>
+  </table></div>
+  <h3>3.4 一次随机的完整旅程</h3>
+  <div class="flow" role="img" aria-label="流程图：勾选与设置 → 开始随机 → 方案库 → 生成覆盖层 → 挂载开局 → 退出回存">
+    <svg viewBox="0 0 948 196">
+      <defs>
+        <marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path d="M0 0L10 5L0 10z" fill="#e0b45f"/>
+        </marker>
+      </defs>
+      <g font-family="Microsoft YaHei, sans-serif">
+        <g>
+          <rect x="6" y="34" width="138" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="75" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">勾选 + 设置</text>
+          <text x="75" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">物品 / 敌人 / 预设</text>
+        </g>
+        <line x1="146" y1="65" x2="166" y2="65" stroke="#e0b45f" stroke-width="1.2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="169" y="34" width="138" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="238" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">开始随机</text>
+          <text x="238" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">造一套方案</text>
+        </g>
+        <line x1="309" y1="65" x2="329" y2="65" stroke="#e0b45f" stroke-width="1.2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="332" y="34" width="138" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="401" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">方案库</text>
+          <text x="401" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">自动保存 · 不写盘</text>
+        </g>
+        <line x1="472" y1="65" x2="492" y2="65" stroke="#e0b45f" stroke-width="1.2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="495" y="34" width="138" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="564" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">生成覆盖层</text>
+          <text x="564" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">首次开玩 · 按需</text>
+        </g>
+        <line x1="635" y1="65" x2="655" y2="65" stroke="#e0b45f" stroke-width="1.2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="658" y="34" width="138" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="727" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">挂载 · 开局</text>
+          <text x="727" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">换档 → Plan=</text>
+        </g>
+        <line x1="798" y1="65" x2="818" y2="65" stroke="#e0b45f" stroke-width="1.2" marker-end="url(#ar)"/>
+        <g>
+          <rect x="821" y="34" width="121" height="62" rx="12" fill="#1a1611" stroke="#463721"/>
+          <text x="881" y="60" fill="#e9e2d4" font-size="14" text-anchor="middle">退出回存</text>
+          <text x="881" y="82" fill="#a79b87" font-size="11.5" text-anchor="middle">进度进本方案的档</text>
+        </g>
+        <text x="6" y="132" fill="#7d7365" font-size="11.5">随机不碰游戏文件</text>
+        <text x="332" y="132" fill="#7d7365" font-size="11.5">双击方案才开始</text>
+        <text x="495" y="132" fill="#7d7365" font-size="11.5">只物品几十秒 · 含敌人约 3 分钟</text>
+        <text x="821" y="132" fill="#7d7365" font-size="11.5">下次直接开局</text>
+        <text x="6" y="168" fill="#a79b87" font-size="12">绿色的那一步只在「开玩」时发生；方案可以存很多套，互不覆盖。</text>
+      </g>
+    </svg>
+  </div>
+  <p class="caption">从勾选到进游戏：随机 = 造方案；开玩 = 生成层并挂载；退出 = 进度自动存回这套方案自己的存档。</p>
+</section>
+
+<section id="item">
+  <h2><span class="num">04</span>物品随机</h2>
+  <p class="lede">把「什么东西、在哪儿」重新洗一遍。你只需要做四个决定：<strong>随机什么</strong> → <strong>怎么混</strong> → <strong>允许多乱（合理度）</strong> → <strong>要不要动商店</strong>。</p>
+
+  <h3>4.1 先看懂这张卡片上的四步</h3>
+  <ol class="steps">
+    <li><b>第 1 步 · 随机项目</b>：卢恩 / 护甲 / 装备（武器）—— 至少勾一项；勾几项，下面就决定怎么混。</li>
+    <li><b>第 2 步 · 合理度</b>：一个滑杆同时管「最远跨几档 / 多少东西真的跨档 / 武器掺进混池的上限」。<b>第一次保持 80%</b>。</li>
+    <li><b>更多设置（默认折叠）</b>：法祷整套一起换 / 说明书跟着改 / 商店参与 / 改动比例。第一次可以先不看。</li>
+    <li><b>点底部主按钮</b>：生成方案 → 自动存进方案库 → 跳到方案库。这一步<b>不碰任何游戏文件</b>。</li>
+  </ol>
+  <div class="callout"><strong>生成不是写入。</strong>物品方案生成后只是一个 JSON；真正的物品数据是在「开玩」生成覆盖层时才写进 <code>法魂包\方案\&lt;层名&gt;\mod\</code> 的，法魂本体不参与。</div>
+
+  <h3 id="item-mode">4.2 随机项目与混合方式</h3>
+  <h4>随机项目（三选一或全选）</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>项目</th><th>会洗什么</th></tr></thead>
+    <tbody>
+      <tr><td>卢恩</td><td>卢恩（符文）在游戏里的获取位置 / 说明书地点</td></tr>
+      <tr><td>护甲</td><td>护甲套装与散件（含法祷职业护甲；法祷永远单独成组）</td></tr>
+      <tr><td>装备（武器）</td><td>近战武器 / 触媒 / 盾牌等装备</td></tr>
+    </tbody>
+  </table></div>
+  <h4>混合方式</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>方式</th><th>意思</th><th>适合</th></tr></thead>
+    <tbody>
+      <tr><td>全部混合</td><td>勾选的几个大类的物品放进<b>同一个池</b>互相换（法祷护甲始终不掺进去）</td><td>想让世界彻底变样</td></tr>
+      <tr><td>两两混 · 剩下独自</td><td>只在勾满三项时出现在下拉里：<br>卢恩 + 护甲混 / 装备独自；卢恩 + 装备混 / 护甲独自；护甲 + 装备混 / 卢恩独自</td><td>只想让两类互相串，第三类保持原味</td></tr>
+      <tr><td>各自随机</td><td>每个大类<b>各自一个池</b>，只在本类内部换</td><td>最稳，不容易出「法师护甲里开出大剑」这种错位感</td></tr>
+    </tbody>
+  </table></div>
+  <p><span class="tag">只换已有的东西</span>它只重排游戏里本来会出现的物品，不会凭空塞新物品；也不会改物品名、数量、掉落概率。</p>
+
+  <h3 id="item-coh">4.3 合理度：一个滑杆，三件事</h3>
+  <div class="grid3">
+    <div class="card"><h4>1. 最远跨几档</h4><p>物品按等级/强度分档。合理度越高，越倾向「同档位互换」；越低，越可能抽到跨度大的东西。</p></div>
+    <div class="card"><h4>2. 多少东西真的跨档</h4><p>越档不是不可能，而是按概率发生：<b>越档率 ≈ 100% − 合理度</b>。80% ⇒ 最多约 20% 的位置会跨出允许的跨度。</p></div>
+    <div class="card"><h4>3. 武器掺进混池的上限</h4><p>混池里武器占比有硬上限 <b>66%</b>，不会出现「一池子全是武器」。</p></div>
+  </div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>合理度</th><th>档位跨度</th><th>越档率</th><th>手感</th></tr></thead>
+    <tbody>
+      <tr><td><b>100%</b></td><td>1/4 · 只能同档位互换</td><td>0%</td><td>最保守，基本只换同强度物品</td></tr>
+      <tr><td><b>80%</b>（默认）</td><td>2/4 · 相邻两档可互换</td><td>≤ 20%</td><td><b>推荐第一次就用这个</b></td></tr>
+      <tr><td>约 50%</td><td>3/4 · 三档以内可互换</td><td>≤ 50%</td><td>明显变乱，前期可能捡到后期货</td></tr>
+      <tr><td><b>0%</b></td><td>4/4 · 等级完全放开</td><td>100%</td><td>最疯，纯娱乐</td></tr>
+    </tbody>
+  </table></div>
+  <p>滑杆下面会实时写清「档位：X/4（合理度 N%，跨度 n/4）」，不用自己算。</p>
+
+  <h3 id="item-coh-rows">4.4 单池合理度（会跟着混合方式自动出现）</h3>
+  <p>混合方式不同，「单池合理度」那几行会出现得不一样 —— 这是设计，不是 bug：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>混合方式</th><th>上面那条「总合理度」</th><th>下面出现几条</th></tr></thead>
+    <tbody>
+      <tr><td>全部混合</td><td>可用，<b>统管混池</b></td><td>一条都不出现（三类都进了混池）</td></tr>
+      <tr><td>两两混</td><td>可用，统管混池</td><td>只有「落单那一类」一条</td></tr>
+      <tr><td>各自随机</td><td><b>置灰</b>（它不参与）</td><td>卢恩 / 护甲 / 装备 各一条</td></tr>
+    </tbody>
+  </table></div>
+  <p>没动过的那几条会<b>跟着总合理度走</b>；一旦你单独拖过某一条，它就不再跟随。法祷护甲永远没有单池合理度（它不分级，合理度对它没意义）。</p>
+
+  <h3 id="item-more">4.5 更多设置（默认折叠）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>设置</th><th>默认</th><th>作用与边界</th></tr></thead>
+    <tbody>
+      <tr><td>法祷护甲整套一起换</td><td><span class="badge b-on">开</span></td><td>勾上 = 一整套（头/身/手/腿）换成同一套；不勾 = 按部位各自换，可能出现混搭</td></tr>
+      <tr><td>说明书跟着一起改</td><td><span class="badge b-on">开</span></td><td>职业说明书里写的获取地点跟着方案改；关掉则说明书保持原版（东西还是换了）</td></tr>
+      <tr><td>商店里的职业装备也一起换</td><td><span class="badge b-off">关</span></td><td>只动商店里在售的<b>职业专属装备 69 行</b>（法祷护甲 50 / 近战 16 / 武器 2）；其余 1,485 行不动。价格、限量、解锁条件都不动；货架与宝箱/掉落同步换</td></tr>
+      <tr><td>改动比例（法祷职业护甲）</td><td>100%</td><td>只对法祷护甲生效：100% = 全换；拉低 = 只换一部分。勾掉「整套一起换」时，这条的标签会从「整套」变成「散件」。商店没有比例条</td></tr>
+    </tbody>
+  </table></div>
+  <p>这一栏底部还有四个老按钮：<kbd>保存这套设置</kbd> / <kbd>读取设置</kbd> / <kbd>导出方案表</kbd> / <kbd>打开输出文件夹</kbd>。日常用不到；想反复用同一套参数可以用保存/读取。</p>
+
+  <h3 id="item-seed">4.6 种子：想复现就关掉自动换</h3>
+  <ul class="tight">
+    <li>底栏的种子就是这整套结果的「随机数钥匙」；同一个种子 + 同一套设置 = <b>完全一样的结果</b>。</li>
+    <li>默认勾着「每次开始随机都换种子」；想对比两套设置、或者想重玩同一套，取消勾选、手动填种子即可。</li>
+    <li>种子会一起存进方案；以后「载入到设置」还能把当时的参数填回来。</li>
+  </ul>
+
+  <h3 id="item-after">4.7 生成之后看什么</h3>
+  <p>生成完跳回方案库之前，「结果」卡与「详细记录」会告诉你这次改了什么：</p>
+  <ul class="tight">
+    <li><b>这次会改什么</b>：一句话总结（改了多少格、分类明细等）；</li>
+    <li><b>详细记录 → 检查项</b>：逐项自检（备份、复核、基线）是否通过；</li>
+    <li><b>详细记录 → 前 300 条替换</b>：原来是什么 / 换成了什么 / 在哪儿（这是抽样展示，不是全部）；</li>
+    <li><b>详细记录 → 日志</b>：完整过程，出问题时把这一段发出来最有用。</li>
+  </ul>
+
+  <h3 id="item-recipes">4.8 三个建议配方</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>你想要</th><th>怎么设</th></tr></thead>
+    <tbody>
+      <tr><td>第一次，稳一点</td><td>随机项目全勾；混合方式「各自随机」；合理度 <b>85–90%</b></td></tr>
+      <tr><td>世界大变样</td><td>随机项目全勾；混合方式「全部混合」；合理度 <b>60–75%</b></td></tr>
+      <tr><td>只想换装备</td><td>只勾「装备（武器）」；混合方式自动无意义（只有一类）；合理度 80%</td></tr>
+      <tr><td>物品 + 敌人一起</td><td>两个页签都勾 → 底部按钮变「开始随机物品和敌人」→ 开玩时两者叠进<b>同一个</b>覆盖层</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="enemy">
+  <h2><span class="num">05</span>敌人随机</h2>
+  <p class="lede">把地图上摆着的敌人换成别的敌人。它有一套完整的「规则 → 来源 → 写入」管线，默认就很克制；想乱也有现成的预设。</p>
+
+  <h3 id="enemy-model">5.1 它怎么工作：三条链路</h3>
+  <div class="grid3">
+    <div class="card">
+      <h4>① 位置（谁）</h4>
+      <p>全游戏 <b>27,780</b> 条敌人摆放记录，先被分成 <b>9 个可见类 + 6 个内部标记类</b>。内部标记类（随从、复制体、粪金龟等）只用来标记「不能动」，不参与随机、不当来源、也不进界面。</p>
+    </div>
+    <div class="card">
+      <h4>② 规则（换成谁）</h4>
+      <p>四类特殊规则先行（多阶段 BOSS / 传送门守门 / 有血条的 BOSS 位 / 劳弗圣龛），其余按<b>逐类预设</b>：每个目标类有自己的「换入来源百分比」。</p>
+    </div>
+    <div class="card">
+      <h4>③ 写入（怎么落地）</h4>
+      <p>克隆 NpcParam 行 → 换地图实体的模型 / npc / AI / 外观四字段 → 改血条名 → 给克隆行挂一条<b>区域强度 SpEffect</b>。<b>原 NpcParam 表一行不动</b>。</p>
+    </div>
+  </div>
+  <p>默认计划（不选预设）的规模：<b>25,656 个随机单元 → 22,509 个被替换 → 覆盖 24,459 个位置</b>，跳过 3,147 个。选预设后数字会略有不同，界面预览会给你当前这套的准确数字。</p>
+
+  <h3 id="enemy-pools">5.2 四个特殊池（默认全开）</h3>
+  <p>有些位置不是普通刷怪点，而是特殊玩法的一部分。它们被单独编成「池」，勾选框管三件事：<b>池里的位置要不要随、池能不能当别人的来源、池内位置自己选什么来源</b>。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>池</th><th>是什么</th><th>默认</th><th>关掉会怎样</th></tr></thead>
+    <tbody>
+      <tr><td>黄金树传送门</td><td>各地传送门旁的守门敌人（固定搭配，换错了位置会变得很怪）</td><td><span class="badge b-on">开</span></td><td>守门位保持原样，别的随机不受影响</td></tr>
+      <tr><td>大锅钥石</td><td>大锅 / 钥石相关的重要守门位</td><td><span class="badge b-on">开</span></td><td>这些位置保持原样</td></tr>
+      <tr><td>追忆</td><td>追忆 BOSS 相关的位置（48 个左右）</td><td><span class="badge b-on">开</span></td><td>追忆位保持原样</td></tr>
+      <tr><td>劳弗圣龛</td><td>9 座圣龛其实是<b>同一场战斗</b>（同一个竞技场实体，只是点亮不同旗标），所以 9 座整组换成同一只别的 BOSS</td><td><span class="badge b-on">开</span></td><td>圣龛恢复原样（只影响这一组）</td></tr>
+    </tbody>
+  </table></div>
+  <p>池子还有两种进阶用法：<b>当来源</b>（比如「常规敌人只从追忆池里抽」）和<b>池内位置单独选来源</b>（点开左边树的池子节点编辑）。</p>
+
+  <h3 id="enemy-multiphase">5.3 多阶段 BOSS（常开，无开关）</h3>
+  <p>有些 BOSS 打起来会变身、换模型、换血条。数据里把它们编成 <b>14 组 / 20 只 BOSS / 33 个位置</b>，默认<b>位置参与替换、身份也能当来源</b>。</p>
+  <h4>按模型拆 BOSS</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>情况</th><th>怎么算</th><th>例子</th></tr></thead>
+    <tbody>
+      <tr><td>同一个模型（变身 / 多管血条）</td><td>算<b>一只</b> BOSS：整组共用一个换入身份、同一份血量</td><td>玛利喀斯、拉卡德、拉塔恩、梅瑟莫、玛莲妮亚、火焰巨人、幽影树化身（6 个实体一起换）、融泥骑士（骑士 + 坐骑）</td></tr>
+      <tr><td>不同模型（换了个身体）</td><td>算<b>多只</b> BOSS：各自独立随机</td><td>荷莱·露、蕾娜菈、达格拉夫、拉达冈 / 艾尔登之兽、受封印神祇之嗣、米德拉</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="tight">
+    <li><b>池开关对整组生效</b>：组内任一位置所在的池被关掉 → 整组都不参与（原子，不会只换一半）。</li>
+    <li><b>只换身份，不搬事件</b>：目标场地仍然跑原来的雾门、死亡、奖励、剧情事件。</li>
+    <li><b>v1.4.2 起「当来源只取一阶段身份」</b>：同一个 BOSS 只留一个代表身份进来源池（血条名 = 模型常用名的那个，即一阶段）。以前二阶段身份也会被抽去克隆到别的战场，结果是「血条名是二阶段，打起来只有一阶段招式」—— 修的是名实相符，<b>不是</b>让二阶段招式跟过去。不同模型的两只（如拉达冈 / 艾尔登之兽）两个身份仍然都能当来源。</li>
+    <li>数据里另有 <b>1 组龙人士兵默认关</b>（阶段依赖未验证，界面不暴露）；想试需要改 <code>enemy_classes_v3.yaml</code> 里的 <code>enabled: false</code>，属高级操作。</li>
+  </ul>
+
+  <h3 id="enemy-switches">5.4 开关、滑杆与下拉</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>控件</th><th>默认</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td>改 BOSS 血条名</td><td><span class="badge b-on">开</span></td><td>换进去的敌人，血条显示它自己的名字（这套计划里约 193 张图 / 252 个位置实际改名）</td></tr>
+      <tr><td>夜间 BOSS 全天出现</td><td><span class="badge b-off">关</span></td><td>原本只在夜里出的 BOSS，白天也能遇上</td></tr>
+      <tr><td>忽略场地 / 体型限制</td><td><span class="badge b-off">关</span></td><td>默认会拦「大体型 BOSS 塞进小房间」这类组合；勾上 = 不拦（更容易卡墙 / 穿模）</td></tr>
+      <tr><td>BGM 跟新 BOSS</td><td><span class="badge b-off">关</span></td><td>战斗音乐换成换入 BOSS 的曲子</td></tr>
+      <tr><td>卢恩跟新 BOSS</td><td><span class="badge b-off">关</span></td><td>击杀给多少卢恩跟着换进去的敌人走</td></tr>
+      <tr><td>随机化敌人颜色</td><td><span class="badge b-off">关</span> <span class="badge b-exp">实验</span></td><td>给克隆行挂一串纯色，视觉上区分；纯实验，默认关</td></tr>
+      <tr><td>双人 BOSS 第二只也随机</td><td><span class="badge b-on">开</span> <span class="badge b-exp">实验</span></td><td>6 组双人战的「第二只」也单只互换（保留实体、只换身份 + 血条名、血量按原比例、魂 0）；关掉 = 那 6 个位置保持原样，其它随机完全不受影响</td></tr>
+      <tr><td>生命值倍率 0.5–2.0×</td><td>1.00×</td><td>只改血量，别的都不动；想整体更难就往上拉</td></tr>
+      <tr><td>全替换为（Oops All）</td><td>不启用（按规则表）</td><td>把某个类「全替换成」下拉里选的类 / 池 —— 用于「所有杂兵都变成某类」的实验玩法；默认不启用</td></tr>
+      <tr><td>敌人倍增 1.0–2.0×</td><td>1.00×</td><td>实验：只复制<b>普通敌人</b>，BOSS / 传送门 / 多阶段不动；1.0 = 关</td></tr>
+      <tr><td>比例 5%–100%</td><td>100%</td><td>这次只替换多少比例的位置（相当于「半个世界」）</td></tr>
+      <tr><td>种子</td><td>默认同物品种子</td><td>可改；同一个种子 + 同一套设置 = 同一套敌人分布</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout warn"><strong>两个「实验」项如实说：</strong>它们是最容易出 T-pose / 悬空 / 演出卡住的开关。第一次玩建议保持默认（颜色关、双人第二只开）；如果某个位置看起来坏了，先关掉对应开关或换回 01 预设重建方案。</div>
+
+  <h3 id="enemy-numbers">5.5 区域缩放与 BOSS 数值平衡</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>区域缩放（每个位置单独算）</h4>
+      <p>换入的敌人按<b>它所在区域的强度档</b>重新算血量 / 攻击 / 防御 / 抗性 / 魂：每个位置一条独立 SpEffect，挂在克隆行上，<b>原始表一行不改</b>。所以把盖利德的 BOSS 换到宁姆格福，它会<b>变弱</b>；反过来变强。</p>
+      <p><b>BOSS 换进杂兵位还要再压一档</b>（血 ×0.25 / 魂 ×0.25 / 攻击 ×0.5），否则就成了「血量像杂兵、打人还是 BOSS」。</p>
+    </div>
+    <div class="card">
+      <h4>BOSS 数值平衡（默认自动带）</h4>
+      <p>BOSS→BOSS 的位置，血量按<b>这个位置原来那只 BOSS 的强度</b>对齐（不是按换入者自己的原版血量）：分位分层抽（k=10）+ 硬夹在 <b>0.85–1.25 倍</b>。</p>
+      <p>前期区域不会出现「后期 BOSS 的巨血」，后期也不会换进来一个一刀就死的纸糊 BOSS；杂兵位不动，写盘仍是克隆行 + 区域 SpEffect。</p>
+    </div>
+  </div>
+  <div class="callout ok"><strong>v1.4.1 修过一个双重缩放：</strong>以前「普通位置换成 BOSS」会被扣两次血（写盘 ×0.25 之后，平衡层又按写盘前的值锚一次），实际只剩位置原血量的约 0.25。现在有效血量回到<b>位置原强度 ±25%</b>（01 预设那 29 个位置实测 p50 ≈ 0.98×）。如果你还在用旧版，换成当前版本就好。</div>
+  <p>三个开关的差别：<b>区域缩放</b>是自动的、永远生效；<b>BOSS 平衡</b>默认自动带（高级用法在计划里关 <code>features.balance</code>）；<b>生命值倍率</b>是叠加在这两者之上的整体微调。</p>
+
+  <h3 id="presets">5.6 七份内置预设</h3>
+  <p>打开「敌人随机」页 → 配置下拉里直接选。预设只影响<b>计划</b>；不点开始 / 预览就不会写任何文件。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>预设</th><th>思路</th><th>适合</th><th>实测替换位置（种子 99）</th></tr></thead>
+    <tbody>
+      <tr><td><b>01 参考默认·同族池</b></td><td>杂兵各自同族；BOSS 六类温和加权互抽，并按难度分层：主要 BOSS 位多抽追忆 / 楔石</td><td>第一次用、想接近参考 mod 默认</td><td>24,458</td></tr>
+      <tr><td>02 Boss 大乱斗</td><td>杂兵同族；BOSS 六类互抽且强分层（主要 BOSS 位追忆 25% + 楔石 15%）</td><td>想每只 BOSS 都可能变成别的 BOSS</td><td>24,458</td></tr>
+      <tr><td>03 杂兵大乱斗</td><td>常规 ↔ 野生互混；BOSS 位保持同族、只收难池</td><td>只想让杂兵热闹</td><td>24,455</td></tr>
+      <tr><td>04 全员大乱斗</td><td>9 类 + 四个特殊池共用一套加权池，Boss 位偏难池</td><td>想彻底乱，接受 BOSS 也可能变杂兵</td><td>24,452</td></tr>
+      <tr><td>05 保守半随机</td><td>与 01 相同组成与分层，但每类只替换 50% 位置</td><td>想保留一半原版体验</td><td>12,223</td></tr>
+      <tr><td>06 全 BOSS 混池·杂兵同族</td><td>BOSS 六类互抽（中分层）；杂兵各自同族</td><td>想 BOSS 大乱斗、杂兵保持原味</td><td>24,458</td></tr>
+      <tr><td>07 BOSS 同类·杂兵同族</td><td>每种 BOSS 只换同一种 BOSS（主要→主要、龙→龙…）；血条位也用「同类型 BOSS」</td><td>想保留 BOSS 的种类感、只换具体是谁</td><td>24,455</td></tr>
+    </tbody>
+  </table></div>
+  <ul class="tight">
+    <li><b>难度分层是概率倾向，不是硬规则</b>：主要 BOSS 位仍可能换到杂兵级，只是概率更低。想更狠 / 更稳，到编辑器里把某一类的追忆百分比调高 / 调低。</li>
+    <li><b>v1.4.1 起特殊池补齐</b>：凡是引用特殊池的组成都引用全部 4 个池（追忆 / 楔石 / 传送门 / 圣龛）—— 以前被漏掉的池的成员<b>永远不会被抽到</b>；07 用「同类型 BOSS」语义，设计上不用池，所以没动。</li>
+    <li><b>预设会自动存进方案</b>：开玩前不需要再手动保存；想改一份自己的，用编辑器「保存为预设」。</li>
+  </ul>
+  <h4>第一次用哪个？</h4>
+  <div class="table-wrap"><table>
+    <thead><tr><th>你的口味</th><th>建议</th></tr></thead>
+    <tbody>
+      <tr><td>先看看效果、不想太离谱</td><td><b>01</b> + 四个池全开 + 其它开关默认</td></tr>
+      <tr><td>想要刺激但 BOSS 别串味</td><td>02（BOSS 大乱斗）或 06</td></tr>
+      <tr><td>只想保留一半原版</td><td>05（50%）</td></tr>
+      <tr><td>只换「具体是谁」、不换种类</td><td>07</td></tr>
+      <tr><td>彻底疯一把</td><td>04 + 生命值倍率 1.2–1.5 + 夜间 BOSS 全天</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="editor">
+  <h2><span class="num">05.7</span>编辑逐类预设（想自己调规则时）</h2>
+  <p class="lede">内置 7 份预设覆盖了大多数口味。想自己定「哪类位置从哪儿抽」，点敌人页的 <kbd>自定义敌人配置…</kbd> 打开编辑器。</p>
+  <h3>界面怎么读</h3>
+  <div class="grid2">
+    <div class="card">
+      <h4>左边树</h4>
+      <ul class="tight">
+        <li><b>全局设置</b>：总替换比例 / 合并全 BOSS / 合并全敌人；</li>
+        <li><b>类别（9 个）</b>：常规敌人、被动野生动物、敌对型人类、主要 BOSS、次要 BOSS、野外 BOSS、夜间 BOSS、龙类 BOSS、封印监牢 BOSS；</li>
+        <li><b>特殊池（4 个）</b>：黄金树传送门 / 大锅钥石 / 追忆 / 劳弗圣龛；</li>
+        <li><b>血条位（真 BOSS 战）</b>：有 BOSS 大血条的位置单独一套来源。</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h4>右面板</h4>
+      <ul class="tight">
+        <li><b>换入来源百分比</b>：14 行 —— 9 个类别 + 4 个特殊池 + 「同类型 BOSS」；合计显示 100.0%；</li>
+        <li>快捷按钮：<kbd>只同族</kbd> / <kbd>全部类别平均</kbd> / <kbd>清零</kbd> / <kbd>自动平衡到 100%</kbd>；</li>
+        <li>每个节点还能设：<b>来源区域 / 目标区域 / 体型上限</b>、<b>参与随机</b>、<b>替换率</b>、<b>权重模式</b>；</li>
+        <li>底部：预设名、<kbd>保存为预设</kbd>、<kbd>恢复默认</kbd>、<kbd>应用并关闭</kbd>、<kbd>取消</kbd>。</li>
+      </ul>
+    </div>
+  </div>
+  <h3>几个关键概念</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>概念</th><th>怎么理解</th></tr></thead>
+    <tbody>
+      <tr><td>换入来源百分比</td><td>这个位置<b>从哪些池里抽</b>、各自占多少。权重不必凑满 100，保存时会按比例归一化；界面显示合计 100.0%</td></tr>
+      <tr><td>同类型 BOSS</td><td>Boss 只换同一种 Boss（主要→主要、龙→龙…）；老数据里被标成杂兵的真 BOSS 位会换成任意 Boss 级，不会让 BOSS 战变杂兵</td></tr>
+      <tr><td>参与随机</td><td>关掉 = 这一类的位置保持原样（不换），但它仍然可以被别的规则引用为来源</td></tr>
+      <tr><td>替换率</td><td>这一类位置里，有多少比例真的被替换（例如 05 预设全是 50%）</td></tr>
+      <tr><td>来源区域 / 目标区域</td><td>默认「本体 ↔ 本体、DLC ↔ DLC」不互串（silo）；想跨界就在这里放开</td></tr>
+      <tr><td>体型上限</td><td>空 = 用全局 3.0×；勾了界面上的「忽略场地 / 体型限制」后不再拦</td></tr>
+      <tr><td>血条位覆盖</td><td>内置规则是「Boss 六类互抽」；勾上「覆盖内置血条规则」后可以给有血条的位置单独定来源（07 预设就是这么做到真 BOSS 位同类换的）</td></tr>
+      <tr><td>Boss 使用上限</td><td>默认同一个 Boss 最多被随机到 <b>5 次</b>（六类 BOSS 都算，手动指定也计入；多阶段按「场次」计 —— 同一场战斗里同一只 Boss 的多个位置只算一次）；设为 <b>0</b> 可关掉上限</td></tr>
+      <tr><td>合并全 BOSS / 全敌人</td><td>把 Boss 六类并成一个池 / 把所有可见类并成一个池，用于「全员大乱斗」式的玩法</td></tr>
+    </tbody>
+  </table></div>
+  <h3>怎么开始</h3>
+  <ol class="steps">
+    <li>先在下拉里选一份内置预设作为起点（比如 01），再打开编辑器 —— 不要从零开始。</li>
+    <li>左侧点你想调的类（或池 / 血条位），右边只改一两个数字，比如把主要 BOSS 位的「追忆」权重从 14 调到 25。</li>
+    <li>点 <kbd>应用并关闭</kbd> 回到卡片，先点 <kbd>预览这次会换什么（不写盘）</kbd> 看数字与来源占比，满意再点开始随机。</li>
+    <li>想长期复用：底部填预设名 → <kbd>保存为预设</kbd>（写回 <code>investigation\enemy_presets\</code>，下拉里就能选到）。</li>
+  </ol>
+  <div class="callout"><strong>旧预设不用重做：</strong>v1.3.12 起载入时会自动迁移 —— 旧「法魂杂兵」的百分比并进「常规敌人」，被删掉的分类条目自动丢掉；保存一次就是新格式。</div>
+</section>
+
+<section id="manual">
+  <h2><span class="num">05.8</span>手动指定位置（精确到某一只）</h2>
+  <p>点敌人页的 <kbd>手动指定…</kbd> 会打开 <code>investigation\enemy_manual.csv</code>。它<b>优先级高于一切规则</b>，适合「我就想让这个位置的敌人变成某一只」。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>列</th><th>填什么</th></tr></thead>
+    <tbody>
+      <tr><td><code>map</code></td><td>地图名，如 <code>m34_14_00_00</code></td></tr>
+      <tr><td><code>entity_id</code></td><td>该地图里的实体 ID，如 <code>34140851</code></td></tr>
+      <tr><td><code>npc_id</code></td><td>想换成的敌人的 NPC ID（和 <code>model</code> 至少填一个；填了 npc_id 就按它找）</td></tr>
+      <tr><td><code>model</code></td><td>想换成的模型名（如 <code>c3560</code>）；没填 npc_id 时按它找</td></tr>
+      <tr><td><code>note</code></td><td>备注，随便写（会带进日志）</td></tr>
+    </tbody>
+  </table></div>
+  <pre><code>map,entity_id,npc_id,model,note
+m34_14_00_00,34140851,48200930,,把第二只换成恶兆猎人
+m31_06_00_00,31060801,,c3560,换成神皮使徒</code></pre>
+  <ul class="tight">
+    <li>只对「本来就会随机」的位置生效；keep 位（剧情 / 多阶段本体等）不会被手动指定强行打开。</li>
+    <li>找不到目标时<b>如实跳过并记账</b>，不会偷偷退回随机 —— 「指定了却没生效」这种情况能在预览 / 日志里看到原因。</li>
+    <li>每行一个位置；用文本编辑器或 Excel 存成 CSV 即可。</li>
+  </ul>
+</section>
+
+<section id="enemy-run">
+  <h2><span class="num">05.9</span>预览、开始随机与时间</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>按钮</th><th>做什么</th><th>写盘吗</th></tr></thead>
+    <tbody>
+      <tr><td><kbd>预览这次会换什么（不写盘）</kbd></td><td>按当前设置生成一次计划，给你替换数量、每类来源占比、跳过原因</td><td><span class="badge b-off">不写</span></td></tr>
+      <tr><td><kbd>开始随机敌人</kbd>（底部主按钮）</td><td>生成方案 → 存进方案库（只勾敌人时）或与物品合成一套</td><td><span class="badge b-off">不写游戏文件</span></td></tr>
+      <tr><td><kbd>用这个方案玩</kbd>（方案库）</td><td>第一次会生成覆盖层（敌人约 3 分钟；物品 + 敌人约 3–4 分钟），然后换档 → 挂载 → 起游戏</td><td><span class="badge b-on">写到方案层</span></td></tr>
+    </tbody>
+  </table></div>
+  <p>生成期间按钮会变成「正在生成覆盖层…」并置灰，完成会自动接着开局；不需要你手动挂载。大计划的生成会吃几分钟 CPU，属正常。</p>
+  <div class="callout"><strong>跳过不是错误。</strong>预览里会有一批位置被跳过（体型不合适、没有同名血条、池被关掉、已经是原样…）。这是安全阀，宁可不动也不硬塞。想看原因，日志里每条都有 code。</div>
+</section>
+
+<section id="enemy-notes">
+  <h2><span class="num">05.10</span>哪些默认不碰，风险在哪</h2>
+  <h3>9 个可见类</h3>
+  <p>常规敌人 / 被动野生动物 / 敌对型人类 / 主要 BOSS / 次要 BOSS / 野外 BOSS / 夜间 BOSS / 龙类 BOSS / 封印监牢 BOSS。法魂新增、游戏没给名字的无名杂兵已并入<b>常规敌人</b>（同一档强度，池子更大）。</p>
+  <h3>6 个内部标记类（不进界面、不随、不当来源）</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>内部类</th><th>为什么不动</th></tr></thead>
+    <tbody>
+      <tr><td>未分类</td><td>占位空壳 / 剧情对象 / 拟态复制体（仿身泪滴、水银躯壳等），没有可战斗身份</td></tr>
+      <tr><td>随从 / 召唤物</td><td>跟着主人走；单独换就与主人断链（血量壳、炮台、剧情随从）</td></tr>
+      <tr><td>复制体</td><td>分身 / 复制品，参考实现也不让它们随机</td></tr>
+      <tr><td>假人 / 测试体</td><td>圆桌训练假人一类</td></tr>
+      <tr><td>粪金龟</td><td>只是掉落容器，换了没意义</td></tr>
+      <tr><td>商队巨魔</td><td>跟着商队路线；换了会断商队</td></tr>
+    </tbody>
+  </table></div>
+  <h3>已经放开、但仍有风险的位置</h3>
+  <ul class="tight">
+    <li><b>A 批 · 9 个「事件系」BOSS</b>（10 个位置，v1.4.0 起可换）：死术师哥瑞斯、鲜血祭司艾斯加、喟叹者、古龙人、火焰大主教、拉纳舞娘、孤牢骑士、红熊（两张地图必须同步，算两个位置）、罗刹。</li>
+    <li><b>B 批 · 双人 BOSS 第二只</b>（6 组默认开）：只换身份 + 血条名，保留实体、不删、不改死亡条件；血量按原本「第二只 / 主人」比例，魂 0。另有 3 组结晶人（动作 / 阶段未验证）和 1 组神皮（阶段生成器）默认关；拟态泪那组不做。</li>
+    <li><b>C 批 · 龙人士兵</b>：能整组换成同一只 BOSS，但阶段依赖未验证，<b>默认关</b>（界面不暴露，需改 yaml）。</li>
+    <li><b>不做的</b>：菲雅英雄组 5 只（要从线上复制玩家数据）、帕奇 2 个（商人 / 剧情状态机）。</li>
+  </ul>
+  <div class="callout warn"><strong>风险如实说：</strong>A 批 9 个位置与 B 批第二只是第一次这么换，都可能出现 T-pose / 悬空 / 演出卡住。哪个位置坏了：A 批在 <code>enemy_classes_v3.yaml</code> 的 <code>overrides.places</code> 里删掉那一行重建数据；B 批取消「双人BOSS第二只也随机」或把对应组设 <code>enabled: false</code>。也可以直接换回 01 预设重建方案。</div>
+</section>
+
+<section id="library">
+  <h2><span class="num">06</span>方案库</h2>
+  <p class="lede">所有方案都在这里：每次点「开始随机…」生成的方案会自动保存，不用手动存；重装工具也不会丢。</p>
+  <h3>6.1 方案是什么、存在哪</h3>
+  <ul class="tight">
+    <li>一套方案 = 你的设置 + 种子 + 生成的计划 + 引擎版本指纹，存成 <code>plans\</code> 里的一个 JSON（在 MOD 目录下，不在 exe 里）；</li>
+    <li>方案本身<b>不包含</b>覆盖层；层在第一次开玩时按需生成到 <code>法魂包\方案\&lt;层名&gt;\mod\</code>；</li>
+    <li>同一个方案再玩不需要重新生成（层已是最新）；改了设置的话，下次开玩会重新生成。</li>
+  </ul>
+  <h3>6.2 列表与筛选</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>能力</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>搜索</td><td>按名字 / 标签 / 备注筛</td></tr>
+      <tr><td>排序</td><td>时间（新→旧）/ 名字 / 改动量（多→少）</td></tr>
+      <tr><td>收藏 ★</td><td>收藏的排在最前面</td></tr>
+      <tr><td>损坏条目 ⚠</td><td>某个方案文件坏了会带 ⚠，但<b>其余方案照常可用</b>，不会整库打不开</td></tr>
+    </tbody>
+  </table></div>
+  <h3>6.3 详情三段</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>段落</th><th>写什么</th></tr></thead>
+    <tbody>
+      <tr><td>随机设置</td><td>随机项目 · 混合方式 · 种子 · 合理度（单独设过的会写出来）· 改动比例 · 开关</td></tr>
+      <tr><td>这次改了什么</td><td>改动行（含跨大类多少行）· 分类明细（护甲 X，其中法祷整套几套 / 散件几件；卢恩 Y；装备 Z）· 商店换了几个货架 · 池子按类分布</td></tr>
+      <tr><td>记录</td><td>引擎版本 · 指纹 · 保存时间 · 修改时间 · 覆盖层状态（还没生成 / 已生成 / 设置改过下次会重新生成）</td></tr>
+      <tr><td>存档（两行）</td><td><b>方案存档</b>（这个方案自己的档：时间 / 大小 / 是否当前挂着）· <b>游戏存档</b>（游戏真正会读的那份：SteamID 目录 / 时间 / 大小）—— 换没换对，一眼能看出来</td></tr>
+    </tbody>
+  </table></div>
+  <h3>6.4 能对它做什么</h3>
+  <div class="table-wrap"><table>
+    <thead><tr><th>想做什么</th><th>怎么做</th></tr></thead>
+    <tbody>
+      <tr><td>用这一套开局</td><td><b>双击那一行</b>，或选中后点 <kbd>用这个方案玩</kbd></td></tr>
+      <tr><td>在同一套上再改</td><td><kbd>载入到设置</kbd> → 参数填回物品 / 敌人页 → 改完点开始随机会存成<b>新的一条</b>，旧的还在</td></tr>
+      <tr><td>改名 / 备注</td><td>详情里点一下就地改，回车或点走就存</td></tr>
+      <tr><td>标签</td><td><kbd>+ 添加</kbd> → 回车；点标签上的 ✕ 去掉</td></tr>
+      <tr><td>收藏</td><td><kbd>收藏 ★</kbd></td></tr>
+      <tr><td>复制一份再改</td><td><kbd>复制一份</kbd></td></tr>
+      <tr><td>删除</td><td><kbd>删除</kbd> → 移到 <code>plans\.trash</code>，并给你「打开回收站」入口</td></tr>
+      <tr><td>给朋友 / 备份</td><td><kbd>导出…</kbd> 成 <code>.json</code>；对方 <kbd>导入</kbd> 即可</td></tr>
+      <tr><td>其它</td><td>打开文件夹 / 刷新 / 右键菜单里还有上面这些动作</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="play">
+  <h2><span class="num">07</span>开玩与独立存档</h2>
+  <h3>7.1 开玩流程</h3>
+  <ol class="steps">
+    <li><b>双击方案</b>：如果覆盖层还没生成，先在后台生成（只物品约几十秒；含敌人约 3 分钟）。</li>
+    <li><b>换档</b>：把这个方案自己的存档换进游戏（第一次会问「这个方案还没有存档，现在就用新角色启动吗？」）。</li>
+    <li><b>挂载</b>：把方案层写进 <code>yafsml\YAFSML.ini</code> 的 <code>Plan=</code>。</li>
+    <li><b>起游戏</b>：进游戏就是这一套世界。</li>
+    <li><b>退出游戏</b>：进度自动存回这个方案自己的槽（界面开着时每几秒看一次进程；界面关着退出，下次打开 1.5 秒后补存）。</li>
+  </ol>
+  <ul class="tight">
+    <li><b>游戏正在运行时点也可以</b>：会先问「自动关掉它并启动吗」—— 先请它自己退，实在不退才强杀；强杀会丢最近一小段进度。</li>
+    <li><b>任务管理器里有个 eldenring.exe 却看不到窗口？</b>那是退出后没被系统回收的「空壳」（线程/句柄 0），新版会跳过它，不用手动杀（也杀不掉，系统会自己收掉）。</li>
+    <li>生成 / 换档期间按钮会置灰并显示进度；卡住就看方案库底部那行小字，它会写卡在哪一步。</li>
+  </ul>
+  <h3>7.2 每个方案一份独立存档</h3>
+  <ul class="tight">
+    <li>存档放在 <b>法魂包\存档库\&lt;方案名&gt;\</b>（和 <code>方案\</code> 并排；删游戏本体、换机器都不会丢）。</li>
+    <li><b>任何覆盖 / 删除之前都会先留底</b>到 <code>存档库\_回收\</code>。</li>
+    <li>第一次用某方案会问「现在就用新角色启动吗？」：选「否」= 什么都不动；选「是」= 旧档先归到「上一个方案」或 <code>_法魂本体</code> 槽，再开新角色。</li>
+    <li>从层目录双击 <b>「用这个方案启动.bat」</b> 也算这条路（换档 → 挂载 → 起游戏 → 退出回存），日志在层目录的 <code>启动日志.txt</code>；<b>「切回法魂本体.bat」</b> = 删掉挂载。</li>
+    <li>文件名跟着法魂包的 <code>YAFSML.ini</code> 走（常见 <code>ER0000.cnv</code>；没配改名时是 <code>ER0000.sl2</code>），工具会按配置读写，不用你管。</li>
+  </ul>
+  <div class="callout warn"><strong>玩多套方案前，先把 Elden Ring 的 Steam 云存档关掉。</strong>云同步可能在另一次启动把档换回去，这个工具管不着 Steam。另外：只能单人离线，不能联机。</div>
+</section>
+
+<section id="restore">
+  <h2><span class="num">08</span>还原、卸载、搬迁</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>想做什么</th><th>怎么做</th><th>会发生什么</th></tr></thead>
+    <tbody>
+      <tr><td>回到纯法魂本体（日常）</td><td>点 <kbd>切回法魂本体</kbd>（物品卡右下 / 敌人卡 / 方案库）</td><td>删掉 <code>Plan=</code> 挂载并把本体档换回来；层还留在 <code>方案\</code>，想再玩点「用这个方案玩」</td></tr>
+      <tr><td>彻底还原本体文件</td><td>点 <kbd>还原成原始</kbd></td><td>把本体两个文件放回原版；<b>只有 2026-10-23 前「直接写本体」的老行为才需要</b>，现在恒为方案层</td></tr>
+      <tr><td>删掉某一套方案</td><td>方案库 <kbd>删除</kbd></td><td>移进 <code>plans\.trash</code>，可恢复；对应层可手动删（不影响本体）</td></tr>
+      <tr><td>换电脑 / 搬盘 / 改名</td><td>整个文件夹一起搬</td><td>按「哪层有 <code>mod\regulation.bin</code>」重新找；找不到就点「指定 MOD 目录…」或设 <code>CONVERGENCE_MOD_ROOT</code></td></tr>
+      <tr><td>卸载工具</td><td>删 exe 与 <code>investigation</code> / <code>plans</code></td><td>游戏本体不受影响；<b>删之前想清楚</b>：<code>investigation\apply\backup</code> 是原始备份，<code>plans</code> 是你的方案库</td></tr>
+      <tr><td>存档出事</td><td>去 <code>存档库\_回收\</code> 找</td><td>覆盖 / 删除前都留过底</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><strong>旧层提示：</strong>2026-10-22 那批层（D/E/F…）本体里还留着当时的物品随机。要彻底回到「本体不动」的状态：退出游戏 → 点一次「还原成原始」→ 之后都用方案层。</div>
+</section>
+
+<section id="cli">
+  <h2><span class="num">09</span>命令行的少量用法（高级，可不看）</h2>
+  <p>日常全在界面里点就行。下面这些是排障或自动化用的，普通玩家可以跳过。</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>命令</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>ConvergenceClassItemRandomizer.exe --paths</code></td><td>打印它当前认定：工具目录、法魂包根、方案库、存档库、Oodle 库等路径（排「找不到目录」最有用）</td></tr>
+      <tr><td><code>...exe --play &lt;层目录&gt;</code></td><td>直接换档 + 挂载 + 启动某一层（方案层目录，不是 exe）</td></tr>
+      <tr><td><code>...exe --plan-off</code></td><td>切回法魂本体（删 <code>Plan=</code> 并换回本体档）</td></tr>
+      <tr><td><code>...exe --deploy plan.csv</code></td><td>按一份 plan.csv 部署（自动化 / 批量用）</td></tr>
+      <tr><td><code>...exe --selftest</code> / <code>--planlib</code> / <code>--uicheck</code> / <code>--uitest</code></td><td>四道自检（开发与验证用，正常玩家不需要跑）</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section id="files">
+  <h2><span class="num">10</span>文件与目录一览</h2>
+  <h3>10.1 工具与法魂包</h3>
+  <pre><code>法魂整合包\
+├─ mod\regulation.bin               法魂本体（工具永远不写）
+├─ yafsml\YAFSML.ini                挂载开关 Plan= 在这里
+├─ 启动法魂.bat
+├─ ConvergenceClassItemRandomizer.exe
+├─ investigation\                   第一次运行生成，别删
+│  ├─ apply\backup\                 原始备份（「还原成原始」的基线）
+│  ├─ apply\data\enemy_classes_v3.yaml   敌人规则 / 多阶段组 / 双人组（高级）
+│  ├─ enemy_presets\                7 份内置预设 + 你保存的预设
+│  ├─ enemy_manual.csv              手动指定表
+│  └─ …                             运行数据与日志
+├─ plans\                          方案库（每次随机自动保存的 JSON）
+├─ 方案\                            每套方案第一次开玩时生成的覆盖层
+│  └─ &lt;层名&gt;\
+│     ├─ mod\                       这一层盖在法魂本体上的文件
+│     ├─ 用这个方案启动.bat
+│     ├─ 切回法魂本体.bat
+│     └─ 启动日志.txt
+└─ 存档库\                          每套方案自己的存档
+   ├─ &lt;方案名&gt;\
+   └─ _回收\                        覆盖 / 删除前的留底</code></pre>
+  <h3>10.2 哪些文件别动</h3>
+  <ul class="tight">
+    <li><code>investigation\apply\backup</code>：原始备份。删了「还原成原始」就没有基线；也不要把已经随机过的文件当原版补进去。</li>
+    <li><code>plans\</code>：你的方案库。删了方案就没了（但游戏本体不受影响）。</li>
+    <li><code>enemy_classes_v3.yaml</code>：敌人规则与多阶段 / 双人组定义。改错会让数据校验失败；不懂就先别动。</li>
+    <li><code>存档库\</code>：你的游戏进度。想清理旧方案存档，先确认不再需要，或先把文件复制走。</li>
+  </ul>
+</section>
+
+<section id="faq">
+  <h2><span class="num">11</span>常见问题</h2>
+
+  <details><summary>点了「用这个方案玩」，一点动静都没有？</summary><div class="body">
+    <p>先看方案库底部那行小字，它会写卡在哪一步。两种最常见的情况：</p>
+    <ul class="tight">
+      <li><b>覆盖层还没生成</b>：点一下就在后台生成（含敌人约 3 分钟）；期间按钮变成「正在生成覆盖层…」并置灰，完成后会自动接着开局。</li>
+      <li><b>游戏还开着</b>：会问你「自动关掉它并启动吗」。同意就替你关掉再开（先请它自己退，实在不退才强杀）。两个都点「否」= 什么都不动。</li>
+    </ul>
+  </div></details>
+
+  <details><summary>提示「关不掉还在跑的游戏」，可任务管理器里又看不到游戏窗口？</summary><div class="body">
+    <p>v1.3.9 起已修。游戏退出后任务管理器会留下一个 <code>eldenring.exe</code> 的「空壳」（线程 / 句柄都是 0、内存几十 KB，手动结束还会提示拒绝访问）。旧版把它当成游戏在跑，于是每次都先问、等 35 秒后报错。新版会跳过这种空壳；不用手动杀（也杀不掉，系统会自己收掉）。</p>
+  </div></details>
+
+  <details><summary>「编辑逐类预设」里怎么只剩 9 个类别了？法魂杂兵去哪了？</summary><div class="body">
+    <p>v1.3.12 起调整：<b>法魂杂兵并进「常规敌人」</b>（同一档强度，池子更大）。另外 6 个分类（未分类 / 随从召唤物 / 复制体 / 假人测试体 / 粪金龟 / 商队巨魔）不再显示、不再随机、也不当来源 —— 原因见「哪些默认不碰」一节。</p>
+  </div></details>
+
+  <details><summary>我自己改过的逐类预设要重做吗？</summary><div class="body">
+    <p>不用。v1.3.12 起载入时自动迁移：旧「法魂杂兵」的百分比并进常规敌人，被删掉的类别条目自动丢掉；保存一次就变成新格式。</p>
+  </div></details>
+
+  <details><summary>进游戏以后，每隔两三秒屏幕闪一个黑色终端框？</summary><div class="body">
+    <p>v1.3.10 起已修。旧版在等游戏退出时每 2 秒起一次 <code>tasklist</code>，窗口版 exe 没控制台，于是每查一次就新建一个黑框。新版改成直接读系统进程快照，不再弹框。</p>
+  </div></details>
+
+  <details><summary>换了方案，进游戏看到的还是原来那个角色 / 进度？</summary><div class="body">
+    <p>v1.3.10 起已修。法魂包的 <code>YAFSML.ini</code> 配了 <code>replace_save_filename=.cnv</code>，游戏读写的是 <code>ER0000.cnv</code>，而旧版只认 <code>ER0000.sl2</code> —— 换档换了个游戏不读的文件。新版会从 <code>YAFSML.ini</code> 现读档名；老存档槽第一次运行会自动改名（内容不动，原文件在 <code>存档库\_回收\</code> 留一份），不用你手动做什么。另外「切回法魂本体」现在也会真的把本体档换回来。</p>
+  </div></details>
+
+  <details><summary>双击层目录里的「用这个方案启动.bat」，提示「法魂包根目录不对（没有 yafsml\）」？</summary><div class="body">
+    <p>v1.3.8 起已修（层里也有一份 <code>mod\regulation.bin</code>，从层目录启动时被误当成法魂包本体）。如果还在用旧版：最省事是别从层目录启动，回随机器打开方案库双击那一行。</p>
+  </div></details>
+
+  <details><summary>把整个文件夹搬到别的盘、改个名、换台电脑，还能用吗？</summary><div class="body">
+    <p>可以。工具按「目录里有 <code>mod\regulation.bin</code>」找法魂包，<b>不看文件夹名</b>（从它所在目录往上最多 7 层，连同级目录一起看）。搬完第一次打开若「环境」有红项：点「指定 MOD 目录…」重选一次，或设环境变量 <code>CONVERGENCE_MOD_ROOT</code>。旧方案不用重做：覆盖层按目录名找回，找不到会在下次开玩时重新生成。</p>
+  </div></details>
+
+  <details><summary>杀软提示 / 拦下载 / 点开没反应？</summary><div class="body">
+    <p>exe 未签名，杀软提示属正常，加信任即可。工具不联网、不改游戏本体。第一次运行会生成工作文件，稍等几秒；若一直不动，看 exe 旁边有没有 <code>investigation</code> 文件夹。</p>
+  </div></details>
+
+  <details><summary>报错说找不到 <code>oo2core*_win64.dll</code>？</summary><div class="body">
+    <p>打开游戏安装目录里的 <code>Game</code> 文件夹，把 <code>oo2core_*_win64.dll</code> 复制到 <b>exe 旁边的 <code>oodle</code> 文件夹</b>（没有就新建）。放一次即可。</p>
+  </div></details>
+
+  <details><summary>我的存档存在哪？换方案会不会把原来的档弄丢？</summary><div class="body">
+    <p>每个方案一份档，都在法魂包 <code>存档库\&lt;方案名&gt;\</code>；任何覆盖 / 删除之前都会先复制到 <code>存档库\_回收\</code>。第一次用某个方案玩会先问你；选「否」= 什么都不动。文件名跟着 <code>YAFSML.ini</code> 走，工具按配置读写，老版本存的 <code>.sl2</code> 槽第一次运行会自动改名。</p>
+  </div></details>
+
+  <details><summary>用方案库启动，Steam 那边会不会打架？</summary><div class="body">
+    <p>会。玩多套方案前先关掉 Elden Ring 的 <b>Steam 云存档</b>，否则云同步可能在另一次启动把档换回去。</p>
+  </div></details>
+
+  <details><summary>能联机吗？关掉工具还能改回来吗？</summary><div class="body">
+    <p><b>不能联机</b>，单人游戏专用；用之前请先备份存档。能改回来：点「还原成原始」（原始备份一直在 exe 旁边的 <code>investigation\apply\backup</code> 里）。</p>
+  </div></details>
+
+  <details><summary>开始随机后报「写前复核未通过（…条与当前文件不一致）」？</summary><div class="body">
+    <p>说明工具手里的「原始备份」不是真正的原版 —— 最常见原因：第一次补备份时本体<b>已经被随机过</b>（以前直接写过本体），于是把改过的文件当成了「原始」。处理：把法魂 mod 原版的 <code>regulation.bin</code> 放回本体（重装或用你留的原版文件）→ 再点「补一份原始备份」。跟种子无关，换什么种子都会一样报。</p>
+  </div></details>
+
+  <details><summary>换进去的敌人 T-pose / 悬空 / 卡住 / 战斗不结束？</summary><div class="body">
+    <p>敌人随机不是 100% 无风险：特殊位置（A 批事件系 BOSS、B 批双人第二只、实验开关）可能出现动作或演出问题。处理顺序：</p>
+    <ul class="tight">
+      <li>先换回 <b>01 参考默认·同族池</b>、四个池全开、其它开关默认，重建一套方案对照；</li>
+      <li>若确认是某个开关（颜色 / 双人第二只 / 忽略体型 / 敌人倍增）造成，关掉它重建；</li>
+      <li>A 批某个位置坏了：在 <code>enemy_classes_v3.yaml</code> 的 <code>overrides.places</code> 里删掉那一行重建数据；B 批：把对应组设 <code>enabled: false</code> 或取消开关；</li>
+      <li>实在不行就「切回法魂本体」，本体永远干净。</li>
+    </ul>
+  </div></details>
+
+  <details><summary>为什么二阶段 BOSS（比如梅瑟莫）被换到别处后只会一阶段招式？</summary><div class="body">
+    <p>因为「阶段切换」是<b>原战场 EMEVD 事件</b>驱动的：血量到一半后禁用一阶段实体、启用二阶段实体、加 SpEffect、播动画。克隆到别的战场带不走这套事件。v1.4.2 起，同一个 BOSS 当来源时只取<b>一阶段身份</b>（血条名 = 模型常用名的那个），所以不会再出现「挂着二阶段名字却只有一阶段招式」的名实不符。<b>不同模型</b>的两只（拉达冈 / 艾尔登之兽等）两个身份仍然都能当来源。想体验真正的二阶段：关掉多阶段规则、保留原战场。</p>
+  </div></details>
+
+  <details><summary>为什么「普通位置换成 BOSS」不会突然变得超模？</summary><div class="body">
+    <p>区域缩放会按位置所在区域的强度档重算换入者的血 / 攻 / 防 / 抗 / 魂，每位置一条独立 SpEffect 挂在克隆行上；BOSS 进杂兵位还有额外降级（血 ×0.25 / 魂 ×0.25 / 攻 ×0.5）。v1.4.1 修掉了「平衡层又扣一次」的双重缩放，现在有效血量回到位置原强度 ±25%。</p>
+  </div></details>
+
+  <details><summary>「开始随机」要多久？会占很多空间吗？</summary><div class="body">
+    <p>生成方案本身几秒到几十秒（纯计算，不写盘）。真正花时间的是第一次开玩生成覆盖层：只物品约几十秒；含敌人约 3 分钟；物品 + 敌人约 3–4 分钟。每套方案的覆盖层是独立的，会占磁盘（含地图和事件，几百 MB 级）；不玩的方案可以在 <code>方案\</code> 里手动删层，不影响本体与方案库。</p>
+  </div></details>
+</section>
+
+<section id="versions">
+  <h2><span class="num">12</span>版本、边界与风险</h2>
+  <h3>12.1 本页对应的版本</h3>
+  <p>本教学随 <b>v1.4.2 发行包</b>提供（exe 文件名不带版本号，版本只体现在发布包与文档名上）。最近三版做了什么：</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>版本</th><th>内容</th></tr></thead>
+    <tbody>
+      <tr><td><b>v1.4.2</b></td><td>多阶段 BOSS 当来源只取一阶段身份（修「二阶段名字 + 一阶段招式」）；同一 seed 下 163 个位置的换入者会小范围变化</td></tr>
+      <tr><td>v1.4.1</td><td>修「Boss 进杂兵位双重缩放」（有效血量回到位置原强度 ±25%）；修多阶段 / 双人实体被误判为杂兵；内置预设补齐 4 个特殊池；打包版第一次运行会释放 7 份内置预设</td></tr>
+      <tr><td>v1.4.0</td><td>A 批 9 个事件系 BOSS 可随（10 位置）；B 批双人 BOSS 第二只单只互换（6 组默认开）；C 批龙人士兵整组（默认关）</td></tr>
+    </tbody>
+  </table></div>
+  <p>包内 <code>更新日志_v1.4.2.md</code> 有更细的改动与数字；更早版本见仓库 <code>docs\发布\</code>。</p>
+  <h3>12.2 边界</h3>
+  <ul class="tight">
+    <li>只支持<b>中文法魂汉化本体（游戏 1.17.1）</b>；其他整合包 / 游戏版本不保证。</li>
+    <li><b>单机离线</b>：不联网、不能联机；请先备份存档。</li>
+    <li><b>不改游戏本体</b>：所有产物都在方案层 / 存档库；不做平台上传与在线分发。</li>
+    <li><b>不搬事件</b>：BOSS 二阶段、特殊演出、剧情事件流程都不复制到新位置。</li>
+    <li>敌人随机有少量<b>实验项</b>（颜色、双人第二只、敌人倍增），默认值已尽量保守，仍可能出问题。</li>
+  </ul>
+  <h3>12.3 出问题怎么报告</h3>
+  <p>把这几样一起发出来最有用：① 方案库里的方案 JSON（导出即可）；② 层目录的 <code>启动日志.txt</code>；③ 生成时「详细记录 → 日志」那段文本；④ 出问题的位置（地图名 + 实体 ID，或截图）。</p>
+  <div class="callout ok"><strong>最后一句：</strong>这是一个单机整活工具，最好的用法是「先备份存档 → 用 01 预设玩一套 → 觉得不够乱再往上加」。本体永远干净，随时可以切回去。</div>
+</section>
+
+</main>
+</div>
+
+<footer>
+  法魂随机器 · 使用教学 · 发行版 v1.4.2 · 文档生成 2026-10-25<br>
+  本页是单文件离线网页：不联网、无外部资源，随发行包一起分发。
+</footer>
+<button id="toTop" aria-label="回到顶部" title="回到顶部">↑</button>
+<script>
+(function () {
+  var links = Array.prototype.slice.call(document.querySelectorAll('.sidebar a'));
+  var byId = {};
+  links.forEach(function (a) { byId[a.getAttribute('href').slice(1)] = a; });
+  var sections = Array.prototype.slice.call(document.querySelectorAll('main section[id]'));
+  var current = null;
+  function activate(id) {
+    if (current === id) return;
+    current = id;
+    links.forEach(function (a) { a.classList.remove('active'); });
+    var a = byId[id];
+    if (a) a.classList.add('active');
+  }
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (entries) {
+      var visible = entries.filter(function (e) { return e.isIntersecting; });
+      if (!visible.length) return;
+      visible.sort(function (a, b) { return a.boundingClientRect.top - b.boundingClientRect.top; });
+      activate(visible[0].target.id);
+    }, { rootMargin: '-15% 0px -70% 0px', threshold: 0 });
+    sections.forEach(function (s) { io.observe(s); });
+  }
+  var top = document.getElementById('toTop');
+  function onScroll() {
+    if (window.scrollY > 700) top.classList.add('show');
+    else top.classList.remove('show');
+  }
+  window.addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+  top.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+})();
+</script>
+</body>
+</html>

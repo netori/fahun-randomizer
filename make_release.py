@@ -21,6 +21,7 @@ DEFAULT_OUT = os.path.normpath(os.path.join(WS, '..', '发布包'))
 # (源路径, 包内路径) —— 顺序就是玩家解压后看到的顺序
 FILES = [
     (EXE, 'ConvergenceClassItemRandomizer.exe'),
+    (os.path.join(WS, 'docs', '使用教学.html'), '使用教学.html'),
     (os.path.join(WS, 'docs', '使用说明（给玩家）.md'), '使用说明（给玩家）.md'),
     (os.path.join(WS, 'README.md'), 'README.md'),
 ]
