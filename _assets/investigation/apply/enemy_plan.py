@@ -490,6 +490,44 @@ def visible_sources(cfg):
     return list(visible_classes(cfg)) + [pool_ref(p) for p in visible_pools(cfg)]
 
 
+def preset_special_pool_gaps(preset, cfg):
+    """一份预设的「特殊池来源」完整度检查（v1.4.1）。
+
+    规则：任何一处组成（类条目 / 池条目 / 血条位）只要引用了**至少一个**特殊池，
+    就必须把**全部**特殊池都列为来源（权重可不同）。理由：池是「成员集合」而不是
+    类，漏掉一个池 = 那个池的成员永远不会出现在这类替换的候选里 —— v1.4.0 的问题
+    正是 reliquary 在 v1.3.19 变成可当来源后，7 份内置预设的类/池组成全都没接它。
+
+    返回 [(section, key, 缺失引用 tuple)]；空 = 完整（@sameboss 的同类预设没有池
+    引用 → 天然通过）。
+    """
+    specials = [pool_ref(p) for p in visible_pools(cfg)]
+
+    def _refs(e):
+        out = set(str(x) for x in (e.get("targets") or []))
+        out |= set(str(x) for x in (e.get("donor_weights") or {}).keys())
+        return out
+
+    gaps = []
+    for sec in ("classes", "pools"):
+        for key, e in (preset.get(sec) or {}).items():
+            refs = _refs(e)
+            present = [r for r in specials if r in refs]
+            if not present:
+                continue
+            miss = [r for r in specials if r not in refs]
+            if miss:
+                gaps.append((sec, str(key), tuple(miss)))
+    bar = preset.get("bar") or {}
+    refs = _refs(bar)
+    present = [r for r in specials if r in refs]
+    if present:
+        miss = [r for r in specials if r not in refs]
+        if miss:
+            gaps.append(("bar", "bar", tuple(miss)))
+    return gaps
+
+
 def migrate_preset_classes(entries, cfg):
     """把旧预设迁到现行分类表（2026-10-24）：
 
@@ -3395,6 +3433,21 @@ def _selftest():
     assert _rl, "劳弗仪卫当来源：一个 Boss 位都没抽到 c2195"
     print("PASS 劳弗仪卫当来源：%d 个 Boss 位换入 c2195（人工血条名 121911）"
           % len(_rl))
+
+    # ㉓ 内置预设的特殊池来源完整度（v1.4.1）：凡是引用特殊池的组成必须引用全部
+    import glob as _glob
+    _pdir = os.path.join(INV, "enemy_presets")
+    _checked = []
+    if os.path.isdir(_pdir):
+        for _pp in sorted(_glob.glob(os.path.join(_pdir, "*.json"))):
+            _raw = json.load(io.open(_pp, encoding="utf-8"))
+            _gaps = preset_special_pool_gaps(_raw, data["cfg"])
+            assert not _gaps, "内置预设 %s 漏特殊池：%s" % (
+                os.path.basename(_pp), _gaps[:6])
+            _checked.append(os.path.basename(_pp))
+    assert len(_checked) >= 7, "内置预设数量不对：%d" % len(_checked)
+    print("PASS 内置预设特殊池完整：%d 份（引用特殊池的组成都包含全部 %d 个池）"
+          % (len(_checked), len(visible_pools(data["cfg"]))))
 
     print("RESULT: PASS")
 

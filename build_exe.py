@@ -122,6 +122,19 @@ def sync_assets():
             os.makedirs(os.path.dirname(d), exist_ok=True)
             shutil.copy2(s, d)
             n += 1
+    # 2026-10-25 v1.4.1：内置预设也要打进 exe —— 打包版首次运行会把 _assets/investigation
+    # 释放到 exe 旁边；以前只同步数据表，7 份内置预设只在开发/测试目录里，玩家手里的 exe
+    # 打开「编辑逐类预设」看不到它们（下拉里只有「内置规则」）。
+    pdir = os.path.join(WS, "investigation", "enemy_presets")
+    if os.path.isdir(pdir):
+        for f in sorted(os.listdir(pdir)):
+            if not f.endswith((".json", ".md")):
+                continue
+            s = os.path.join(pdir, f)
+            d = os.path.join(A, "investigation", "enemy_presets", f)
+            os.makedirs(os.path.dirname(d), exist_ok=True)
+            shutil.copy2(s, d)
+            n += 1
     for f in BASELINE:
         s = os.path.join(WS, "investigation", "apply", "work", "msg", "zh", f)
         if os.path.exists(s):

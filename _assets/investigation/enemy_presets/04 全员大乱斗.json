@@ -1,0 +1,434 @@
+{
+  "version": 1,
+  "name": "04 全员大乱斗",
+  "rate_mode": "independent",
+  "classes": {
+    "Basic": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Basic": 52.2,
+        "Wildlife": 23.8,
+        "Boss": 4.8,
+        "pool:remembrance": 2.9,
+        "pool:keystone": 1.9,
+        "MinorBoss": 4.8,
+        "Miniboss": 2.9,
+        "pool:waygate": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Wildlife": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Wildlife": 52.2,
+        "Basic": 23.8,
+        "Boss": 4.8,
+        "pool:remembrance": 2.9,
+        "pool:keystone": 1.9,
+        "MinorBoss": 4.8,
+        "Miniboss": 1.9,
+        "pool:waygate": 2.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Boss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 17.1,
+        "pool:remembrance": 21.1,
+        "pool:keystone": 13.3,
+        "MinorBoss": 17.1,
+        "Miniboss": 11.4,
+        "pool:waygate": 7.6,
+        "Basic": 3.8,
+        "Wildlife": 1.9,
+        "NightMiniboss": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "MinorBoss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 15.2,
+        "pool:remembrance": 11.4,
+        "pool:keystone": 9.5,
+        "MinorBoss": 23.0,
+        "Miniboss": 15.2,
+        "pool:waygate": 9.5,
+        "Basic": 5.7,
+        "Wildlife": 3.8,
+        "NightMiniboss": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Miniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Basic": 18.5,
+        "Wildlife": 11.1,
+        "MinorBoss": 20.2,
+        "Miniboss": 20.4,
+        "pool:waygate": 13.0,
+        "Boss": 5.6,
+        "pool:keystone": 1.9,
+        "NightMiniboss": 1.9,
+        "pool:remembrance": 2.8,
+        "pool:reliquary": 4.6
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "NightMiniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Basic": 10.8,
+        "Wildlife": 7.2,
+        "NightMiniboss": 25.3,
+        "Miniboss": 19.8,
+        "MinorBoss": 12.6,
+        "pool:waygate": 9.0,
+        "Boss": 3.6,
+        "DragonMiniboss": 1.8,
+        "pool:keystone": 2.7,
+        "pool:remembrance": 2.7,
+        "pool:reliquary": 4.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "DragonMiniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Basic": 9.0,
+        "Wildlife": 7.2,
+        "DragonMiniboss": 27.1,
+        "MinorBoss": 18.0,
+        "Miniboss": 14.4,
+        "pool:waygate": 9.0,
+        "Boss": 5.4,
+        "pool:keystone": 2.7,
+        "pool:remembrance": 2.7,
+        "pool:reliquary": 4.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Evergaol": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Basic": 9.0,
+        "Wildlife": 7.2,
+        "Evergaol": 23.5,
+        "MinorBoss": 19.8,
+        "Miniboss": 16.2,
+        "Boss": 9.0,
+        "pool:waygate": 5.4,
+        "pool:keystone": 2.7,
+        "pool:remembrance": 2.7,
+        "pool:reliquary": 4.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "HostileNPC": {
+      "enabled": false,
+      "rate": 1,
+      "weight": 0,
+      "targets": [],
+      "donor_weights": null,
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
+  },
+  "pools": {
+    "waygate": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 23.8,
+        "pool:remembrance": 19.0,
+        "pool:keystone": 9.5,
+        "MinorBoss": 23.8,
+        "Miniboss": 14.3,
+        "pool:waygate": 4.8,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "keystone": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 17.1,
+        "pool:remembrance": 21.1,
+        "pool:keystone": 13.3,
+        "MinorBoss": 17.1,
+        "Miniboss": 11.4,
+        "pool:waygate": 7.6,
+        "Basic": 3.8,
+        "Wildlife": 1.9,
+        "NightMiniboss": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "remembrance": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 17.1,
+        "pool:remembrance": 21.1,
+        "pool:keystone": 13.3,
+        "MinorBoss": 17.1,
+        "Miniboss": 11.4,
+        "pool:waygate": 7.6,
+        "Basic": 3.8,
+        "Wildlife": 1.9,
+        "NightMiniboss": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "reliquary": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic",
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "Wildlife",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 17.1,
+        "pool:remembrance": 21.1,
+        "pool:keystone": 13.3,
+        "MinorBoss": 17.1,
+        "Miniboss": 11.4,
+        "pool:waygate": 7.6,
+        "Basic": 3.8,
+        "Wildlife": 1.9,
+        "NightMiniboss": 1.9,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
+  }
+}

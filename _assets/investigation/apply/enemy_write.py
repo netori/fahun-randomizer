@@ -29,6 +29,7 @@ if HERE not in sys.path:
     sys.path.insert(0, HERE)
 
 import bar_names                                                 # noqa: E402
+import enemy_balance as balance_model                            # noqa: E402
 import erio                                                      # noqa: E402
 import evd_edit                                                  # noqa: E402
 import msb_edit                                                   # noqa: E402
@@ -145,7 +146,13 @@ AREA_FIELD_NAMES = tuple(f for _g, fs in AREA_FIELDS for f in fs)
 # 只动 damage 组（*AttackPowerRate）：十步档本身只缩放这一组，damagerate /
 # defense / buildup 在所有标准档里恒为 1.0，动它们等于凭空造一条游戏里不存在的规则。
 # 调参入口就是这张表：太软调到 0.6，还是一招带走调到 0.35。
-AREA_BOSS_AS_BASIC_FACTORS = {"health": 0.25, "xp": 0.25, "damage": 0.5}
+# 数值的**单一来源**在 enemy_balance（平衡层要靠它把 target_hp 预先除回来，否则
+# b2m 的有效血量会被写盘层再砍一刀，v1.4.0 实测只有位置原值的 0.21~0.31）。
+AREA_BOSS_AS_BASIC_FACTORS = {
+    "health": balance_model.B2M_HP_FACTOR,
+    "xp": balance_model.B2M_XP_FACTOR,
+    "damage": balance_model.B2M_DAMAGE_FACTOR,
+}
 
 # 参考实现的多阶段 Boss 血量修正（SoulsRandomizers EldenEnemyEditor.cs 第 961–1018 行，
 # InitialNpcPass 里的 CreatedReferredDamagePair 段）。参考实现没有通用比例，而是这 5 组
@@ -420,7 +427,11 @@ def _rel_of(unit):
     事件死亡条件）。不把它算成 boss 侧的话会被判成 m2b，克隆行写
     disableInitializeDead=1（「不按事件 flag 初始化死亡」），第二只可能出场即死/不生成。
     """
-    p = unit.get("cls") in BOSSISH or bool(unit.get("duo"))
+    # v1.4.1：多阶段组的各阶段实体原类可能是 Helper（如女武神二阶段、幽影树
+    # 化身 2~6 阶），但它们站在 boss 侧，不是「Boss 进杂兵位」—— 漏这一个判断会让
+    # 这些行白吃 health×0.25（只有原强度的 1/4），对齐 enemy_balance.rel_of。
+    p = (unit.get("cls") in BOSSISH or bool(unit.get("duo"))
+         or bool(unit.get("multiphase")))
     d = (unit.get("new_cls") or unit.get("donor_cls")) in BOSSISH
     if p == d:
         return "same"

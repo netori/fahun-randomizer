@@ -37,12 +37,33 @@ sys.path.insert(0, HERE)
 
 REF_PATH = os.path.join(INV, "balance_ref.json")
 BOSSISH = {"Boss", "MinorBoss", "Miniboss", "NightMiniboss", "DragonMiniboss", "Evergaol"}
+# Boss 进杂兵位（b2m）时写盘层会再乘的一组"降级"倍率（见 enemy_write.AREA_BOSS_AS_BASIC_FACTORS）。
+# 写盘层用它造区域 SpEffect；平衡层必须知道它，才能把 target_hp 预先除回来 ——
+# 否则平衡锚住的位置强度会被再砍一刀（v1.4.0 实测：最终有效血量只有位置原值的 0.21~0.31）。
+# 单一来源：enemy_write 的 AREA_BOSS_AS_BASIC_FACTORS 直接引用这里的值。
+B2M_HP_FACTOR = 0.25
+B2M_XP_FACTOR = 0.25
+B2M_DAMAGE_FACTOR = 0.5
 DEFAULT_K = 10
 DEFAULT_JITTER = 0
 DEFAULT_ALPHA = 0.5
 DEFAULT_DMG_CLAMP = (0.5, 2.0)
 DEFAULT_HP_RATIO = (0.85, 1.25)   # 每个位置的有效血量 / 该位置原有效血量 允许的倍率窗口
 DEFAULT_DMG_MODEL = "position"    # position = 伤害按位置档缩放（方案 A）；derived = 按血量派生倍率
+
+
+def rel_of(unit):
+    """位置与换入者的 boss 属性关系：same / b2m（Boss 进杂兵位）/ m2b。
+
+    与 enemy_write._rel_of 同一口径：cls 是位置原类；duo（双人第二只）与 multiphase
+    （多阶段 Boss 的各阶段实体）虽然原类可能是 Helper，但都站在 boss 侧，按 same 处理。
+    """
+    p = ((unit.get("cls") or unit.get("old_cls")) in BOSSISH
+         or bool(unit.get("duo")) or bool(unit.get("multiphase")))
+    d = (unit.get("new_cls") or unit.get("donor_cls")) in BOSSISH
+    if p == d:
+        return "same"
+    return "b2m" if d else "m2b"
 
 
 def load_ref(path=REF_PATH):
@@ -236,6 +257,7 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
         rows.append({"e": e, "old_hp": ohp, "donor_hp": dhp, "map": mp,
                      "dst_tier": d_tier, "dst_rate": d_rate,
                      "src_tier": s_tier, "src_rate": s_rate,
+                     "b2m": rel_of(e) == "b2m",
                      "orig_eff": ohp * d_rate, "donor_eff": dhp * s_rate})
     n = len(rows)
     if n < 10:
@@ -262,8 +284,14 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
         # 写盘口径：有效 = target × dst 档倍率（有 dst 档时）；无 dst 档 = 无 area effect，
         # 有效 = target × 换入者自己的档倍率（克隆行保留捐赠者 spEffectID3）。
         if r["dst_tier"]:
-            target = int(round(h / (r["dst_rate"] or 1.0)))
+            _denom = r["dst_rate"] or 1.0
+            if r["b2m"]:
+                # 写盘层会给 b2m 单位再乘 health×0.25；先除掉，最终有效血量才等于 h
+                # （位置原强度），否则会被双缩放到 1/4。
+                _denom *= B2M_HP_FACTOR
+            target = int(round(h / _denom))
         else:
+            # 没有 dst 档 = 不挂区域 effect，写盘层也就不会乘 b2m 的 0.25
             target = int(round(h / (r["src_rate"] or 1.0)))
         target = max(1, target)
         if str(dmg_model) == "position":
@@ -286,6 +314,7 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
             "hp_ratio": round(h / (r["orig_eff"] or 1.0), 4),
             "dst_tier": r["dst_tier"], "dst_rate": round(r["dst_rate"], 6),
             "src_tier": r["src_tier"], "src_rate": round(r["src_rate"], 6),
+            "b2m": bool(r["b2m"]),
         }
     # 多阶段「同一个 Boss」：同一 Boss 的其余位置跟随它第一个位置的分层结果（同一份血量）
     groups_one = {}
@@ -325,8 +354,11 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
             p["target_hp"] = e["target_hp"]
             touched += 1
     dmg = [r["e"]["balance"]["dmg_mult"] for r in rows]
+    b2m_rows = [r for r in rows if r["b2m"]]
     summary = {
         "model": "quantile-lut",
+        "b2m_units": len(b2m_rows),
+        "b2m_hp_factor": B2M_HP_FACTOR if b2m_rows else None,
         "source": ref.get("source"),
         "seed": seed, "k": kn, "jitter": int(jitter), "alpha": float(alpha),
         "dmg_model": str(dmg_model),
@@ -358,9 +390,11 @@ def apply_to_plan(plan, ref=None, npc=None, seed=None, k=DEFAULT_K, jitter=DEFAU
     }
     if isinstance(plan.get("meta"), dict):
         plan["meta"]["balance"] = summary
-    log("[平衡] %d 个 Boss→Boss 单元：KS=%.4f 逐位>1.5x=%.1f%% 秩相关=%+.3f；"
-        "有效血量 mean %.0f（原 %.0f）；写盘 raw hp %d..%d；伤害倍率 %.2f/%.2f/%.2f"
-        % (n, summary["ks"], summary["tail_gt_1_5x"] * 100, summary["rank_corr"],
+    log("[平衡] %d 个 Boss→Boss 单元（其中 Boss 进杂兵位 %d 个：已按 health×%s 补偿写盘降级）："
+        "KS=%.4f 逐位>1.5x=%.1f%% 秩相关=%+.3f；有效血量 mean %.0f（原 %.0f）；"
+        "写盘 raw hp %d..%d；伤害倍率 %.2f/%.2f/%.2f"
+        % (n, len(b2m_rows), (B2M_HP_FACTOR if b2m_rows else "-"),
+           summary["ks"], summary["tail_gt_1_5x"] * 100, summary["rank_corr"],
            summary["assigned"]["mean"], summary["pool"]["mean"],
            summary["target_hp"]["min"], summary["target_hp"]["max"],
            summary["dmg_mult"]["p10"], summary["dmg_mult"]["p50"], summary["dmg_mult"]["p90"]))
@@ -408,14 +442,23 @@ def _selftest():
         npc[100 + i] = {"hp": int(round(260.0 * (1.15 ** i)))}
     units, positions = [], []
     for i in range(1, 31):
-        e = {"key": "u%02d" % i, "old_cls": "Boss", "new_cls": "Boss",
+        e = {"key": "u%02d" % i, "cls": "Boss", "old_cls": "Boss", "new_cls": "Boss",
              "old_npc_id": i, "new_npc_id": 100 + i,
              "places": [{"map": "m1" if i % 2 else "m2"}], "target_hp": 999}
         units.append(e)
         positions.append({"unit": "u%02d" % i, "map": e["places"][0]["map"], "target_hp": 999})
     # 非 Boss 位置换入 Boss：也必须被平衡锚住（黄金树传送门守门位那一类）
-    units.append({"key": "wg", "old_cls": "Basic", "new_cls": "Boss",
+    units.append({"key": "wg", "cls": "Basic", "old_cls": "Basic", "new_cls": "Boss",
                   "old_npc_id": 5, "new_npc_id": 105, "places": [{"map": "m1"}],
+                  "target_hp": 999})
+    # b2m（Boss 进杂兵位）：平衡 target 要先把写盘层的 health×0.25 除掉
+    units.append({"key": "b2m", "cls": "Basic", "old_cls": "Basic", "new_cls": "Boss",
+                  "old_npc_id": 5, "new_npc_id": 106, "places": [{"map": "m1"}],
+                  "target_hp": 999})
+    # 多阶段实体（原类可能是 Helper，但站在 boss 侧）：不能按 b2m 降级
+    units.append({"key": "mpb", "cls": "Helper", "old_cls": "Helper", "new_cls": "Boss",
+                  "multiphase": "g2", "mp_boss": 1, "phase": 1,
+                  "old_npc_id": 6, "new_npc_id": 107, "places": [{"map": "m1"}],
                   "target_hp": 999})
     units.append({"key": "keep", "old_cls": "Basic", "new_cls": "Basic",
                   "old_npc_id": 1, "new_npc_id": 2, "places": [{"map": "m1"}], "target_hp": 7})
@@ -443,14 +486,28 @@ def _selftest():
     assert sd and sd["dmg_model"] == "derived" and sd["dmg_mult"]["p50"] > 0.2, "派生伤害口径异常"
     wg = next(e for e in units if e["key"] == "wg")
     assert wg.get("balance"), "非Boss→Boss 位置没被平衡"
+    # b2m：写盘层会给它乘 health×0.25；平衡的 target 必须预先除以它，
+    # 这样模拟写盘后（target × dst_rate × 0.25）才等于 hp_eff（位置原强度）。
+    _b = next(e for e in units if e["key"] == "b2m")
+    assert _b["balance"]["b2m"] is True, "b2m 单元没被标记"
+    assert abs(_b["target_hp"] * 2.0 * B2M_HP_FACTOR - _b["balance"]["hp_eff"]) <= 2, \
+        "b2m 的 target 没把写盘降级倍率除掉（有效血量 %s ≠ %s）" % (
+            _b["target_hp"] * 2.0 * B2M_HP_FACTOR, _b["balance"]["hp_eff"])
+    # wg 与 b2m 两个单元都是 Boss 进杂兵位（wg 是黄金树守门位那一类）
+    assert s1["b2m_units"] >= 2, "b2m 统计不对：%s" % s1.get("b2m_units")
+    # 多阶段实体虽然原类可能是 Helper，但站在 boss 侧 → 不是 b2m，不乘 0.25
+    _m = next(e for e in units if e["key"] == "mpb")
+    assert _m["balance"]["b2m"] is False, "多阶段实体被误判成 b2m"
+    assert abs(_m["target_hp"] * 2.0 - _m["balance"]["hp_eff"]) <= 2, \
+        "多阶段实体的写盘口径不对（mix b2m 降级）"
     assert all(0.85 - 1e-9 <= e["balance"]["hp_ratio"] <= 1.25 + 1e-9
                for e in units if e.get("balance")), "有位置的血量倍率越窗"
     # 多阶段「整场共用一个 Boss」：二阶段跟随第一阶段（同一个 Boss、同一份血量）
     mp_units = [
-        {"key": "mp1", "old_cls": "Boss", "new_cls": "Boss", "multiphase": "g",
+        {"key": "mp1", "cls": "Boss", "old_cls": "Boss", "new_cls": "Boss", "multiphase": "g",
          "mp_policy": "one_boss", "phase": 1, "old_npc_id": 1, "new_npc_id": 101,
          "places": [{"map": "m1"}], "target_hp": 999},
-        {"key": "mp2", "old_cls": "Boss", "new_cls": "Helper", "multiphase": "g",
+        {"key": "mp2", "cls": "Boss", "old_cls": "Boss", "new_cls": "Helper", "multiphase": "g",
          "mp_policy": "one_boss", "phase": 2, "old_npc_id": 1, "new_npc_id": 101,
          "places": [{"map": "m1"}], "target_hp": 999},
     ]
@@ -470,6 +527,7 @@ def _selftest():
     assert s3 and any((a["target_hp"] != b["target_hp"]) for a, b in zip(plan2["units"], units)), \
         "换种子后血量完全没变"
     print("PASS 平衡 LUT：同种子可复现 / 换种子有变化 / 非 Boss→Boss 也平衡 / "
+          "b2m 已按 health×0.25 补偿 / 多阶段实体不按 b2m 降级 / "
           "血量倍率 %.2f~%.2f 窗口内 / 伤害=位置档（比值 1.00）/ KS %.3f / 秩相关 %.2f"
           % (s1["ratio"]["min"], s1["ratio"]["max"], s1["ks"], s1["rank_corr"]))
 

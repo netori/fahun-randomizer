@@ -1,0 +1,367 @@
+{
+  "version": 1,
+  "name": "01 参考默认·同族池",
+  "rate_mode": "independent",
+  "classes": {
+    "Basic": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Basic"
+      ],
+      "donor_weights": {
+        "Basic": 100
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Wildlife": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Wildlife"
+      ],
+      "donor_weights": {
+        "Wildlife": 100
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Boss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 22.9,
+        "pool:remembrance": 13.3,
+        "pool:keystone": 8.6,
+        "MinorBoss": 19.0,
+        "Miniboss": 13.3,
+        "pool:waygate": 11.4,
+        "NightMiniboss": 3.8,
+        "DragonMiniboss": 1.9,
+        "Evergaol": 1.0,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "MinorBoss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 19.0,
+        "pool:remembrance": 8.6,
+        "pool:keystone": 5.7,
+        "MinorBoss": 28.5,
+        "Miniboss": 15.2,
+        "pool:waygate": 12.4,
+        "NightMiniboss": 2.9,
+        "DragonMiniboss": 1.9,
+        "Evergaol": 1.0,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Miniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "MinorBoss": 27.7,
+        "Miniboss": 27.8,
+        "pool:waygate": 16.7,
+        "Boss": 7.4,
+        "pool:keystone": 3.7,
+        "NightMiniboss": 4.6,
+        "DragonMiniboss": 2.8,
+        "Evergaol": 1.9,
+        "pool:remembrance": 2.8,
+        "pool:reliquary": 4.6
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "NightMiniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "NightMiniboss": 27.1,
+        "Miniboss": 23.4,
+        "MinorBoss": 16.2,
+        "pool:waygate": 12.6,
+        "DragonMiniboss": 5.4,
+        "Boss": 5.4,
+        "pool:keystone": 2.7,
+        "pool:remembrance": 2.7,
+        "pool:reliquary": 4.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "DragonMiniboss": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "DragonMiniboss": 28.9,
+        "MinorBoss": 19.8,
+        "Miniboss": 16.2,
+        "pool:waygate": 10.8,
+        "Boss": 9.0,
+        "NightMiniboss": 5.4,
+        "pool:keystone": 2.7,
+        "pool:remembrance": 2.7,
+        "pool:reliquary": 4.5
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "Evergaol": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 50,
+      "targets": [
+        "Boss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Evergaol": 27.8,
+        "MinorBoss": 22.2,
+        "Miniboss": 18.5,
+        "Boss": 11.1,
+        "pool:waygate": 9.3,
+        "pool:keystone": 3.7,
+        "pool:remembrance": 2.8,
+        "pool:reliquary": 4.6
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
+  },
+  "pools": {
+    "waygate": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 19.0,
+        "MinorBoss": 33.3,
+        "Miniboss": 23.8,
+        "pool:remembrance": 7.6,
+        "pool:keystone": 6.7,
+        "pool:waygate": 4.8,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "keystone": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 27.9,
+        "pool:remembrance": 23.1,
+        "pool:keystone": 23.1,
+        "MinorBoss": 13.9,
+        "Miniboss": 4.6,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "remembrance": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Boss",
+        "Miniboss",
+        "MinorBoss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 27.9,
+        "pool:remembrance": 23.1,
+        "pool:keystone": 23.1,
+        "MinorBoss": 13.9,
+        "Miniboss": 4.6,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    },
+    "reliquary": {
+      "enabled": true,
+      "rate": 1,
+      "weight": 100,
+      "targets": [
+        "Boss",
+        "DragonMiniboss",
+        "Evergaol",
+        "Miniboss",
+        "MinorBoss",
+        "NightMiniboss",
+        "pool:keystone",
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
+      ],
+      "donor_weights": {
+        "Boss": 22.9,
+        "pool:remembrance": 13.3,
+        "pool:keystone": 8.6,
+        "MinorBoss": 19.0,
+        "Miniboss": 13.3,
+        "pool:waygate": 11.4,
+        "NightMiniboss": 3.8,
+        "DragonMiniboss": 1.9,
+        "Evergaol": 1.0,
+        "pool:reliquary": 4.8
+      },
+      "source_areas": [
+        "base",
+        "dlc"
+      ],
+      "target_areas": "same",
+      "size_max": null
+    }
+  }
+}

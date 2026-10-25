@@ -48,12 +48,16 @@
       "targets": [
         "Boss",
         "pool:keystone",
-        "pool:remembrance"
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
       ],
       "donor_weights": {
-        "Boss": 70,
-        "pool:remembrance": 20,
-        "pool:keystone": 10
+        "Boss": 64.8,
+        "pool:remembrance": 18.5,
+        "pool:keystone": 9.3,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
       },
       "source_areas": [
         "base",
@@ -156,12 +160,16 @@
       "targets": [
         "Boss",
         "pool:keystone",
-        "pool:remembrance"
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
       ],
       "donor_weights": {
-        "Boss": 70,
-        "pool:remembrance": 20,
-        "pool:keystone": 10
+        "Boss": 64.8,
+        "pool:remembrance": 18.5,
+        "pool:keystone": 9.3,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
       },
       "source_areas": [
         "base",
@@ -177,12 +185,16 @@
       "targets": [
         "Boss",
         "pool:keystone",
-        "pool:remembrance"
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
       ],
       "donor_weights": {
-        "Boss": 70,
-        "pool:remembrance": 20,
-        "pool:keystone": 10
+        "Boss": 64.8,
+        "pool:remembrance": 18.5,
+        "pool:keystone": 9.3,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
       },
       "source_areas": [
         "base",
@@ -198,12 +210,16 @@
       "targets": [
         "Boss",
         "pool:keystone",
-        "pool:remembrance"
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
       ],
       "donor_weights": {
-        "Boss": 70,
-        "pool:remembrance": 20,
-        "pool:keystone": 10
+        "Boss": 64.8,
+        "pool:remembrance": 18.5,
+        "pool:keystone": 9.3,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
       },
       "source_areas": [
         "base",
@@ -219,12 +235,16 @@
       "targets": [
         "Boss",
         "pool:keystone",
-        "pool:remembrance"
+        "pool:reliquary",
+        "pool:remembrance",
+        "pool:waygate"
       ],
       "donor_weights": {
-        "Boss": 70,
-        "pool:remembrance": 20,
-        "pool:keystone": 10
+        "Boss": 64.8,
+        "pool:remembrance": 18.5,
+        "pool:keystone": 9.3,
+        "pool:waygate": 2.8,
+        "pool:reliquary": 4.6
       },
       "source_areas": [
         "base",
