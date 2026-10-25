@@ -1,0 +1,343 @@
+{
+  "version": 1,
+  "note": "v1.5 二阶段携带：来源是多阶段 Boss 的初始形态时，把「变身成第二形态」也搬进目标地图；只对单阶段目标生效。",
+  "families": [
+    {
+      "id": "godfrey_horah",
+      "map": "m11_05_00_00",
+      "initial": {
+        "entity": 11050801,
+        "npc": 47200070,
+        "model": "c4720",
+        "think": 47200900,
+        "chara": -1,
+        "bar": null
+      },
+      "transformed": {
+        "entity": 11050800,
+        "npc": 47210070,
+        "model": "c4721",
+        "think": 47210900,
+        "chara": -1,
+        "bar": 904720001
+      },
+      "trigger": {
+        "kind": "hp1"
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20020,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "maliketh_beast",
+      "map": "m13_00_00_00",
+      "initial": {
+        "entity": 13000801,
+        "npc": 21100072,
+        "model": "c2110",
+        "think": 21100000,
+        "chara": -1,
+        "bar": 902110000
+      },
+      "transformed": {
+        "entity": 13000800,
+        "npc": 21101072,
+        "model": "c2110",
+        "think": 21101000,
+        "chara": -1,
+        "bar": 902110001
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.55
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20015,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "rennala",
+      "map": "m14_00_00_00",
+      "initial": {
+        "entity": 14000801,
+        "npc": 20300024,
+        "model": "c2030",
+        "think": 20300000,
+        "chara": -1,
+        "bar": 902030000
+      },
+      "transformed": {
+        "entity": 14000800,
+        "npc": 20310024,
+        "model": "c2031",
+        "think": 20310000,
+        "chara": -1,
+        "bar": 902030001
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.01
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20005,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "rykard_serpent",
+      "map": "m16_00_00_00",
+      "initial": {
+        "entity": 16000801,
+        "npc": 47100038,
+        "model": "c4710",
+        "think": 47100000,
+        "chara": -1,
+        "bar": 904710000
+      },
+      "transformed": {
+        "entity": 16000800,
+        "npc": 47101038,
+        "model": "c4710",
+        "think": 47100000,
+        "chara": -1,
+        "bar": 904710001
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.01
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [
+          11901
+        ],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20002,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "daergraf",
+      "map": "m17_00_00_00",
+      "initial": {
+        "entity": 17000800,
+        "npc": 43900000,
+        "model": "c4390",
+        "think": 43900000,
+        "chara": -1,
+        "bar": 902036010
+      },
+      "transformed": {
+        "entity": 17000810,
+        "npc": 43910000,
+        "model": "c4391",
+        "think": 43910000,
+        "chara": -1,
+        "bar": 902036011
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.01
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20000,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "radagon_eldenbeast",
+      "map": "m19_00_00_00",
+      "initial": {
+        "entity": 19000810,
+        "npc": 21900078,
+        "model": "c2190",
+        "think": 21900000,
+        "chara": -1,
+        "bar": 902190000
+      },
+      "transformed": {
+        "entity": 19000800,
+        "npc": 22000078,
+        "model": "c2200",
+        "think": 22000000,
+        "chara": -1,
+        "bar": 902200000
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.01
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20000,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "radahn_consort",
+      "map": "m20_01_00_00",
+      "initial": {
+        "entity": 20010801,
+        "npc": 52200089,
+        "model": "c5220",
+        "think": 52200000,
+        "chara": -1,
+        "bar": 905220000
+      },
+      "transformed": {
+        "entity": 20010800,
+        "npc": 52201089,
+        "model": "c5220",
+        "think": 52200000,
+        "chara": -1,
+        "bar": 905220001
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.65
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20011,
+        "dispmask": []
+      }
+    },
+    {
+      "id": "messmer",
+      "map": "m21_01_00_00",
+      "initial": {
+        "entity": 21010801,
+        "npc": 51300099,
+        "model": "c5130",
+        "think": 51300000,
+        "chara": -1,
+        "bar": 905130000
+      },
+      "transformed": {
+        "entity": 21010800,
+        "npc": 51301099,
+        "model": "c5130",
+        "think": 51300000,
+        "chara": -1,
+        "bar": 905130001
+      },
+      "trigger": {
+        "kind": "ratio",
+        "value": 0.5
+      },
+      "actions": {
+        "sp1": [],
+        "sp2": [
+          20010612
+        ],
+        "clear1": [],
+        "clear2": [],
+        "anim2": 20003,
+        "dispmask": [
+          [
+            10,
+            0
+          ],
+          [
+            11,
+            0
+          ],
+          [
+            12,
+            0
+          ],
+          [
+            20,
+            0
+          ],
+          [
+            21,
+            1
+          ]
+        ]
+      }
+    },
+    {
+      "id": "malenia",
+      "map": "m15_00_00_00",
+      "initial": {
+        "entity": 15000800,
+        "npc": 21200056,
+        "model": "c2120",
+        "think": 21200000,
+        "chara": -1,
+        "bar": 902120000
+      },
+      "transformed": {
+        "entity": 15000806,
+        "npc": 21200056,
+        "model": "c2120",
+        "think": 21201020,
+        "chara": -1,
+        "bar": 902120001
+      },
+      "trigger": {
+        "kind": "hp1"
+      },
+      "actions": {
+        "sp1": [
+          18400
+        ],
+        "sp2": [
+          18404,
+          18000,
+          18001,
+          18002,
+          18016,
+          18400
+        ],
+        "clear1": [
+          18015
+        ],
+        "clear2": [
+          18015
+        ],
+        "anim2": 20002,
+        "dispmask": [
+          [
+            10,
+            0
+          ],
+          [
+            11,
+            1
+          ],
+          [
+            12,
+            0
+          ]
+        ]
+      }
+    }
+  ]
+}

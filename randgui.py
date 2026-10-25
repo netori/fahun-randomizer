@@ -1444,6 +1444,9 @@ class App:
         # v1.4.0：双人 Boss 的第二只（Helper）也参与随机（单只互换，实验）。
         # 默认开 = yaml 里 A 批 6 组；B/C 批在 yaml 里 enabled:false，待实机确认后再放。
         self.ev1_duo = tk.BooleanVar(value=True)
+        # v1.5.0：来源是多阶段 Boss 的初始形态时，把「变身成第二形态」的事件一起搬走。
+        # 默认开；遇到地图事件异常可以先关掉这一项再写层。
+        self.ev1_phase_carry = tk.BooleanVar(value=True)
         _rf = tk.Frame(b0, bg=BG)
         _rf.pack(fill="x", pady=(px(6), 0))
         GoldCheck(_rf, text="改BOSS血条名", variable=self.ev1_bar_names,
@@ -1451,6 +1454,8 @@ class App:
         GoldCheck(_rf, text="夜间BOSS全天出现", variable=self.ev1_night,
                   command=self._ev1_status_refresh).pack(side="left", padx=(0, px(16)))
         GoldCheck(_rf, text="忽略场地/体型限制", variable=self.ev1_ignore_size,
+                  command=self._ev1_status_refresh).pack(side="left", padx=(0, px(16)))
+        GoldCheck(_rf, text="二阶段变身一起搬", variable=self.ev1_phase_carry,
                   command=self._ev1_status_refresh).pack(side="left")
         _rf2 = tk.Frame(b0, bg=BG)
         _rf2.pack(fill="x", pady=(px(4), 0))
@@ -1717,6 +1722,8 @@ class App:
                     "soul_follow": bool(getattr(self, "ev1_soul", None) and self.ev1_soul.get()),
                     "rainbow": bool(getattr(self, "ev1_rainbow", None) and self.ev1_rainbow.get()),
                     "duo_second": bool(getattr(self, "ev1_duo", None) and self.ev1_duo.get()),
+                    "phase_carry": bool(getattr(self, "ev1_phase_carry", None)
+                                        and self.ev1_phase_carry.get()),
                     "onslaught": float(getattr(self, "ev1_ons", None).get())
                                  if getattr(self, "ev1_ons", None) else 1.0,
                 },
@@ -5562,8 +5569,9 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
     ck("敌人页：旧管线（v0）的死表单已删干净", not _v0, f"残留={_v0}")
     _v1 = ("ev1_pools", "ev1_mult", "ev1_bar_names", "ev1_night",
            "ev1_ignore_size", "ev1_bgm", "ev1_soul", "ev1_rainbow", "ev1_duo",
+           "ev1_phase_carry",
            "ev1_scale", "ev1_oops", "ev1_ons", "ev1_seed", "ev1_overlay", "ev1_hint")
-    ck("敌人页：v1 控件齐（特殊池 4 个 + 9 个开关 + 3 个滑块 + 种子）",
+    ck("敌人页：v1 控件齐（特殊池 4 个 + 10 个开关 + 3 个滑块 + 种子）",
        all(hasattr(app, a) for a in _v1), "少控件")
     ck("敌人页：不再有自己的生成按钮（唯一入口是底栏的开始随机）",
        (not hasattr(app, "b_ev1_apply"))
@@ -5605,6 +5613,8 @@ def _uitest_actions(app, root, planlib, a, b, tmp, checks, ck):
        and app.ev1_night.get() is False and app.ev1_ignore_size.get() is False
        and app.ev1_duo.get() is True
        and app._ev1_options()["features"]["duo_second"] is True
+       and app.ev1_phase_carry.get() is True
+       and app._ev1_options()["features"]["phase_carry"] is True
        and app.ev1_overlay.get() is True, "默认值不对")
     app.ev1_mult.set(0.4); app.ev1_scale.set(1.5); root.update()
     _o1 = app._ev1_options()

@@ -42,6 +42,9 @@ PIPELINE = ["erio.py", "param_layout.py", "param_patch.py", "fmg.py", "oodle.py"
             # 漏一个，打包版的 v1 部署就会在 import 那一步炸（隔离自检不跑部署，抓不到）。
             "enemy_plan.py", "param_bin.py", "msb_edit.py", "evd_edit.py",
             "enemy_write.py", "enemy_gate.py", "bar_names.py",
+            # 2026-10-25 v1.5.0：二阶段携带（enemy_write 运行时会 import 这两个；
+            # 漏了打包版一写层就 ModuleNotFoundError，隔离自检抓不到）
+            "phase_carry.py", "evd_add.py",
             # 2026-10-24：Boss 数值平衡（写盘时在内存里补算；两层都要打进去，
             # 漏了打包版会在 GUI 生成那一步 import 失败，隔离自检抓不到）
             "enemy_balance.py", "balance_ref.py",
@@ -93,7 +96,9 @@ DATA = ["investigation/randomization-catalog/bundles.json",
         ] + [os.path.join("investigation", "vanilla_events", f)
              for f in sorted(os.listdir(os.path.join(WS, "investigation", "vanilla_events")))
              if f.endswith(".emevd.dcx")] + [
-        "investigation/apply/data/enemy_classes_v3.yaml"] + [
+        "investigation/apply/data/enemy_classes_v3.yaml",
+        # v1.5.0：二阶段携带配方（此文件缺了 = 所有 carry 都不触发，且不报错）
+        "investigation/apply/data/phase_carry.json"] + [
         # Paramdex 的 ER paramdef（enemy_randomizer 运行时要读 XML 解析行表；
         # 以前漏了它 ⇒ exe 里"写入失败：读不到 Paramdex 定义：NpcParam"）
         os.path.join("tools", "witchybnd-3.0.1.0", "Assets", "Paramdex", "ER", "Defs", f)

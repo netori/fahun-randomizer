@@ -31,12 +31,14 @@ if HERE not in sys.path:
 import bar_names                                                 # noqa: E402
 import enemy_balance as balance_model                            # noqa: E402
 import erio                                                      # noqa: E402
+import evd_add                                                   # noqa: E402
 import evd_edit                                                  # noqa: E402
 import msb_edit                                                   # noqa: E402
 import msb_read                                                   # noqa: E402
 import msb_write                                                  # noqa: E402
 import param_bin                                                  # noqa: E402
 import plan_layer                                                 # noqa: E402
+import phase_carry                                               # noqa: E402
 import enemy_randomizer as ER                                    # noqa: E402
 
 WORKSPACE = os.path.dirname(os.path.dirname(HERE))
@@ -53,8 +55,9 @@ VANILLA_EVENT_DIR = os.path.join(WORKSPACE, "investigation", "vanilla_events")
 # 格式 model,sp_effect_id,note；文件可选，不进计划/种子（改它只影响写盘）。
 DONOR_EFFECTS = os.path.join(WORKSPACE, "investigation", "enemy_donor_effects.csv")
 MANIFEST_NAME = "enemy_manifest.json"
-WRITE_VERSION = 9        # 9 = 来源模型专属加护（劳弗仪卫 c2195）；8 = 法魂放宽多阶段血量 clamp 上限（火焰巨人 5045 生效）；7 = 多阶段 Boss 血量（参考实现 5 组）；6 = 敌人倍增；5 = 敌人颜色；4 = 血条名随换入者
+WRITE_VERSION = 10       # 10 = 二阶段携带（来源是多阶段初始形态时，把变身事件一起搬走）；9 = 来源模型专属加护（劳弗仪卫 c2195）；8 = 法魂放宽多阶段血量 clamp 上限（火焰巨人 5045 生效）；7 = 多阶段 Boss 血量（参考实现 5 组）；6 = 敌人倍增；5 = 敌人颜色；4 = 血条名随换入者
 CLONE_NAME = "gfE:"                     # 克隆行的名字前缀（重跑时据此清理）
+PHASE2_CLONE_NAME = "gfPhase2:"        # 二阶段第二形态的 NpcParam 克隆行前缀（重跑时据此清理）
 MAP_REL = os.path.join("map", "MapStudio")
 DATA_SUB = "mod"        # 方案层根只放说明书，游戏数据在 <层根>/mod/（YAFSML 的 [mod] 要的是数据根）
 
@@ -997,7 +1000,8 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
     # ① 清掉上一轮自己加的克隆行（幂等）
     npc_pf = param_bin.ParamFile(bnd.get(npc_name))
     names = row_names(npc_pf)
-    old_clones = sorted(rid for rid, nm in names.items() if nm.startswith(CLONE_NAME))
+    old_clones = sorted(rid for rid, nm in names.items()
+                        if nm.startswith(CLONE_NAME) or nm.startswith(PHASE2_CLONE_NAME))
     if old_clones:
         log("[写盘] 上一轮的克隆行 %d 条 → 先删掉" % len(old_clones))
         npc_pf = param_bin.ParamFile(npc_pf.rebuild(drop=old_clones))
@@ -1177,6 +1181,16 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
             continue
         for pl in u["places"]:
             place_clones["%s|%s|%d" % (pl["map"], pl["part_name"], int(pl["occurrence"]))] = _nid
+    # 二阶段携带：来源是多阶段 Boss 的初始形态时，目标场地要补一份「第二形态」。
+    # 先在这里认目标、克隆第二形态 NpcParam（血量按目标位置），地图 part 与事件在 ④d 写。
+    carry_on = bool(features.get("phase_carry", True))
+    recipes = phase_carry.load_recipes() if carry_on else {}
+    carries = phase_carry.detect(plan, recipes) if carry_on else []
+    carry_rows = []
+    if carries:
+        carry_rows = phase_carry.alloc_npc_rows(carries, npc_pf, fbn,
+                                                used=set(alloc.values()), log=log)
+
     think_alloc = {}
     for u in units:
         tk = _think_clone_key(u)
@@ -1196,7 +1210,9 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
         if missing:
             raise WriteError("来源加护不在 SpEffectParam 里：%s（检查 %s）"
                              % ("、".join(str(x) for x in missing), DONOR_EFFECTS))
-    npc_extra, npc_notes = [], {}
+    npc_extra, npc_notes = list(carry_rows), {}
+    for nid, _payload, _nm in carry_rows:
+        npc_notes[nid] = {"phase2": True}
     donor_effect_units = 0
     n_with_src = 0
     for key in sorted(alloc):
@@ -1370,6 +1386,43 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
     else:
         log("[写盘] 没有 %s，跳过血条名处理" % BAR_TABLE)
 
+    # ④d 二阶段携带：在已写好的层上克隆第二形态 part + 追加 init/transition/death 事件。
+    # 放在血条名之后：血条名先改目标场地原本的 EMEVD，再把新事件追加到同一份文件上。
+    carry_stats = {"targets": 0, "maps": 0, "parts": 0, "events": 0,
+                   "details": [], "skipped": []}
+    write_maps = set(maps)
+    live_carries = [c for c in carries
+                    if any(p["map"] in write_maps for p in c["places"])]
+    for c in live_carries:
+        c["places"] = [p for p in c["places"] if p["map"] in write_maps]
+    if live_carries:
+        carry_stats = phase_carry.apply(stage_data, live_carries, mod, VANILLA_EVENT_DIR, log=log)
+        touched = set()
+        for d in carry_stats.get("details") or []:
+            touched.add(("map", d["map"]))
+            touched.add(("event", d["map"]))
+        for kind, mname in touched:
+            rel = (os.path.join(MAP_REL, mname + ".msb.dcx") if kind == "map"
+                   else "event/%s.emevd.dcx" % mname)
+            rel_n = rel.replace("\\", "/")
+            path = os.path.join(stage_data, rel)
+            rec = {"rel": rel_n, "bytes": os.path.getsize(path), "sha256": sha256_file(path)}
+            for x in files:
+                if x["rel"] == rel_n:
+                    x.update(rec)
+                    break
+            else:
+                files.append(rec)
+        for d in carry_stats.get("details") or []:
+            _st = msb_stats.get(d["map"])
+            if _st is not None:
+                _st["parts"] = int(_st.get("parts") or 0) + len(d["parts"])
+                _st["phase2"] = d["parts"]
+                _st["carry_events"] = d.get("events") or []
+        log("[写盘] 二阶段携带：%d 个目标 / %d 张图 / +%d part / +%d 事件"
+            % (carry_stats["targets"], carry_stats["maps"],
+               carry_stats["parts"], carry_stats["events"]))
+
     # ⑤ regulation
     npc_new = npc_pf.rebuild(extra=npc_extra)
     think_new = think_pf.rebuild(extra=think_extra) if think_extra else think_pf.data
@@ -1465,7 +1518,8 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
                       "onslaught": float(features.get("onslaught") or 1.0),
                       "phase_pair_fix": bool(features.get("phase_pair_fix", True)),
                       "balance": bool(balance_in_memory or _meta0.get("balance")),
-                      "area_scaling": True},
+                      "area_scaling": True,
+                      "phase_carry": carry_on},
         "nightday": night_meta,
         "counts": {"units": len(units), "places": sum(len(u["places"]) for u in units),
                    "maps": len(maps), "npc_clone_rows": len(npc_extra),
@@ -1487,8 +1541,13 @@ def build(plan_path=PLAN_DEFAULT, label=None, out_root=None, base_reg=None,
                    "bar_name_no_slot": bar_stats["no_slot"],
                    "bar_name_placeholder": bar_stats["placeholder"],
                    "bar_name_placeholder_targets": bar_stats["placeholder_targets"],
+                   "phase2_carry_targets": carry_stats.get("targets", 0),
+                   "phase2_carry_maps": carry_stats.get("maps", 0),
+                   "phase2_carry_parts": carry_stats.get("parts", 0),
+                   "phase2_carry_events": carry_stats.get("events", 0),
                    "phase_pair_fix_rows": phase_fix["applied"]},
          "phase_pair_fix": phase_fix,
+         "phase_carry": carry_stats,
         "area_scaling": {
             "base_row": AREA_BASE_ROW,
             "stats": area_stats,
@@ -1665,9 +1724,23 @@ def verify_layer(layer_dir, plan_path=None, log=print):
                     or int(y.get("think_id") or 0) != int(d.get("think") or 0)
                     or y.get("model") != d.get("model")):
                 bad.append("%s 复制体 #%d 的身份不对" % (mname, i))
-        log("    复验图 %s：%d 个 part%s" % (
+        for d in info.get("phase2") or []:
+            ent = int(d.get("entity") or 0)
+            got = None
+            for p in parts.values():
+                if int(p.get("entity_id") or 0) == ent:
+                    got = p
+                    break
+            if got is None:
+                bad.append("%s 缺二阶段复制 part entity=%d" % (mname, ent))
+            elif (int(got.get("npc_id") or 0) != int(d.get("npc") or 0)
+                  or int(got.get("think_id") or 0) != int(d.get("think") or 0)
+                  or got.get("model") != d.get("model")):
+                bad.append("%s 二阶段复制 part %d 的身份不对" % (mname, ent))
+        log("    复验图 %s：%d 个 part%s%s" % (
             mname, len(parts),
-            "（复制 %d）" % len(info.get("dups") or []) if info.get("dups") else ""))
+            "（复制 %d）" % len(info.get("dups") or []) if info.get("dups") else "",
+            "（二阶段 %d）" % len(info.get("phase2") or []) if info.get("phase2") else ""))
 
     # common_func：模板里的 BGM 判定必须已删掉，其余事件逐条一致
     base_evd = (man.get("base") or {}).get("event")
@@ -1697,10 +1770,42 @@ def verify_layer(layer_dir, plan_path=None, log=print):
                 continue
             tgts = {int(k): (v[0] if isinstance(v[0], list) else [int(v[0])], int(v[1]))
                     for k, v in tg.items()}
-            okb, msgs = bar_names.verify_file(srcp, dstp, tgts)
-            if not okb:
-                bad.append("血条名 %s：%s" % (mname, "; ".join(msgs)))
-            n_bar += len(tgts)
+            info = maps.get(mname) or {}
+            carry_ev = info.get("carry_events") or []
+            if carry_ev:
+                cur, _m2, _d2 = evd_edit.load_evd(dstp)
+                # 这张图除了改血条名，还追加了二阶段事件：先算「血条名»，再按 manifest
+                # 记录的事件 id/实体/flag 把同样的事件追加一遍，最后逐字节比。
+                base_evd, _m1, _d1 = evd_edit.load_evd(srcp)
+                expect, hits = bar_names.patch_evd(base_evd, tgts)
+                specs = []
+                for rec in carry_ev:
+                    fam = phase_carry.load_recipes().get(rec.get("family"))
+                    if not fam:
+                        bad.append("血条名 %s：manifest 里的二阶段组 %s 不认识"
+                                   % (mname, rec.get("family")))
+                        continue
+                    evs = phase_carry.build_events(
+                        fam, int(rec["phase1"]), int(rec["phase2"]),
+                        int(rec["flags"][0]), int(rec["flags"][1]),
+                        fam["transformed"].get("bar"))
+                    for kind, eid in zip(("init", "transition", "death"),
+                                         rec.get("events") or []):
+                        specs.append({"event_id": int(eid), "rest": 1,
+                                      "instructions": evs[kind]})
+                if specs:
+                    expect, _meta = evd_add.add_events(expect, specs, register=True)
+                if expect != cur.raw:
+                    bad.append("血条名 %s：写出的明文与期望不一致（长度 %d / %d）"
+                               % (mname, len(expect), len(cur.raw)))
+                if len(cur.check_chain()) and [n for n, ok in cur.check_chain() if not ok]:
+                    bad.append("血条名 %s：结构复验失败" % mname)
+                n_bar += len(tgts)
+            else:
+                okb, msgs = bar_names.verify_file(srcp, dstp, tgts)
+                if not okb:
+                    bad.append("血条名 %s：%s" % (mname, "; ".join(msgs)))
+                n_bar += len(tgts)
         n_real = (man.get("counts") or {}).get("bar_name_targets", n_bar)
         log("    复验血条名：%d 张图 / %d 个位置实际改名（manifest 记录）" % (len(bmap), n_real))
 
