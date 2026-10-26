@@ -50,6 +50,9 @@ I_ANIM = (2003, 18)               # ForceAnimationPlayback(entity, anim, 0, 1.0)
 I_DISPMASK = (2004, 26)           # ChangeCharacterDispmask(entity, mask|on<<8)：8 字节
 I_AI_REPLAN = (2004, 20)          # RequestCharacterAIReplan(entity)：4 字节
 I_FORCE_DEATH = (2004, 4)         # ForceCharacterDeath(entity, false)：8 字节
+I_IF_FLAG = (3, 0)                # WaitFor(EventFlag(flag)==ON)：8 字节
+#   前 4 字节 = [条件组(u8), state(u8, 1=ON), flagType(u8, 0=Absolute), pad]
+#   （原版实测：EventFlag(f) 的组 1 = 0x00000101；老事件里 257/258 就是组 1/2）
 
 MAX_ENTITY = 0xFFFFFF00
 
@@ -133,6 +136,12 @@ def _force_death(entity):
     return ins(*I_FORCE_DEATH, _u32(entity) + _u32(0))
 
 
+def _if_flag(flag, group=1, on=True):
+    """WaitFor 条件：EventFlag(flag) == on（绝对 flag，条件组默认 1，与 _char_dead 同组）。"""
+    word0 = (int(group) & 0xFF) | ((1 if on else 0) << 8)
+    return ins(*I_IF_FLAG, _u32(word0) + _u32(flag))
+
+
 def _trigger(trigger, entity):
     if trigger.get("kind") == "hp1":
         return [_hp_value(entity, 1)]
@@ -180,8 +189,14 @@ def build_events(fam, phase1, phase2, flag_tr, flag_death, bar2):
     trans.append(ins(*I_AI_REPLAN, _u32(phase2)))
     trans.append(_set_flag(flag_tr, 1))
 
+    # 死亡结算必须先等「变过身」的 flag 亮起来再判 phase2 死没死：
+    # 只写 CharacterDead(phase2) 时，地图加载后的第 1 帧 phase2 还是被 init 事件禁用的
+    # 隐藏实体，引擎会把它当「已死」（实测 v1.5.1 试玩层：玩家还没走到引导之始，
+    # 大树守卫就被这段结算 ForceDeath 掉了，地图的野外 Boss 公共事件随即弹出
+    # 「敌人已击败」并结算奖励）。加 flag_tr 这个守卫后，变身之前这段永远不生效。
     death = [
         _end_if(flag_death),
+        _if_flag(flag_tr),
         _char_dead(phase2),
         _char(I_CHAR_ON, phase1, 1),   # 已隐藏的实体也唤醒一下，ForceDeath 才能结算
         _force_death(phase1),
