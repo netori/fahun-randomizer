@@ -125,16 +125,50 @@ def add_events(raw, specs, register=True):
     vals["instructions_offset"] = instructions_offset
     vals["base_arg_size"] = len(args_out)
     vals["base_arg_offset"] = base_arg_offset
+    # 尾巴（unknown / event layers / arg repl / linked / strings）的起点是「参数区末尾」。
+    # 指令表增长（新增事件）和参数区增长都会把它整体推后 —— 只按 args_add 平移是错的，
+    # 会把 arg_repl_offset 指进指令表里，游戏加载该 EMEVD 时直接 0xC0000005（m60_39_43 实测）。
+    old_tail_start = ev.arg_base + old_args_size
+    new_tail_start = base_arg_offset + len(args_out)
+    tail_shift = new_tail_start - old_tail_start
     # unknown 区段在指令与参数之间；原文件通常是空的（offset == base_arg_offset）
     if int(ev.hdr["unknown_count"]) == 0:
         vals["unknown_offset"] = base_arg_offset
     else:
-        vals["unknown_offset"] = int(ev.hdr["unknown_offset"]) + args_add  # 保守
-    for name in ("event_layers_offset", "arg_repl_offset", "linked_offset", "strings_offset"):
-        vals[name] = int(ev.hdr[name]) + args_add if int(ev.hdr[name]) else 0
+        vals["unknown_offset"] = int(ev.hdr["unknown_offset"]) + tail_shift
+    for name, cnt_name in (("event_layers_offset", "event_layers_count"),
+                           ("arg_repl_offset", "arg_repl_count"),
+                           ("linked_offset", "linked_count")):
+        # 空区段（count == 0）指向参数区起点；有内容的区段整体后移 tail_shift
+        if int(ev.hdr[cnt_name]) > 0:
+            vals[name] = int(ev.hdr[name]) + tail_shift
+        else:
+            vals[name] = base_arg_offset
+    vals["strings_offset"] = (int(ev.hdr["strings_offset"]) + tail_shift
+                              if int(ev.hdr["strings_size"]) > 0 else 0)
     for i, name in enumerate(evd_edit.FIELDS):
         struct.pack_into("<Q", hdr, 16 + i * 8, int(vals[name]))
     out = bytes(hdr) + b"".join(ev_out) + bytes(ins_out) + bytes(args_out) + tail
+    # 写后自检：尾巴各区段必须从「参数区末尾」起首尾相接
+    h = evd_edit.Evd(out).hdr
+    pos = h["base_arg_offset"] + h["base_arg_size"]
+    errs = []
+    if h["arg_repl_count"]:
+        if h["arg_repl_offset"] != pos:
+            errs.append("arg_repl_offset %d != args_end %d" % (h["arg_repl_offset"], pos))
+        pos += h["arg_repl_count"] * 32
+    if h["linked_count"]:
+        if h["linked_offset"] != pos:
+            errs.append("linked_offset %d != %d" % (h["linked_offset"], pos))
+        pos += h["linked_count"] * 8
+    if h["strings_size"]:
+        if h["strings_offset"] != pos:
+            errs.append("strings_offset %d != %d" % (h["strings_offset"], pos))
+        pos += h["strings_size"]
+    if pos != len(out):
+        errs.append("tail end %d != file size %d" % (pos, len(out)))
+    if errs:
+        raise EvdAddError("EMEVD 尾部区段没对齐：%s" % errs)
     return out, {"events": len(specs), "instructions": sum(len(x) for x in new_blocks),
                  "args": len(args_out) - old_args_size, "raw": len(out)}
 

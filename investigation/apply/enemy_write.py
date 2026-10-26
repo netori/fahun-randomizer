@@ -773,6 +773,14 @@ def patch_map(raw, units, clone_of, think_of, map_name=None, log=None):
     m = msb_edit.Msb(raw)
     idx = part_index(m)
     parts = dict(m.parts())
+    # 复制体（敌人倍增）必须插进「敌人 part 分组」末尾，不能 append 到 PARTS 块最后：
+    # 实测（v1.5.0 崩因）末尾多一个会被实例化的敌人 part → 进图 50-60 秒
+    # 0xc0000005 / offset 0x3f71d3 崩；插到 type==2 分组末尾 → 挂机 100 秒存活。
+    _ptypes = [int(parts[i].get("type") or 0) for i in sorted(parts)]
+    dup_insert_at = len(_ptypes)
+    for _i, _t in enumerate(_ptypes):
+        if _t == msb_read.PART_TYPE_ENEMY:
+            dup_insert_at = _i + 1
     changed, models_added = {}, []
     for u in units:
         nid = clone_of[_clone_key(u)]
@@ -862,8 +870,8 @@ def patch_map(raw, units, clone_of, think_of, map_name=None, log=None):
                     z = base_z + ONSLAUGHT_OFFSET * math.sin(ang)
                     struct.pack_into("<f", e, msb_read.P_POS, x)
                     struct.pack_into("<f", e, msb_read.P_POS + 8, z)
-                    pb["entries"].append(bytes(e))
-                    dups.append({"index": len(parts) + len(dups), "source_index": i,
+                    pb["entries"].insert(dup_insert_at + len(dups), bytes(e))
+                    dups.append({"index": dup_insert_at + len(dups), "source_index": i,
                                  "source_entity": int(parts[i].get("entity_id") or 0),
                                  "entity": ent, "part_id": next_pid - 1,
                                  "instance_id": next_inst - 1,
@@ -871,7 +879,7 @@ def patch_map(raw, units, clone_of, think_of, map_name=None, log=None):
                                  "x": x, "z": z})
     out = m.assemble()
     return out, {"changed": changed, "models_added": models_added,
-                 "dups": dups, "msb": m}
+                 "dups": dups, "dup_insert_at": dup_insert_at, "msb": m}
 
 
 # ────────────────────────── 校验 ──────────────────────────
@@ -884,8 +892,12 @@ def verify_map(base_raw, out_raw, stat):
     dups = stat.get("dups") or []
     if len(pa) + len(dups) != len(pb):
         raise WriteError("读回校验：part 数 %d + 复制 %d → %d" % (len(pa), len(dups), len(pb)))
+    # 复制体插在 dup_insert_at（敌人分组末尾），之后的基础 part 整体后移 len(dups)
+    ins_at = int(stat.get("dup_insert_at", len(pa)))
+    def _new_index(i):
+        return i if i < ins_at else i + len(dups)
     for i, x in pa.items():
-        y = pb[i]
+        y = pb[_new_index(i)]
         if i in stat["changed"]:
             pl, nid, think = stat["changed"][i]
             if int(y["npc_id"]) != nid or int(y["think_id"]) != think:

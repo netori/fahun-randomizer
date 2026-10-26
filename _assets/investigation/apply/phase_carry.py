@@ -45,7 +45,7 @@ I_GRAVITY = (2004, 10)            # Enable/DisableCharacterGravity
 I_NET = (2004, 34)                # SetNetworkUpdateRate(entity, on)
 I_BAR = (2003, 11)                # DisplayBossHealthBar(enabled, entity, 0, name)：16 字节
 I_SP = (2004, 8)                  # SetSpEffect(entity, effect)：8 字节
-I_CLEAR_SP = (2004, 7)            # ClearSpEffect(entity, effect)：8 字节
+I_CLEAR_SP = (2004, 21)           # ClearSpEffect(entity, effect)：8 字节（(2004,7) 是 CreateBulletOwner，别用）
 I_ANIM = (2003, 18)               # ForceAnimationPlayback(entity, anim, 0, 1.0)：16 字节
 I_DISPMASK = (2004, 26)           # ChangeCharacterDispmask(entity, mask|on<<8)：8 字节
 I_AI_REPLAN = (2004, 20)          # RequestCharacterAIReplan(entity)：4 字节
@@ -84,7 +84,10 @@ def ins(cat, idx, payload):
 
 
 def _end_if(flag):
-    return ins(*I_ENDIF_FLAG, _u32(0) + _u32(flag))
+    # 第一个 u32 是 [endType(u8), desiredFlagState(u8), flagType(u8), pad]；
+    # desiredFlagState=1(ON) 才是「这个 flag 亮起来就结束事件」（0=等 flag 熄灭，
+    # 会让事件在地图加载时立刻自己结束——v1.5.0 二阶段永不触发的实测原因）。
+    return ins(*I_ENDIF_FLAG, _u32(0x00000100) + _u32(flag))
 
 
 def _set_flag(flag, on=1):
@@ -112,17 +115,18 @@ def _dispmask(entity, mask, on):
 
 
 def _hp_ratio(entity, value):
-    # 与 DarkScript3 编译 WaitFor(HPRatio(...) <= x) 的字节一致：group=5
-    return ins(*I_HP_RATIO, _u32(0) + _u32(entity) + _u32(5) + _f32(value)
+    # 与 vanilla 实测字节一致：条件组=1，entity，比较=5(<=)，ratio f32，0，1.0f
+    return ins(*I_HP_RATIO, _u32(1) + _u32(entity) + _u32(5) + _f32(value)
                + _u32(0) + _f32(1.0))
 
 
 def _hp_value(entity, value=1):
-    return ins(*I_HP_VALUE, _u32(0) + _u32(entity) + _u32(int(value)) + _f32(1.0))
+    return ins(*I_HP_VALUE, _u32(1) + _u32(entity) + _u32(int(value)) + _f32(1.0))
 
 
 def _char_dead(entity):
-    return ins(*I_CHAR_DEAD, _u32(0) + _u32(entity) + _u32(1) + _f32(1.0))
+    # (4,0) IF Character Dead/Alive：条件组 1，entity，DesiredLifeState=1(dead)，1.0f
+    return ins(*I_CHAR_DEAD, _u32(1) + _u32(entity) + _u32(1) + _f32(1.0))
 
 
 def _force_death(entity):
@@ -309,6 +313,15 @@ def patch_map(raw, carries, log=None):
     next_ent = max([x for x in entities if 0 < x < MAX_ENTITY] or [1000000]) + 1
     next_pid = max(ids or [0]) + 1
     next_inst = max(insts or [0]) + 1
+    # 克隆条目必须插进「敌人 part 分组」的末尾，不能 append 到 PARTS 块最后。
+    # 实测（v1.5.0 崩因）：多的敌人 part 追在文件末尾（asset 分组之后）→ 进游戏
+    # 60 秒左右 0xc0000005 / offset 0x3f71d3 崩；插到最后一条 type==2(敌人) 之后
+    # → 挂机 100 秒存活（C5/C6 对照实验）。原因应是引擎按 type 分组遍历 parts。
+    part_types = [int(p.get("type") or 0) for _i, p in m.parts()]
+    insert_at = len(part_types)
+    for i, t in enumerate(part_types):
+        if t == msb_read.PART_TYPE_ENEMY:
+            insert_at = i + 1
     added = []
     for c in carries:
         t = c["transformed"]
@@ -336,7 +349,7 @@ def patch_map(raw, carries, log=None):
             struct.pack_into("<i", e, typ + msb_read.E_CHARA, int(t.get("chara") or -1))
             e[typ + 0x15] = 0                  # UnkT15 = false
             struct.pack_into("<i", e, typ + 0x38, -1)  # BackupEventAnimID = -1
-            pb["entries"].append(bytes(e))
+            pb["entries"].insert(insert_at + len(added), bytes(e))
             added.append({"entity": ent, "part_id": next_pid - 1,
                           "instance_id": next_inst - 1, "source_index": i,
                           "npc": int(c["npc2"]), "think": int(t["think"]),
@@ -345,7 +358,17 @@ def patch_map(raw, carries, log=None):
             if log:
                 log("    %s：克隆第二形态 part entity=%d（%s %s）"
                     % (c["family"], ent, t["model"], t["npc"]))
-    return m.assemble(), added
+    out = m.assemble()
+    # 复验插入位置：新条目必须仍和敌人分组相连（前后都是 type==2 或自己）
+    chk = msb_edit.Msb(out)
+    ctypes = [int(p.get("type") or 0) for _i, p in chk.parts()]
+    first_new = insert_at
+    for k in range(len(added)):
+        pos = first_new + k
+        if pos >= len(ctypes) or ctypes[pos] != msb_read.PART_TYPE_ENEMY:
+            raise ValueError("phase_carry: 克隆 part 没落进敌人分组（位置 %d type=%s）"
+                             % (pos, ctypes[pos] if pos < len(ctypes) else "EOF"))
+    return out, added
 
 
 def _event_family(path):
